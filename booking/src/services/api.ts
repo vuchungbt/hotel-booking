@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://http://14.225.198.241/';  // Direct API endpoint
+const API_URL = 'https://bk.blwsmartware.net';  // Direct API endpoint
 
 const api = axios.create({
   baseURL: API_URL,
