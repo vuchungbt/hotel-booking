@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = '/api';  // Thay đổi URL để sử dụng proxy
+const API_URL = 'https://booking-demo.blwsmartware.net';  // Direct API endpoint
 
 const api = axios.create({
   baseURL: API_URL,

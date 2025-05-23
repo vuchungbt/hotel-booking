@@ -8,13 +8,6 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   server: {
-	allowedHosts: ['booking.blwsmartware.net'],  
-    proxy: {
-      '/api': {
-        target: 'https://booking-demo.blwsmartware.net',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
-      }
-    }
+    allowedHosts: ['booking.blwsmartware.net'],
   },
 });
