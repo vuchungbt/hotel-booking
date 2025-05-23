@@ -11,7 +11,7 @@ export default defineConfig({
 	allowedHosts: ['booking.blwsmartware.net'],  
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'https://booking.blwsmartware.net',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }
