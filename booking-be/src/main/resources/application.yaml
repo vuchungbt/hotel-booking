@@ -1,0 +1,38 @@
+server:
+  port: ${BE_PORT:8080}
+  servlet:
+    context-path: /
+spring:
+  application:
+    name: booking-service
+  datasource:
+    url: ${DB_MYSQL_URL:jdbc:mysql://localhost:3306/booking?createDatabaseIfNotExist=true}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 1080645398579-rubp4bq65u82rompf4iu9l0vdv1knjul.apps.googleusercontent.com
+            client-secret: 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
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+            scope:
+              - email
+              - profile
+jwt:
+  secret: ${JWT_SECRET:JWT_SECRET_KEY_MUST_BE_32_DIGITS}
+  expiration-minutes: 30
+  expiration-day: 90
+config:
+  file:
+    upload-dir: ${UPLOAD_DIR:C:\temp}
+  admin:
+    name: ${ADMIN_NAME:adminadmin}
+    password: ${ADMIN_PASSWORD:adminadmin123}
+    email: ${ADMIN_EMAIL:adminadmin@blwsmartware.net}
+    username: ${ADMIN_USERNAME:adminadmin}
