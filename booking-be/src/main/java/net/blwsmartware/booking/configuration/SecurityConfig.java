@@ -25,6 +25,9 @@ public class SecurityConfig  implements WebMvcConfigurer {
     @Value("${jwt.secret}")
     private String SIGNER_KEY;
 
+    @Value("${config.cors}")
+    private String URL_CORS;
+
     private static final String[] PUBLIC_ENDPOINTS = {
             "/users",
             "/auth/**",
@@ -81,7 +84,7 @@ public class SecurityConfig  implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:5173")
+                .allowedOrigins(URL_CORS)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);

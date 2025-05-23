@@ -29,6 +29,7 @@ jwt:
   expiration-minutes: 30
   expiration-day: 90
 config:
+  cors: ${URL_CORS:http://localhost:5173}
   file:
     upload-dir: ${UPLOAD_DIR:C:\temp}
   admin:

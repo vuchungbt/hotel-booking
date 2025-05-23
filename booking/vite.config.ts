@@ -8,6 +8,7 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   server: {
+	allowedHosts: ['booking.blwsmartware.net'],  
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
