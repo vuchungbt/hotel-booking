@@ -14,6 +14,7 @@ import net.blwsmartware.booking.exception.IdentityRuntimeException;
 import net.blwsmartware.booking.mapper.UserMapper;
 import net.blwsmartware.booking.repository.RoleRepository;
 import net.blwsmartware.booking.repository.UserRepository;
+import net.blwsmartware.booking.service.EmailService;
 import net.blwsmartware.booking.service.UserService;
 import net.blwsmartware.booking.util.DataResponseUtils;
 import org.springframework.data.domain.Page;
@@ -23,10 +24,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -37,23 +35,43 @@ public class UserServiceImp implements UserService {
     RoleRepository roleRepository;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
+    EmailService emailService;
 
+    public static String generateRandomString(int length) {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        Random random = new Random();
+        StringBuilder result = new StringBuilder(length);
+
+        for (int i = 0; i < length; i++) {
+            int index = random.nextInt(characters.length());
+            result.append(characters.charAt(index));
+        }
+
+        return result.toString();
+    }
 
     @Override
     public UserResponse createUser(UserRequest request) {
 
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user = userRepository.save(user);
-        ProfileRequest profileRequest = userMapper.toProfile(user);
-        profileRequest.setUserID(user.getId());
-
         Role roleUserDefault = roleRepository.findByName(PredefinedRole.USER_ROLE)
                 .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.ROLE_NOT_EXISTED) );
 
-
         Set<Role> roleSet = Set.of(roleUserDefault);
         user.setRoles(roleSet);
+
+        user = userRepository.save(user);
+
+        if(user.getId()!=null ) {
+            String code = generateRandomString(6);
+            emailService.sendEmail(
+                    EmailRequest.builder()
+                            .to(user.getEmail())
+                            .content("Your verification code:"+code)
+                            .subject("Verification Code")
+                            .build());
+        }
 
         return userMapper.toUserResponse(user);
     }

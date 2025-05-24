@@ -33,11 +33,11 @@ const Header: React.FC = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-6">
-            <NavLink icon={<Search size={18} />} text="Tìm khách sạn" isScrolled={isScrolled} />
-            <NavLink icon={<MapPin size={18} />} text="Địa điểm" isScrolled={isScrolled} />
-            <NavLink icon={<Calendar size={18} />} text="Đặt phòng" isScrolled={isScrolled} />
-            <NavLink icon={<Heart size={18} />} text="Yêu thích" isScrolled={isScrolled} />
-            <NavLink icon={<User size={18} />} text="Tài khoản" isScrolled={isScrolled} />
+            <NavLink icon={<Search size={18} />} text="Search Hotels" isScrolled={isScrolled} />
+            <NavLink icon={<MapPin size={18} />} text="Destinations" isScrolled={isScrolled} />
+            <NavLink icon={<Calendar size={18} />} text="Book Now" isScrolled={isScrolled} />
+            <NavLink icon={<Heart size={18} />} text="Favorites" isScrolled={isScrolled} />
+            <NavLink icon={<User size={18} />} text="Account" isScrolled={isScrolled} />
           </nav>
 
           {/* Login Button */}
@@ -61,7 +61,7 @@ const Header: React.FC = () => {
               }`}
             >
               <LogIn size={18} />
-                  <span>Login</span>
+              <span>Login</span>
             </Link>
           </div>
 
@@ -82,11 +82,11 @@ const Header: React.FC = () => {
         {isMenuOpen && (
           <div className="md:hidden mt-4 py-4 bg-white rounded-lg shadow-lg">
             <div className="flex flex-col space-y-4 px-4">
-              <MobileNavLink icon={<Search size={18} />} text="Tìm khách sạn" />
-              <MobileNavLink icon={<MapPin size={18} />} text="Địa điểm" />
-              <MobileNavLink icon={<Calendar size={18} />} text="Đặt phòng" />
-              <MobileNavLink icon={<Heart size={18} />} text="Yêu thích" />
-              <MobileNavLink icon={<User size={18} />} text="Tài khoản" />
+              <MobileNavLink icon={<Search size={18} />} text="Search Hotels" />
+              <MobileNavLink icon={<MapPin size={18} />} text="Destinations" />
+              <MobileNavLink icon={<Calendar size={18} />} text="Book Now" />
+              <MobileNavLink icon={<Heart size={18} />} text="Favorites" />
+              <MobileNavLink icon={<User size={18} />} text="Account" />
               <Link
                 to="/register"
                 className="w-full px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors"

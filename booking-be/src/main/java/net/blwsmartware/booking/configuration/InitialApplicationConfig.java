@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
-import net.blwsmartware.booking.constant.KafkaTopic;
 import net.blwsmartware.booking.constant.PredefinedRole;
 import net.blwsmartware.booking.entity.Role;
 import net.blwsmartware.booking.entity.User;
@@ -57,9 +56,15 @@ public class InitialApplicationConfig {
                         .name(PredefinedRole.USER_ROLE)
                         .description("User")
                         .build());
+                Role host = roleRepository.save(Role.builder()
+                        .name(PredefinedRole.HOST_ROLE)
+                        .description("Owner")
+                        .build());
                 Set<Role> roles = new HashSet<>();
                 roles.add(admin);
                 roles.add(user);
+                roles.add(host);
+
                 User userAdmin = User.builder()
                         .email(adminEmail)
                         .name(adminName)

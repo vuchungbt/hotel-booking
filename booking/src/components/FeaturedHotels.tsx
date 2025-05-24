@@ -2,30 +2,30 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Star, MapPin } from 'lucide-react';
 
-// Dữ liệu mẫu cho đến khi có API thực sự
+// Sample data until we have a real API
 const featuredHotels = [
   {
     id: '1',
     name: 'Grand Hotel',
-    location: 'Hà Nội',
+    location: 'London',
     rating: 4.5,
-    price: 1500000,
+    price: 299,
     image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
   },
   {
     id: '2',
     name: 'Seaside Resort',
-    location: 'Đà Nẵng',
+    location: 'Miami',
     rating: 4.8,
-    price: 2500000,
+    price: 399,
     image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
   },
   {
     id: '3',
     name: 'Mountain View Lodge',
-    location: 'Sapa',
+    location: 'Swiss Alps',
     rating: 4.6,
-    price: 1800000,
+    price: 349,
     image: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2025&q=80'
   }
 ];
@@ -71,9 +71,9 @@ const FeaturedHotels: React.FC = () => {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-2xl font-bold text-blue-600">
-                      {hotel.price.toLocaleString('vi-VN')}đ
+                      ${hotel.price}
                     </span>
-                    <span className="text-sm text-gray-500">/đêm</span>
+                    <span className="text-sm text-gray-500">/night</span>
                   </div>
                 </div>
               </Link>

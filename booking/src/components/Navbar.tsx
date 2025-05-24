@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, User, LogOut, Settings } from 'lucide-react';
+import { Menu, X, User, LogOut, Settings, Hotel } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Navbar: React.FC = () => {
@@ -17,6 +17,9 @@ const Navbar: React.FC = () => {
       console.error('Logout failed:', error);
     }
   };
+
+  const isAdmin = user?.roles?.some(role => role.name === 'ADMIN');
+  const isHost = user?.roles?.some(role => role.name === 'HOST');
 
   return (
     <nav className="bg-white shadow-lg">
@@ -55,6 +58,22 @@ const Navbar: React.FC = () => {
               >
                 Contact
               </Link>
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className="border-transparent text-blue-600 hover:border-blue-300 hover:text-blue-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                >
+                  Admin
+                </Link>
+              )}
+              {isHost && (
+                <Link
+                  to="/host"
+                  className="border-transparent text-green-600 hover:border-green-300 hover:text-green-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                >
+                  Host Dashboard
+                </Link>
+              )}
             </div>
           </div>
 
@@ -83,6 +102,17 @@ const Navbar: React.FC = () => {
                           Account
                         </div>
                       </Link>
+                      {isHost && (
+                        <Link
+                          to="/host"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <div className="flex items-center">
+                            <Hotel className="h-4 w-4 mr-2" />
+                            Host Dashboard
+                          </div>
+                        </Link>
+                      )}
                       <Link
                         to="/settings"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -164,6 +194,22 @@ const Navbar: React.FC = () => {
             >
               Contact
             </Link>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-blue-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-800"
+              >
+                Admin
+              </Link>
+            )}
+            {isHost && (
+              <Link
+                to="/host"
+                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-green-600 hover:bg-green-50 hover:border-green-300 hover:text-green-800"
+              >
+                Host Dashboard
+              </Link>
+            )}
           </div>
           {user ? (
             <div className="pt-4 pb-3 border-t border-gray-200">
@@ -197,7 +243,7 @@ const Navbar: React.FC = () => {
                 >
                   <div className="flex items-center">
                     <LogOut className="h-4 w-4 mr-2" />
-                    
+                    Logout
                   </div>
                 </button>
               </div>
@@ -215,7 +261,7 @@ const Navbar: React.FC = () => {
                   to="/register"
                   className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
                 >
-                  Đăng ký
+                  Register
                 </Link>
               </div>
             </div>
@@ -226,4 +272,4 @@ const Navbar: React.FC = () => {
   );
 };
 
-export default Navbar; 
+export default Navbar;

@@ -35,7 +35,7 @@ const HeroSection: React.FC = () => {
               {/* Destination */}
               <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
-                  Localtion
+                  Location
                 </label>
                 <div className="relative">
                   <input
@@ -84,7 +84,7 @@ const HeroSection: React.FC = () => {
                   >
                     {[1, 2, 3, 4, 5, 6].map((num) => (
                       <option key={num} value={num}>
-                        {num} guests
+                        {num} {num === 1 ? 'guest' : 'guests'}
                       </option>
                     ))}
                   </select>

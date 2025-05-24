@@ -40,15 +40,18 @@ public class User {
     @NotNull(message = "USERNAME_NOT_NULL")
     String username;
 
-
     @Builder.Default
     boolean isActive=true;
+
+    @Builder.Default
+    boolean emailVerified=false;
 
     @CreationTimestamp
     Instant createAt;
 
     @UpdateTimestamp
     Instant updateAt;
+
 
     @ManyToMany
     Set<Role> roles;
