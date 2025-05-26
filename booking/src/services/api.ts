@@ -99,4 +99,4 @@ export const userAPI = {
     api.get('/users', { params: { pageNumber, pageSize, sortBy } })
 };
 
-export default api; 
+export default api;

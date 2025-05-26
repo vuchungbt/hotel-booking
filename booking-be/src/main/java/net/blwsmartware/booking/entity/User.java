@@ -52,7 +52,6 @@ public class User {
     @UpdateTimestamp
     Instant updateAt;
 
-
     @ManyToMany
     Set<Role> roles;
 

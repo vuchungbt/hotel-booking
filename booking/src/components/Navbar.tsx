@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, User, LogOut, Settings, Hotel } from 'lucide-react';
+import { Menu, X, User, LogOut, Settings, Hotel, BookOpen } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Navbar: React.FC = () => {
@@ -99,7 +99,16 @@ const Navbar: React.FC = () => {
                       >
                         <div className="flex items-center">
                           <User className="h-4 w-4 mr-2" />
-                          Account
+                          Profile
+                        </div>
+                      </Link>
+                      <Link
+                        to="/bookings"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <div className="flex items-center">
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          My Bookings
                         </div>
                       </Link>
                       {isHost && (
@@ -122,15 +131,18 @@ const Navbar: React.FC = () => {
                           Settings
                         </div>
                       </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        <div className="flex items-center">
+                          <LogOut className="h-4 w-4 mr-2" />
+                          Logout
+                        </div>
+                      </button>
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={handleLogout}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  <LogOut className="h-4 w-4" /> 
-                </button>
               </>
             ) : (
               <div className="flex items-center space-x-4">
@@ -229,7 +241,16 @@ const Navbar: React.FC = () => {
                   to="/profile"
                   className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
                 >
-                  Account
+                  Profile
+                </Link>
+                <Link
+                  to="/bookings"
+                  className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                >
+                  <div className="flex items-center">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    My Bookings
+                  </div>
                 </Link>
                 <Link
                   to="/settings"

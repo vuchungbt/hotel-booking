@@ -1,66 +1,82 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Hotel, BookOpen, Settings } from 'lucide-react';
+import { Users, Hotel, BookOpen, Settings, Star, BarChart2, Tag } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
 
   const stats = [
-    { label: 'Total Users', value: '1,234', icon: Users },
-    { label: 'Total Hotels', value: '567', icon: Hotel },
-    { label: 'Total Bookings', value: '8,901', icon: BookOpen },
+    { label: 'Tổng người dùng', value: '1,234', icon: Users },
+    { label: 'Tổng khách sạn', value: '567', icon: Hotel },
+    { label: 'Tổng đặt phòng', value: '8,901', icon: BookOpen },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 pt-20">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+    <div className="w-full">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">Bảng điều khiển quản trị</h1>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <div key={index} className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-500">{stat.label}</p>
-                    <h3 className="text-2xl font-bold mt-2">{stat.value}</h3>
-                  </div>
-                  <Icon className="h-8 w-8 text-blue-500" />
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <div key={index} className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm sm:text-base text-gray-500">{stat.label}</p>
+                  <h3 className="text-xl sm:text-2xl font-bold mt-2">{stat.value}</h3>
                 </div>
+                <Icon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
+      </div>
 
-        {/* Management Sections */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <ManagementCard
-            title="User Management"
-            description="Manage user accounts and permissions"
-            icon={<Users className="h-6 w-6" />}
-            onClick={() => navigate('/admin/users')}
-          />
-          <ManagementCard
-            title="Hotel Management"
-            description="Manage hotel listings and details"
-            icon={<Hotel className="h-6 w-6" />}
-            onClick={() => navigate('/admin/hotels')}
-          />
-          <ManagementCard
-            title="Booking Management"
-            description="View and manage booking records"
-            icon={<BookOpen className="h-6 w-6" />}
-            onClick={() => navigate('/admin/bookings')}
-          />
-          <ManagementCard
-            title="Settings"
-            description="Configure system settings"
-            icon={<Settings className="h-6 w-6" />}
-            onClick={() => navigate('/admin/settings')}
-          />
-        </div>
+      {/* Management Sections */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <ManagementCard
+          title="Quản lý người dùng"
+          description="Quản lý tài khoản và phân quyền người dùng"
+          icon={<Users className="h-5 w-5 sm:h-6 sm:w-6" />}
+          onClick={() => navigate('/admin/users')}
+        />
+        <ManagementCard
+          title="Quản lý khách sạn"
+          description="Quản lý danh sách và thông tin khách sạn"
+          icon={<Hotel className="h-5 w-5 sm:h-6 sm:w-6" />}
+          onClick={() => navigate('/admin/hotels')}
+        />
+        <ManagementCard
+          title="Quản lý đặt phòng"
+          description="Xem và quản lý các đơn đặt phòng"
+          icon={<BookOpen className="h-5 w-5 sm:h-6 sm:w-6" />}
+          onClick={() => navigate('/admin/bookings')}
+        />
+        <ManagementCard
+          title="Quản lý đánh giá"
+          description="Duyệt và quản lý đánh giá của người dùng"
+          icon={<Star className="h-5 w-5 sm:h-6 sm:w-6" />}
+          onClick={() => navigate('/admin/reviews')}
+        />
+        <ManagementCard
+          title="Thống kê & Phân tích"
+          description="Xem báo cáo và thống kê hệ thống"
+          icon={<BarChart2 className="h-5 w-5 sm:h-6 sm:w-6" />}
+          onClick={() => navigate('/admin/analytics')}
+        />
+        <ManagementCard
+          title="Quản lý khuyến mãi"
+          description="Tạo và quản lý các mã khuyến mãi"
+          icon={<Tag className="h-5 w-5 sm:h-6 sm:w-6" />}
+          onClick={() => navigate('/admin/promotions')}
+        />
+        <ManagementCard
+          title="Cài đặt hệ thống"
+          description="Cấu hình các thiết lập hệ thống"
+          icon={<Settings className="h-5 w-5 sm:h-6 sm:w-6" />}
+          onClick={() => navigate('/admin/settings')}
+        />
       </div>
     </div>
   );
@@ -82,17 +98,18 @@ const ManagementCard: React.FC<ManagementCardProps> = ({
   return (
     <button
       onClick={onClick}
-      className="bg-white rounded-lg shadow-md p-6 text-left transition-all hover:shadow-lg hover:scale-105"
+      className="bg-white rounded-lg shadow-md p-4 sm:p-6 text-left transition-all hover:shadow-lg hover:scale-105"
     >
-      <div className="flex items-center mb-4">
-        <div className="bg-blue-100 p-3 rounded-full mr-4">
+      <div className="flex items-center mb-3 sm:mb-4">
+        <div className="bg-blue-100 p-2 sm:p-3 rounded-full mr-3 sm:mr-4">
           {icon}
         </div>
-        <h3 className="text-lg font-semibold">{title}</h3>
+        <h3 className="text-base sm:text-lg font-semibold">{title}</h3>
       </div>
-      <p className="text-gray-600">{description}</p>
+      <p className="text-sm sm:text-base text-gray-600">{description}</p>
     </button>
   );
 };
 
 export default AdminDashboard;
+
