@@ -8,7 +8,7 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           {/* About */}
           <div>
-            <h3 className="text-xl font-bold mb-4">VietBooking</h3>
+            <h3 className="text-xl font-bold mb-4">FBooking</h3>
             <p className="text-gray-400 mb-4">
               The leading hotel booking platform in Vietnam, providing high-quality booking services with great discounts.
             </p>
@@ -58,7 +58,7 @@ const Footer: React.FC = () => {
               </li>
               <li className="flex items-center">
                 <Mail size={18} className="mr-3 text-blue-400" />
-                <span className="text-gray-400">contact@vietbooking.com</span>
+                <span className="text-gray-400">contact@fbooking.com</span>
               </li>
             </ul>
           </div>
@@ -68,7 +68,7 @@ const Footer: React.FC = () => {
         {/* Copyright */}
         <div className="border-t border-gray-800 pt-6 text-center">
           <p className="text-gray-500">
-            &copy; {new Date().getFullYear()} VietBooking. Tất cả các quyền được bảo lưu.
+            &copy; {new Date().getFullYear()} FBooking. Tất cả các quyền được bảo lưu.
           </p>
         </div>
       </div>

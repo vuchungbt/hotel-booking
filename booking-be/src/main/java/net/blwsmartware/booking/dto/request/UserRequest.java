@@ -8,6 +8,8 @@ import lombok.experimental.FieldDefaults;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserRequest {
     @Size(min = 8,message = "PASSWORD_MUST_8_DIGITS")

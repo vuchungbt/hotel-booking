@@ -6,8 +6,12 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDate;
+
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserUpdate {
     @Size(min = 8,message = "PASSWORD_MUST_8_DIGITS")
@@ -22,5 +26,12 @@ public class UserUpdate {
 
     @Email(message = "EMAIL_INVALID")
     String email;
+
+    String tel,address;
+
+    LocalDate dob;
+
+    boolean isActive;
+    boolean emailVerified;
 
 }

@@ -80,8 +80,8 @@ const ContactPage: React.FC = () => {
                 <div>
                   <h3 className="font-semibold mb-1">Email</h3>
                   <p className="text-gray-600">
-                    support@vietbooking.com<br />
-                    info@vietbooking.com
+                    support@fbooking.com<br />
+                    info@fbooking.com
                   </p>
                 </div>
               </div>

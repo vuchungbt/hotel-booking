@@ -71,6 +71,7 @@ public class InitialApplicationConfig {
                         .username(adminUsername)
                         .password(passwordEncoder.encode(adminPassword))
                         .roles(roles)
+                        .emailVerified(true)
                         .build();
                 userRepository.save(userAdmin);
                 log.info("********** Application init successfully for admin...");

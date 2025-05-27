@@ -10,6 +10,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 
@@ -40,12 +42,19 @@ public class User {
     @NotNull(message = "USERNAME_NOT_NULL")
     String username;
 
+    String tel,address;
+
+    LocalDate dob;
+
     @Builder.Default
     boolean isActive=true;
 
     @Builder.Default
     boolean emailVerified=false;
 
+    String code;
+
+    Date codeExpr;
     @CreationTimestamp
     Instant createAt;
 

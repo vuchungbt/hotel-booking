@@ -36,8 +36,9 @@ const LoginPage: React.FC = () => {
       // Sử dụng login từ AuthContext
       login(token, refreshToken);
       
-      // Chuyển hướng về trang chủ
-      navigate('/');
+      // Chuyển hướng về trang được yêu cầu trước đó hoặc trang chủ
+      const from = location.state?.from?.pathname || '/';
+      navigate(from, { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
     } finally {
@@ -142,9 +143,9 @@ const LoginPage: React.FC = () => {
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+                <Link to="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
                   Forgot password?
-                </a>
+                </Link>
               </div>
             </div>
 

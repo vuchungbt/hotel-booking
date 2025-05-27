@@ -28,6 +28,12 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
+        if(!user.isActive() ) {
+            throw  new IdentityRuntimeException(ErrorResponse.USER_BLOCKED) ;
+        }
+        else if(!user.isEmailVerified()) {
+            throw  new IdentityRuntimeException(ErrorResponse.USER_NOT_VERIFICATION) ;
+        }
         return new CustomUserDetails(user);
     }
     public UserDetails loadUserByID(String id)  {

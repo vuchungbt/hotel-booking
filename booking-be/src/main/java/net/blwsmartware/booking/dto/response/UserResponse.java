@@ -5,6 +5,7 @@ import lombok.experimental.FieldDefaults;
 import net.blwsmartware.booking.entity.Role;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
 
@@ -16,6 +17,9 @@ public class UserResponse {
     String username;
     String email;
     boolean isActive;
+    boolean emailVerified;
+    String tel,address;
+    LocalDate dob;
     Instant createAt;
     Instant updateAt;
     Set<Role> roles;

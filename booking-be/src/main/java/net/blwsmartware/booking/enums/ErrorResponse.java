@@ -31,6 +31,10 @@ public enum ErrorResponse {
 
     USER_NOT_FOUND(3004, "User not found!", HttpStatus.NOT_FOUND),
     USER_NOT_LOGIN(1001, "Incorrect password!", HttpStatus.BAD_REQUEST),
+    USER_BLOCKED(4008, "User has been blocked!", HttpStatus.FORBIDDEN),
+    USER_NOT_VERIFICATION(4009, "Email not verified!", HttpStatus.FORBIDDEN),
+    CODE_EXPIRED(4012, "Code has expired!", HttpStatus.BAD_REQUEST),
+    CODE_NOT_FOUND(4113, "Code not found!", HttpStatus.BAD_REQUEST),
 
     PASSWORD_MUST_8_DIGITS(2005, "Password must be at least 8 characters!", HttpStatus.BAD_REQUEST),
     PASSWORD_NOT_NULL(2006, "Password cannot be null!", HttpStatus.BAD_REQUEST),

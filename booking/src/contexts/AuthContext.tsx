@@ -6,11 +6,18 @@ interface User {
   name: string;
   username: string;
   email: string;
+  tel?: string;
+  address?: string;
+  dob?: string;
+  createAt: string;
+  updateAt: string;
   roles: Array<{
     id: number;
     name: string;
     description: string;
   }>;
+  active: boolean;
+  emailVerified?: boolean;
 }
 
 interface AuthContextType {

@@ -1,5 +1,5 @@
 import React, { ReactNode, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Users, Hotel, BookOpen, Settings, Star, BarChart2, Tag, Home, 
@@ -15,11 +15,17 @@ interface DashboardLayoutProps {
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, type }) => {
   const location = useLocation();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['Quản lý', 'Tài chính']);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isAdmin = type === 'admin';
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const adminMenuItems = [
     { path: '/admin', label: 'Tổng quan', icon: <Home size={20} /> },
@@ -175,14 +181,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, type }) => 
 
       {/* Logout */}
       <div className="p-4 border-t border-gray-700">
-        <Link
-          to="/"
-          className="flex items-center px-4 py-2 text-sm font-medium text-gray-300 rounded-md hover:bg-gray-700 hover:text-white transition-colors"
-          onClick={() => setIsMobileMenuOpen(false)}
+        <button
+          onClick={() => {
+            setIsMobileMenuOpen(false);
+            handleLogout();
+          }}
+          className="w-full flex items-center px-4 py-2 text-sm font-medium text-gray-300 rounded-md hover:bg-gray-700 hover:text-white transition-colors"
         >
           <LogOut size={20} className="mr-3" />
           Đăng xuất
-        </Link>
+        </button>
       </div>
     </div>
   );

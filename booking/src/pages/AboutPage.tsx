@@ -9,7 +9,7 @@ const AboutPage: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Về VietBooking
+              Về FBooking
             </h1>
             <p className="text-xl opacity-90">
               Chúng tôi là nền tảng đặt phòng khách sạn hàng đầu tại Việt Nam, 
@@ -49,7 +49,7 @@ const AboutPage: React.FC = () => {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Tại sao chọn chúng tôi?</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              VietBooking cam kết mang đến trải nghiệm đặt phòng tốt nhất cho khách hàng
+              FBooking cam kết mang đến trải nghiệm đặt phòng tốt nhất cho khách hàng
             </p>
           </div>
 

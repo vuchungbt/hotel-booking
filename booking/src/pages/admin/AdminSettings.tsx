@@ -3,9 +3,9 @@ import { Save, Bell, Shield, Database, Mail, Globe } from 'lucide-react';
 
 const AdminSettings: React.FC = () => {
   const [settings, setSettings] = useState({
-    siteName: 'VietBooking',
+    siteName: 'FBooking',
     siteDescription: 'Nền tảng đặt phòng khách sạn hàng đầu Việt Nam',
-    contactEmail: 'admin@vietbooking.com',
+    contactEmail: 'admin@fbooking.com',
     supportPhone: '1900-1234',
     maintenanceMode: false,
     emailNotifications: true,

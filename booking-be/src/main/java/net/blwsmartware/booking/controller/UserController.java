@@ -13,6 +13,7 @@ import net.blwsmartware.booking.dto.request.UserRequest;
 import net.blwsmartware.booking.dto.request.UserUpdate;
 import net.blwsmartware.booking.dto.response.UserResponse;
 import net.blwsmartware.booking.service.UserService;
+import net.blwsmartware.booking.validator.IsAdmin;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -92,6 +93,17 @@ public class UserController {
                 .status(HttpStatus.OK)
                 .body(MessageResponse.<UserResponse>builder()
                         .result(userService.updateRoleOfUser(id,roles))
+                        .build()
+                );
+    }
+
+    @PutMapping("/email-verification/{id}")
+    @IsAdmin
+    public ResponseEntity<MessageResponse<UserResponse>> toggleEmailVerification(@PathVariable UUID id) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(MessageResponse.<UserResponse>builder()
+                        .result(userService.toggleEmailVerification(id))
                         .build()
                 );
     }

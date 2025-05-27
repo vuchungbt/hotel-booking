@@ -52,6 +52,45 @@ public class AuthenController {
                 );
     }
 
+    @PostMapping("/confirm-email")
+    public ResponseEntity<MessageResponse<UserResponse>> confirmMail(@RequestBody @Valid ConfirmEmailRequest request) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(MessageResponse.<UserResponse>builder()
+                        .result(userService.confirmEmail(request))
+                        .build()
+                );
+    }
+    @PostMapping("/resend-code")
+    public ResponseEntity<MessageResponse<UserResponse>> resendCode(@RequestBody @Valid ResendEmailRequest request) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(MessageResponse.<UserResponse>builder()
+                        .result(userService.resendCodeMail(request))
+                        .message("Please check your email (Inbox/Spam)")
+                        .build()
+                );
+    }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<MessageResponse<UserResponse>> forgot(@RequestBody @Valid ResendEmailRequest request) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(MessageResponse.<UserResponse>builder()
+                        .result(userService.resendCodeMail(request))
+                        .message("Please check your email (Inbox/Spam)")
+                        .build()
+                );
+    }
+    @PostMapping("/new-password")
+    public ResponseEntity<MessageResponse<UserResponse>> newPass(@RequestBody @Valid NewPassRequest request) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(MessageResponse.<UserResponse>builder()
+                        .result(userService.newPass(request))
+                        .build()
+                );
+    }
+
     @PostMapping("/login")
     public ResponseEntity<MessageResponse<AuthenResponse>> authen(@RequestBody AuthenRequest authen) {
                 return ResponseEntity

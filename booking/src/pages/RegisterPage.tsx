@@ -46,9 +46,9 @@ const RegisterPage: React.FC = () => {
     try {
       await authAPI.register(formData);
       
-      // Chuyển hướng đến trang đăng nhập sau khi đăng ký thành công
-      navigate('/login', { 
-        state: { message: 'Registration successful! Please login.' }
+      // Chuyển hướng đến trang xác nhận email sau khi đăng ký thành công
+      navigate('/email-verification', { 
+        state: { email: formData.email }
       });
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');

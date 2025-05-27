@@ -52,15 +52,15 @@ public class IdentityExceptionHandler {
 
         log.info("ConstraintViolationException: {}", errorMessage);
 
-        if (errorMessage.contains("foreign key")) {
-            err = ErrorResponse.QUERY_KEY_INVALID;
-        } else if (errorMessage.contains("email")) {
-            err = ErrorResponse.EMAIL_EXISTED;
-        } else if (errorMessage.contains("username")) {
-            err = ErrorResponse.USERNAME_EXISTED;
-        } else if (errorMessage.contains("name")) {
-            err = ErrorResponse.NAME_EXISTED;
-        }
+//        if (errorMessage.contains("foreign key")) {
+//            err = ErrorResponse.QUERY_KEY_INVALID;
+//        } else if (errorMessage.contains("email")) {
+//            err = ErrorResponse.EMAIL_EXISTED;
+//        } else if (errorMessage.contains("username")) {
+//            err = ErrorResponse.USERNAME_EXISTED;
+//        } else if (errorMessage.contains("name")) {
+//            err = ErrorResponse.NAME_EXISTED;
+//        }
 
 
         return ResponseEntity

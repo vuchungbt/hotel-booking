@@ -1,144 +1,116 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Edit, Trash, Eye, Mail, Phone, Calendar, Check, X, Filter } from 'lucide-react';
+import { Search, Plus, Edit, Trash, Eye, Mail, Phone, Calendar, Filter, RefreshCw, Settings, MailCheck, MailX } from 'lucide-react';
+import { userAPI } from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
+import UserRoleModal from '../../components/admin/UserRoleModal';
 
 interface User {
   id: string;
   name: string;
   username: string;
   email: string;
-  phone: string;
-  role: string[];
-  status: 'active' | 'inactive' | 'pending';
-  createdAt: string;
-  lastLogin: string;
+  tel?: string;
+  address?: string;
+  dob?: string;
+  createAt: string;
+  updateAt: string;
+  roles: Array<{
+    id: number;
+    name: string;
+    description: string;
+  }>;
+  active: boolean;
+  emailVerified: boolean;
+}
+
+interface ApiResponse {
+  code: number;
+  success: boolean;
+  message: string;
+  result: {
+    content: User[];
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+  };
 }
 
 const AdminUsers: React.FC = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [emailVerificationFilter, setEmailVerificationFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(0); // API uses 0-based pagination
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isSelectAll, setIsSelectAll] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [selectedUserForRole, setSelectedUserForRole] = useState<User | null>(null);
 
-  // Sample users data
-  const users: User[] = [
-    {
-      id: '1',
-      name: 'Nguyễn Văn An',
-      username: 'nguyenvanan',
-      email: 'nguyenvanan@example.com',
-      phone: '0901234567',
-      role: ['USER'],
-      status: 'active',
-      createdAt: '2023-01-15',
-      lastLogin: '2023-10-20'
-    },
-    {
-      id: '2',
-      name: 'Trần Thị Bình',
-      username: 'tranthibinh',
-      email: 'tranthibinh@example.com',
-      phone: '0912345678',
-      role: ['USER', 'HOST'],
-      status: 'active',
-      createdAt: '2023-02-20',
-      lastLogin: '2023-10-18'
-    },
-    {
-      id: '3',
-      name: 'Lê Văn Cường',
-      username: 'levancuong',
-      email: 'levancuong@example.com',
-      phone: '0923456789',
-      role: ['USER'],
-      status: 'inactive',
-      createdAt: '2023-03-10',
-      lastLogin: '2023-09-05'
-    },
-    {
-      id: '4',
-      name: 'Phạm Thị Dung',
-      username: 'phamthidung',
-      email: 'phamthidung@example.com',
-      phone: '0934567890',
-      role: ['USER', 'HOST'],
-      status: 'active',
-      createdAt: '2023-04-05',
-      lastLogin: '2023-10-19'
-    },
-    {
-      id: '5',
-      name: 'Hoàng Văn Em',
-      username: 'hoangvanem',
-      email: 'hoangvanem@example.com',
-      phone: '0945678901',
-      role: ['ADMIN'],
-      status: 'active',
-      createdAt: '2023-01-01',
-      lastLogin: '2023-10-20'
-    },
-    {
-      id: '6',
-      name: 'Ngô Thị Phương',
-      username: 'ngothiphuong',
-      email: 'ngothiphuong@example.com',
-      phone: '0956789012',
-      role: ['USER'],
-      status: 'pending',
-      createdAt: '2023-10-10',
-      lastLogin: '2023-10-10'
-    },
-    {
-      id: '7',
-      name: 'Đỗ Văn Giang',
-      username: 'dovangiang',
-      email: 'dovangiang@example.com',
-      phone: '0967890123',
-      role: ['USER', 'HOST'],
-      status: 'active',
-      createdAt: '2023-05-15',
-      lastLogin: '2023-10-15'
-    },
-    {
-      id: '8',
-      name: 'Vũ Thị Hương',
-      username: 'vuthihuong',
-      email: 'vuthihuong@example.com',
-      phone: '0978901234',
-      role: ['USER'],
-      status: 'active',
-      createdAt: '2023-06-20',
-      lastLogin: '2023-10-17'
+  const itemsPerPage = 10;
+
+  // Fetch users from API
+  const fetchUsers = async (page = 0, size = itemsPerPage, sortBy = 'id') => {
+    try {
+      setLoading(true);
+      const response = await userAPI.getAllUsers(page, size, sortBy);
+      const data = response.data as ApiResponse;
+      
+      if (data.success) {
+        setUsers(data.result.content);
+        setTotalPages(data.result.totalPages);
+        setTotalElements(data.result.totalElements);
+        setCurrentPage(data.result.number);
+      } else {
+        showToast('error', 'Lỗi', data.message || 'Không thể tải danh sách người dùng');
+      }
+    } catch (error: any) {
+      console.error('Error fetching users:', error);
+      showToast('error', 'Lỗi', 'Không thể kết nối đến server');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const itemsPerPage = 5;
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
-  // Filter users based on search term, role, and status
+  // Filter users based on search term, role, status, and email verification
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesRole = roleFilter === 'all' || user.role.includes(roleFilter);
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+    const userRoles = user.roles.map(role => role.name);
+    const matchesRole = roleFilter === 'all' || userRoles.includes(roleFilter);
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'active' && user.active) ||
+      (statusFilter === 'inactive' && !user.active);
+    const matchesEmailVerification = emailVerificationFilter === 'all' ||
+      (emailVerificationFilter === 'verified' && user.emailVerified) ||
+      (emailVerificationFilter === 'unverified' && !user.emailVerified);
     
-    return matchesSearch && matchesRole && matchesStatus;
+    return matchesSearch && matchesRole && matchesStatus && matchesEmailVerification;
   });
 
-  // Pagination
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
   const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
+    const options: Intl.DateTimeFormatOptions = { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
     return new Date(dateString).toLocaleDateString('vi-VN', options);
   };
 
@@ -146,7 +118,7 @@ const AdminUsers: React.FC = () => {
     if (isSelectAll) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(paginatedUsers.map(user => user.id));
+      setSelectedUsers(filteredUsers.map(user => user.id));
     }
     setIsSelectAll(!isSelectAll);
   };
@@ -157,6 +129,18 @@ const AdminUsers: React.FC = () => {
     } else {
       setSelectedUsers([...selectedUsers, userId]);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchUsers(currentPage);
+    setSelectedUsers([]);
+    setIsSelectAll(false);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    fetchUsers(newPage);
+    setSelectedUsers([]);
+    setIsSelectAll(false);
   };
 
   const handleAddUser = () => {
@@ -171,57 +155,116 @@ const AdminUsers: React.FC = () => {
     navigate(`/admin/users/${userId}`);
   };
 
-  const handleDeleteUser = (userId: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa người dùng này không?')) {
-      // Delete user logic would go here
-      alert(`Đã xóa người dùng có ID: ${userId}`);
+  const handleDeleteUser = async (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
+    if (window.confirm(`Bạn có chắc chắn muốn xóa người dùng "${user.name}" không?`)) {
+      try {
+        setActionLoading(userId);
+        await userAPI.deleteUser(userId);
+        showToast('success', 'Thành công', 'Đã xóa người dùng thành công');
+        fetchUsers(currentPage); // Refresh current page
+      } catch (error: any) {
+        console.error('Error deleting user:', error);
+        const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi xóa người dùng';
+        showToast('error', 'Lỗi', errorMessage);
+      } finally {
+        setActionLoading(null);
+      }
     }
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (selectedUsers.length === 0) return;
     
     if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedUsers.length} người dùng đã chọn không?`)) {
-      // Delete selected users logic would go here
-      alert(`Đã xóa ${selectedUsers.length} người dùng`);
-      setSelectedUsers([]);
+      try {
+        setActionLoading('bulk-delete');
+        
+        // Delete users one by one (since we don't have bulk delete API)
+        const deletePromises = selectedUsers.map(userId => userAPI.deleteUser(userId));
+        await Promise.all(deletePromises);
+        
+        showToast('success', 'Thành công', `Đã xóa ${selectedUsers.length} người dùng thành công`);
+        setSelectedUsers([]);
+        setIsSelectAll(false);
+        fetchUsers(currentPage);
+      } catch (error: any) {
+        console.error('Error deleting users:', error);
+        showToast('error', 'Lỗi', 'Có lỗi xảy ra khi xóa người dùng');
+      } finally {
+        setActionLoading(null);
+      }
     }
   };
 
-  const handleActivateUser = (userId: string) => {
-    // Activate user logic would go here
-    alert(`Đã kích hoạt người dùng có ID: ${userId}`);
+  const getStatusBadge = (active: boolean) => {
+    return active 
+      ? <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Hoạt động</span>
+      : <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Vô hiệu</span>;
   };
 
-  const handleDeactivateUser = (userId: string) => {
-    // Deactivate user logic would go here
-    alert(`Đã vô hiệu hóa người dùng có ID: ${userId}`);
+  const getRoleBadges = (roles: Array<{name: string}>) => {
+    return roles.map((role, index) => (
+      <span 
+        key={index} 
+        className={`px-2 py-1 text-xs font-medium rounded-full ${
+          role.name === 'ADMIN' 
+            ? 'bg-purple-100 text-purple-800' 
+            : role.name === 'HOST'
+              ? 'bg-blue-100 text-blue-800'
+              : 'bg-gray-100 text-gray-800'
+        }`}
+      >
+        {role.name === 'ADMIN' ? 'Quản trị viên' : role.name === 'HOST' ? 'Chủ khách sạn' : 'Người dùng'}
+      </span>
+    ));
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Hoạt động</span>;
-      case 'inactive':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Vô hiệu</span>;
-      case 'pending':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Chờ xác nhận</span>;
-      default:
-        return null;
-    }
+  const handleManageRoles = (user: User) => {
+    setSelectedUserForRole(user);
+    setIsRoleModalOpen(true);
   };
+
+  const handleRoleModalSuccess = () => {
+    // Refresh current page after role update
+    fetchUsers(currentPage);
+    setSelectedUserForRole(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="w-full flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
-        <h1 className="text-xl sm:text-2xl font-bold">Quản lý người dùng</h1>
-        <button
-          onClick={handleAddUser}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-        >
-          <Plus size={20} className="mr-2" />
-          Thêm người dùng mới
-        </button>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold">Quản lý người dùng</h1>
+          <p className="text-gray-600 mt-1">Tổng cộng {totalElements} người dùng</p>
+        </div>
+        <div className="flex space-x-3">
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center disabled:opacity-50"
+          >
+            <RefreshCw size={20} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Làm mới
+          </button>
+          <button
+            onClick={handleAddUser}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+          >
+            <Plus size={20} className="mr-2" />
+            Thêm người dùng
+          </button>
+        </div>
       </div>
 
       {/* Filters and Search */}
@@ -260,7 +303,17 @@ const AdminUsers: React.FC = () => {
                 <option value="all">Tất cả trạng thái</option>
                 <option value="active">Hoạt động</option>
                 <option value="inactive">Vô hiệu</option>
-                <option value="pending">Chờ xác nhận</option>
+              </select>
+            </div>
+            <div className="flex items-center">
+              <select
+                value={emailVerificationFilter}
+                onChange={(e) => setEmailVerificationFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">Tất cả email</option>
+                <option value="verified">Đã xác thực</option>
+                <option value="unverified">Chưa xác thực</option>
               </select>
             </div>
           </div>
@@ -274,9 +327,14 @@ const AdminUsers: React.FC = () => {
           <div className="flex gap-2">
             <button
               onClick={handleDeleteSelected}
-              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors flex items-center"
+              disabled={actionLoading === 'bulk-delete'}
+              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors flex items-center disabled:opacity-50"
             >
-              <Trash size={16} className="mr-1" />
+              {actionLoading === 'bulk-delete' ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+              ) : (
+                <Trash size={16} className="mr-1" />
+              )}
               Xóa đã chọn
             </button>
           </div>
@@ -310,20 +368,14 @@ const AdminUsers: React.FC = () => {
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Trạng thái
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày tạo
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Đăng nhập gần đây
-                </th>
+                </th>  
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Thao tác
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedUsers.map((user) => (
+              {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -337,7 +389,7 @@ const AdminUsers: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                      <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
                         {user.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="ml-4">
@@ -349,43 +401,36 @@ const AdminUsers: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900 flex items-center">
                       <Mail className="h-4 w-4 mr-1 text-gray-500" />
-                      {user.email}
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span>{user.email}</span>
+                          {user.emailVerified ? (
+                            <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                              <MailCheck className="h-3 w-3 mr-0.5" /> 
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                              <MailX className="h-3 w-3 mr-0.5" /> 
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-500 flex items-center">
-                      <Phone className="h-4 w-4 mr-1 text-gray-500" />
-                      {user.phone}
-                    </div>
+                    {user.tel && (
+                      <div className="text-sm text-gray-500 flex items-center mt-1">
+                        <Phone className="h-4 w-4 mr-1 text-gray-500" />
+                        {user.tel}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-wrap gap-1">
-                      {user.role.map((role, index) => (
-                        <span 
-                          key={index} 
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            role === 'ADMIN' 
-                              ? 'bg-purple-100 text-purple-800' 
-                              : role === 'HOST'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {role === 'ADMIN' ? 'Quản trị viên' : role === 'HOST' ? 'Chủ khách sạn' : 'Người dùng'}
-                        </span>
-                      ))}
+                      {getRoleBadges(user.roles)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(user.status)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-1 text-gray-500" />
-                      {formatDate(user.createdAt)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(user.lastLogin)}
-                  </td>
+                    {getStatusBadge(user.active)}
+                  </td> 
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-2">
                       <button
@@ -396,35 +441,30 @@ const AdminUsers: React.FC = () => {
                         <Eye size={18} />
                       </button>
                       <button
+                        onClick={() => handleManageRoles(user)}
+                        className="text-purple-600 hover:text-purple-900"
+                        title="Quản lý vai trò"
+                      >
+                        <Settings size={18} />
+                      </button>
+                      <button
                         onClick={() => handleEditUser(user.id)}
                         className="text-yellow-600 hover:text-yellow-900"
                         title="Chỉnh sửa"
                       >
                         <Edit size={18} />
                       </button>
-                      {user.status === 'active' ? (
-                        <button
-                          onClick={() => handleDeactivateUser(user.id)}
-                          className="text-orange-600 hover:text-orange-900"
-                          title="Vô hiệu hóa"
-                        >
-                          <X size={18} />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleActivateUser(user.id)}
-                          className="text-green-600 hover:text-green-900"
-                          title="Kích hoạt"
-                        >
-                          <Check size={18} />
-                        </button>
-                      )}
                       <button
                         onClick={() => handleDeleteUser(user.id)}
-                        className="text-red-600 hover:text-red-900"
+                        disabled={actionLoading === user.id}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
                         title="Xóa"
                       >
-                        <Trash size={18} />
+                        {actionLoading === user.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                        ) : (
+                          <Trash size={18} />
+                        )}
                       </button>
                     </div>
                   </td>
@@ -439,10 +479,10 @@ const AdminUsers: React.FC = () => {
           <div className="px-6 py-3 flex items-center justify-between border-t border-gray-200">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
+                onClick={() => handlePageChange(Math.max(0, currentPage - 1))}
+                disabled={currentPage === 0}
                 className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                  currentPage === 1
+                  currentPage === 0
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-white text-gray-700 hover:bg-gray-50'
                 }`}
@@ -450,10 +490,10 @@ const AdminUsers: React.FC = () => {
                 Trước
               </button>
               <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
+                onClick={() => handlePageChange(Math.min(totalPages - 1, currentPage + 1))}
+                disabled={currentPage === totalPages - 1}
                 className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                  currentPage === totalPages
+                  currentPage === totalPages - 1
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-white text-gray-700 hover:bg-gray-50'
                 }`}
@@ -464,20 +504,20 @@ const AdminUsers: React.FC = () => {
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  Hiển thị <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> đến{' '}
+                  Hiển thị <span className="font-medium">{currentPage * itemsPerPage + 1}</span> đến{' '}
                   <span className="font-medium">
-                    {Math.min(currentPage * itemsPerPage, filteredUsers.length)}
+                    {Math.min((currentPage + 1) * itemsPerPage, totalElements)}
                   </span>{' '}
-                  trong tổng số <span className="font-medium">{filteredUsers.length}</span> người dùng
+                  trong tổng số <span className="font-medium">{totalElements}</span> người dùng
                 </p>
               </div>
               <div>
                 <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                   <button
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(Math.max(0, currentPage - 1))}
+                    disabled={currentPage === 0}
                     className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                      currentPage === 1
+                      currentPage === 0
                         ? 'text-gray-300 cursor-not-allowed'
                         : 'text-gray-500 hover:bg-gray-50'
                     }`}
@@ -487,24 +527,29 @@ const AdminUsers: React.FC = () => {
                       <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </button>
-                  {Array.from({ length: totalPages }).map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentPage(index + 1)}
-                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                        currentPage === index + 1
-                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                      }`}
-                    >
-                      {index + 1}
-                    </button>
-                  ))}
+                  {Array.from({ length: Math.min(totalPages, 5) }).map((_, index) => {
+                    const pageNumber = currentPage < 3 ? index : currentPage - 2 + index;
+                    if (pageNumber >= totalPages) return null;
+                    
+                    return (
+                      <button
+                        key={pageNumber}
+                        onClick={() => handlePageChange(pageNumber)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          currentPage === pageNumber
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNumber + 1}
+                      </button>
+                    );
+                  })}
                   <button
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
+                    onClick={() => handlePageChange(Math.min(totalPages - 1, currentPage + 1))}
+                    disabled={currentPage === totalPages - 1}
                     className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                      currentPage === totalPages
+                      currentPage === totalPages - 1
                         ? 'text-gray-300 cursor-not-allowed'
                         : 'text-gray-500 hover:bg-gray-50'
                     }`}
@@ -520,36 +565,31 @@ const AdminUsers: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
-  );
-};
 
-interface ManagementCardProps {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-}
-
-const ManagementCard: React.FC<ManagementCardProps> = ({
-  title,
-  description,
-  icon,
-  onClick,
-}) => {
-  return (
-    <button
-      onClick={onClick}
-      className="bg-white rounded-lg shadow-md p-6 text-left transition-all hover:shadow-lg hover:scale-105"
-    >
-      <div className="flex items-center mb-4">
-        <div className="bg-blue-100 p-3 rounded-full mr-4">
-          {icon}
+      {/* Empty State */}
+      {filteredUsers.length === 0 && !loading && (
+        <div className="bg-white rounded-lg shadow-md p-12 text-center">
+          <div className="text-gray-400 mb-4">
+            <Search size={48} className="mx-auto" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy người dùng</h3>
+          <p className="text-gray-500">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.</p>
         </div>
-        <h3 className="text-lg font-semibold">{title}</h3>
-      </div>
-      <p className="text-gray-600">{description}</p>
-    </button>
+      )}
+
+      {/* Role Management Modal */}
+      {selectedUserForRole && (
+        <UserRoleModal
+          isOpen={isRoleModalOpen}
+          onClose={() => {
+            setIsRoleModalOpen(false);
+            setSelectedUserForRole(null);
+          }}
+          user={selectedUserForRole}
+          onSuccess={handleRoleModalSuccess}
+        />
+      )}
+    </div>
   );
 };
 
