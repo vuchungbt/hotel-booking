@@ -186,13 +186,17 @@ const AdminUserEdit: React.FC = () => {
         name: formData.name,
         username: formData.username,
         email: formData.email,
-        password: formData.changePassword ? formData.password : user.username, // Use new password or keep current
         tel: formData.tel || undefined,
         address: formData.address || undefined,
         dob: formData.dob || undefined,
         active: formData.active,
         emailVerified: formData.emailVerified
       };
+
+      // Only include password if changing
+      if (formData.changePassword) {
+        updateData.password = formData.password;
+      }
 
       await userAPI.updateUser(user.id, updateData);
       

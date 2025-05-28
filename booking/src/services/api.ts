@@ -40,7 +40,7 @@ export interface RegisterRequest {
 export interface UserUpdateRequest {
   name: string;
   username: string;
-  password: string;
+  password?: string; // Make password optional
   email: string;
   tel?: string;
   address?: string;

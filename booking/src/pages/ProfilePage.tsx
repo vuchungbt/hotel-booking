@@ -116,7 +116,6 @@ const ProfilePage: React.FC = () => {
         name: formData.name,
         username: formData.username,
         email: user.email, // Use original email (cannot be changed)
-        password: user.username, // Keep current password for profile update
         tel: formData.phone,
         address: formData.address,
         dob: formData.dateOfBirth

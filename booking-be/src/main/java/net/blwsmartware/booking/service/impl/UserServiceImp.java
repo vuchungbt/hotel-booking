@@ -102,6 +102,9 @@ public class UserServiceImp implements UserService {
             if (exp.isBefore(Instant.now() )) {
                 throw new IdentityRuntimeException(ErrorResponse.CODE_EXPIRED);
             }
+            if( !user.getCode().equals(request.getCode().toUpperCase())) {
+                throw new IdentityRuntimeException(ErrorResponse.CODE_INVALID);
+            }
 
             user.setCode(null);
             user.setEmailVerified(true);
@@ -142,12 +145,16 @@ public class UserServiceImp implements UserService {
     public UserResponse newPass(NewPassRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.EMAIL_EXISTED) );
-        if (user.getCodeExpr() != null) {
+        if (user.getCodeExpr() != null ) {
 
             Instant exp = user.getCodeExpr().toInstant();
             if (exp.isBefore(Instant.now() )) {
                 throw new IdentityRuntimeException(ErrorResponse.CODE_EXPIRED);
             }
+            if( !user.getCode().equals(request.getCode().toUpperCase())) {
+                throw new IdentityRuntimeException(ErrorResponse.CODE_INVALID);
+            }
+
 
             user.setCode(null);
             user.setEmailVerified(true);
@@ -199,7 +206,11 @@ public class UserServiceImp implements UserService {
 
         userMapper.updateUser(request,old);
 
-        old.setPassword(passwordEncoder.encode(request.getPassword()));
+        // Only update password if provided
+        if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
+            old.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+        
         return userMapper.toUserResponse(userRepository.save(old));
     }
 

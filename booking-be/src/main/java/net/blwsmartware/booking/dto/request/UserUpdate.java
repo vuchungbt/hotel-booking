@@ -15,7 +15,6 @@ import java.time.LocalDate;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserUpdate {
     @Size(min = 8,message = "PASSWORD_MUST_8_DIGITS")
-    @NotNull(message = "PASSWORD_NOT_NULL")
     String password;
 
     @NotNull(message = "NAME_NOT_NULL")
