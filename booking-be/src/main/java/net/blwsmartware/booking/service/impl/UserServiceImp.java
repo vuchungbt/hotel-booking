@@ -205,13 +205,46 @@ public class UserServiceImp implements UserService {
                 .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
 
         userMapper.updateUser(request,old);
-
-        // Only update password if provided
-        if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
-            old.setPassword(passwordEncoder.encode(request.getPassword()));
-        }
         
         return userMapper.toUserResponse(userRepository.save(old));
+    }
+
+    @Override
+    public UserResponse updateProfile(UUID id, ProfileUpdateRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
+
+        userMapper.updateProfile(request, user);
+        
+        return userMapper.toUserResponse(userRepository.save(user));
+    }
+
+    @Override
+    public UserResponse updatePassword(UUID id, PasswordUpdateRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
+
+        // Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new IdentityRuntimeException(ErrorResponse.PASSWORD_INCORRECT);
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        
+        return userMapper.toUserResponse(userRepository.save(user));
+    }
+
+    @Override
+    @IsAdmin
+    public UserResponse adminUpdatePassword(UUID id, AdminPasswordUpdateRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
+
+        // Admin can update password without current password verification
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        
+        return userMapper.toUserResponse(userRepository.save(user));
     }
 
     @Override

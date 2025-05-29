@@ -27,6 +27,7 @@ import AdminInvoices from './pages/admin/AdminInvoices';
 import AdminInvoiceDetail from './pages/admin/AdminInvoiceDetail';
 import AdminPromotions from './pages/admin/AdminPromotions';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
+import AdminAdvancedAnalytics from './pages/admin/AdminAdvancedAnalytics';
 import AdminCommissionPayments from './pages/admin/AdminCommissionPayments';
 import AdminCommissionPaymentDetail from './pages/admin/AdminCommissionPaymentDetail';
 import AdminCommissionPaymentCreate from './pages/admin/AdminCommissionPaymentCreate';
@@ -35,6 +36,10 @@ import AdminBookingDetail from './pages/admin/AdminBookingDetail';
 import AdminHotels from './pages/admin/AdminHotels';
 import AdminHotelDetail from './pages/admin/AdminHotelDetail';
 import AdminHotelAdd from './pages/admin/AdminHotelAdd';
+import AdminHotelEdit from './pages/admin/AdminHotelEdit';
+import AdminRoomTypes from './pages/admin/AdminRoomTypes';
+import AdminRoomTypeEdit from './pages/admin/AdminRoomTypeEdit';
+import AdminRoomTypeAdd from './pages/admin/AdminRoomTypeAdd';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminUserDetail from './pages/admin/AdminUserDetail';
 import AdminUserEdit from './pages/admin/AdminUserEdit';
@@ -140,6 +145,11 @@ function App() {
                 <DashboardLayout type="admin"><AdminAnalytics /></DashboardLayout>
               </ProtectedRoute>
             } />
+            <Route path="/admin/advanced-analytics" element={
+              <ProtectedRoute requiredRole="ADMIN">
+                <DashboardLayout type="admin"><AdminAdvancedAnalytics /></DashboardLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/admin/commission-payments" element={
               <ProtectedRoute requiredRole="ADMIN">
                 <DashboardLayout type="admin"><AdminCommissionPayments /></DashboardLayout>
@@ -178,6 +188,26 @@ function App() {
             <Route path="/admin/hotels/:id" element={
               <ProtectedRoute requiredRole="ADMIN">
                 <DashboardLayout type="admin"><AdminHotelDetail /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/hotels/edit/:id" element={
+              <ProtectedRoute requiredRole="ADMIN">
+                <DashboardLayout type="admin"><AdminHotelEdit /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/room-types" element={
+              <ProtectedRoute requiredRole="ADMIN">
+                <DashboardLayout type="admin"><AdminRoomTypes /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/room-types/edit/:id" element={
+              <ProtectedRoute requiredRole="ADMIN">
+                <DashboardLayout type="admin"><AdminRoomTypeEdit /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/room-types/add" element={
+              <ProtectedRoute requiredRole="ADMIN">
+                <DashboardLayout type="admin"><AdminRoomTypeAdd /></DashboardLayout>
               </ProtectedRoute>
             } />
             <Route path="/admin/users" element={

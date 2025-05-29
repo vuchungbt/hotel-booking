@@ -40,6 +40,17 @@ public class HotelController {
         
         DataResponse<HotelResponse> response = hotelService.getAllHotels(pageNumber, pageSize, sortBy);
         
+        // Debug logging
+        log.info("=== HOTEL RESPONSE DEBUG ===");
+        log.info("Total hotels returned: {}", response.getContent().size());
+        
+        response.getContent().forEach((hotel) -> {
+            log.info("Hotel {}:", hotel.getName());
+            log.info("  - ID: {}", hotel.getId());
+            log.info("  - isActive: {}", hotel.isActive());
+            log.info("  - isFeatured: {} ", hotel.isFeatured());
+        });
+        
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(MessageResponse.<DataResponse<HotelResponse>>builder()

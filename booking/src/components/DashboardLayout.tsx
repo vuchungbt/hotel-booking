@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   Users, Hotel, BookOpen, Settings, Star, BarChart2, Tag, Home, 
   FileText, Percent, CreditCard, LogOut, ChevronDown, ChevronRight,
-  Menu, X, FolderOpen, DollarSign, Calendar, MessageSquare
+  Menu, X, FolderOpen, DollarSign, Calendar, MessageSquare, BedDouble, TrendingUp
 } from 'lucide-react';
 import '../styles/dashboard.css';
 
@@ -34,6 +34,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, type }) => 
       icon: <FolderOpen size={20} />,
       subItems: [
         { path: '/admin/hotels', label: 'Khách sạn', icon: <Hotel size={20} /> },
+        { path: '/admin/room-types', label: 'Loại phòng', icon: <BedDouble size={20} /> },
         { path: '/admin/bookings', label: 'Đặt phòng', icon: <BookOpen size={20} /> },
         { path: '/admin/users', label: 'Người dùng', icon: <Users size={20} /> },
         { path: '/admin/reviews', label: 'Đánh giá', icon: <Star size={20} /> },
@@ -50,6 +51,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, type }) => 
     },
     { path: '/admin/promotions', label: 'Khuyến mãi', icon: <Tag size={20} /> },
     { path: '/admin/analytics', label: 'Thống kê', icon: <BarChart2 size={20} /> },
+    { path: '/admin/advanced-analytics', label: 'Phân tích nâng cao', icon: <TrendingUp size={20} /> },
     { path: '/admin/settings', label: 'Cài đặt', icon: <Settings size={20} /> },
   ];
 

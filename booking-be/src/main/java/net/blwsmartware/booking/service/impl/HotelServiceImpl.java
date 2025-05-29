@@ -49,9 +49,29 @@ public class HotelServiceImpl implements HotelService {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
         Page<Hotel> hotelPage = hotelRepository.findAll(pageable);
         
+        // Debug: Log raw entities from database
+        log.info("=== DATABASE ENTITIES DEBUG ===");
+        log.info("Total hotels from DB: {}", hotelPage.getContent().size());
+        hotelPage.getContent().forEach((hotel) -> {
+            log.info("DB Hotel: {}", hotel.getName());
+            log.info("  - ID: {}", hotel.getId());
+            log.info("  - isActive: {} (type: {})", hotel.isActive(), hotel.isActive() ? "true" : "false");
+            log.info("  - isFeatured: {} (type: {})", hotel.isFeatured(), hotel.isFeatured() ? "true" : "false");
+        });
+        
         List<HotelResponse> hotelResponses = hotelPage.getContent().stream()
                 .map(hotelMapper::toResponse)
                 .toList();
+        
+        // Debug: Log mapped responses
+        log.info("=== MAPPED RESPONSES DEBUG ===");
+        log.info("Total hotel responses: {}", hotelResponses.size());
+        hotelResponses.forEach((response) -> {
+            log.info("Response : {}", response.getName());
+            log.info("  - ID: {}", response.getId());
+            log.info("  - isActive: {} (type: {})", response.isActive(), response.isActive() ? "true" : "false");
+            log.info("  - isFeatured: {} (type: {})", response.isFeatured(), response.isFeatured() ? "true" : "false");
+        });
         
         return DataResponseUtils.convertPageInfo(hotelPage, hotelResponses);
     }
@@ -123,10 +143,10 @@ public class HotelServiceImpl implements HotelService {
     @Transactional
     public HotelResponse updateHotel(UUID id, HotelUpdateRequest request) {
         log.info("Updating hotel: {}", id);
-        
+
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
-        
+
         // Check if new name conflicts with existing hotels in the same city
         if (request.getName() != null && !request.getName().equals(hotel.getName())) {
             String city = request.getCity() != null ? request.getCity() : hotel.getCity();
@@ -134,13 +154,22 @@ public class HotelServiceImpl implements HotelService {
                 throw new AppException(ErrorCode.HOTEL_NAME_ALREADY_EXISTS);
             }
         }
-        
+        log.info("hotel.isActive: {}", hotel.isActive());
+        log.info("hotel.isFeatured: {}", hotel.isFeatured());
+        log.info("request.isActive: {}", request.isActive());
+        log.info("request.isFeatured: {}", request.isFeatured());
+
         // Update hotel
         hotelMapper.updateEntity(hotel, request);
+
+        log.info("Updated");
+        log.info("hotel.isActive: {}", hotel.isActive());
+        log.info("hotel.isFeatured: {}", hotel.isFeatured());
+
         hotel.setUpdatedBy(getCurrentUserId());
-        
+
         Hotel updatedHotel = hotelRepository.save(hotel);
-        
+
         return hotelMapper.toResponse(updatedHotel);
     }
     
@@ -168,12 +197,35 @@ public class HotelServiceImpl implements HotelService {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
         
+        // Debug: Before toggle
+        log.info("=== TOGGLE STATUS DEBUG ===");
+        log.info("Before toggle - Hotel: {} (ID: {})", hotel.getName(), hotel.getId());
+        log.info("  - Current isActive: {}", hotel.isActive());
+        log.info("  - Current isFeatured: {}", hotel.isFeatured());
+        
         hotel.setActive(!hotel.isActive());
         hotel.setUpdatedBy(getCurrentUserId());
         
+        // Debug: After toggle, before save
+        log.info("After toggle - Hotel: {} (ID: {})", hotel.getName(), hotel.getId());
+        log.info("  - New isActive: {}", hotel.isActive());
+        log.info("  - New isFeatured: {}", hotel.isFeatured());
+        
         Hotel updatedHotel = hotelRepository.save(hotel);
         
-        return hotelMapper.toResponse(updatedHotel);
+        // Debug: After save
+        log.info("After save - Hotel: {} (ID: {})", updatedHotel.getName(), updatedHotel.getId());
+        log.info("  - Saved isActive: {}", updatedHotel.isActive());
+        log.info("  - Saved isFeatured: {}", updatedHotel.isFeatured());
+        
+        HotelResponse response = hotelMapper.toResponse(updatedHotel);
+        
+        // Debug: Final response
+        log.info("Final response - Hotel: {} (ID: {})", response.getName(), response.getId());
+        log.info("  - Response isActive: {}", response.isActive());
+        log.info("  - Response isFeatured: {}", response.isFeatured());
+        
+        return response;
     }
     
     @Override

@@ -31,8 +31,6 @@ public class HotelResponse {
     boolean isActive;
     boolean isFeatured;
     BigDecimal pricePerNight;
-    Double latitude;
-    Double longitude;
     String amenities;
     String cancellationPolicy;
     String petPolicy;

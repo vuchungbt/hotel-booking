@@ -16,6 +16,8 @@ public interface HotelMapper {
     @Mapping(target = "ownerId", source = "owner.id")
     @Mapping(target = "ownerName", source = "owner.name")
     @Mapping(target = "ownerEmail", source = "owner.email")
+    @Mapping(target = "isActive", source = "active")
+    @Mapping(target = "isFeatured", source = "featured")
     @Mapping(target = "totalRoomTypes", ignore = true) // Will be set manually
     @Mapping(target = "totalRooms", ignore = true) // Will be set manually
     @Mapping(target = "availableRooms", ignore = true) // Will be set manually
@@ -30,6 +32,8 @@ public interface HotelMapper {
     @Mapping(target = "ownerId", source = "owner.id")
     @Mapping(target = "ownerName", source = "owner.name")
     @Mapping(target = "ownerEmail", source = "owner.email")
+    @Mapping(target = "isActive", source = "active")
+    @Mapping(target = "isFeatured", source = "featured")
     @Mapping(target = "totalRoomTypes", ignore = true)
     @Mapping(target = "totalRooms", ignore = true)
     @Mapping(target = "availableRooms", ignore = true)
