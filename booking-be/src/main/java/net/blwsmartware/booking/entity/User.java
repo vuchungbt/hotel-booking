@@ -55,6 +55,7 @@ public class User {
     String code;
 
     Date codeExpr;
+
     @CreationTimestamp
     Instant createAt;
 

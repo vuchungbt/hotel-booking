@@ -255,8 +255,8 @@ const AdminHotelDetail: React.FC = () => {
           
           <div className="flex flex-col items-end space-y-2">
             <div className="flex items-center space-x-2">
-              {getStatusBadge(hotel?.isActive || false)}
-              {getFeaturedBadge(hotel?.isFeatured || false)}
+              {getStatusBadge(hotel?.active || false)}
+              {getFeaturedBadge(hotel?.featured || false)}
             </div>
             {hotel?.starRating && (
               <div className="flex items-center">
@@ -640,26 +640,26 @@ const AdminHotelDetail: React.FC = () => {
             onClick={handleToggleStatus}
             disabled={actionLoading === 'status'}
             className={`px-4 py-2 rounded-lg transition-colors flex items-center disabled:opacity-50 ${
-              hotel.isActive 
+              hotel.active 
                 ? 'bg-orange-600 text-white hover:bg-orange-700' 
                 : 'bg-green-600 text-white hover:bg-green-700'
             }`}
           >
-            {hotel.isActive ? <ToggleRight size={20} className="mr-2" /> : <ToggleLeft size={20} className="mr-2" />}
-            {actionLoading === 'status' ? 'Đang cập nhật...' : (hotel.isActive ? 'Vô hiệu hóa' : 'Kích hoạt')}
+            {hotel.active ? <ToggleRight size={20} className="mr-2" /> : <ToggleLeft size={20} className="mr-2" />}
+            {actionLoading === 'status' ? 'Đang cập nhật...' : (hotel.active ? 'Vô hiệu hóa' : 'Kích hoạt')}
           </button>
           
           <button
             onClick={handleToggleFeatured}
             disabled={actionLoading === 'featured'}
             className={`px-4 py-2 rounded-lg transition-colors flex items-center disabled:opacity-50 ${
-              hotel.isFeatured 
+              hotel.featured 
                 ? 'bg-yellow-600 text-white hover:bg-yellow-700' 
                 : 'bg-gray-600 text-white hover:bg-gray-700'
             }`}
           >
             <Award size={20} className="mr-2" />
-            {actionLoading === 'featured' ? 'Đang cập nhật...' : (hotel.isFeatured ? 'Bỏ nổi bật' : 'Đặt nổi bật')}
+            {actionLoading === 'featured' ? 'Đang cập nhật...' : (hotel.featured ? 'Bỏ nổi bật' : 'Đặt nổi bật')}
           </button>
           
           <button

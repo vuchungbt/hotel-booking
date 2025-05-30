@@ -28,8 +28,8 @@ const AdminHotelEdit: React.FC = () => {
     amenities: '',
     cancellationPolicy: '',
     petPolicy: '',
-    isActive: true,
-    isFeatured: false
+    active: true,
+    featured: false
   });
 
   useEffect(() => {
@@ -63,8 +63,8 @@ const AdminHotelEdit: React.FC = () => {
         amenities: hotelData.amenities || '',
         cancellationPolicy: hotelData.cancellationPolicy || '',
         petPolicy: hotelData.petPolicy || '',
-        isActive: hotelData.isActive,
-        isFeatured: hotelData.isFeatured
+        active: hotelData.active,
+        featured: hotelData.featured
       });
     } catch (error: any) {
       console.error('Error fetching hotel:', error);
@@ -476,9 +476,9 @@ const AdminHotelEdit: React.FC = () => {
             <div className="flex items-center">
               <input
                 type="checkbox"
-                id="isActive"
-                name="isActive"
-                checked={formData.isActive}
+                id="active"
+                name="active"
+                checked={formData.active}
                 onChange={handleCheckboxChange}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
@@ -489,13 +489,13 @@ const AdminHotelEdit: React.FC = () => {
             <div className="flex items-center">
               <input
                 type="checkbox"
-                id="isFeatured"
-                name="isFeatured"
-                checked={formData.isFeatured}
+                id="featured"
+                name="featured"
+                checked={formData.featured}
                 onChange={handleCheckboxChange}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-              <label htmlFor="isFeatured" className="ml-2 block text-sm text-gray-900">
+              <label htmlFor="featured" className="ml-2 block text-sm text-gray-900">
                 Khách sạn nổi bật
               </label>
             </div>
