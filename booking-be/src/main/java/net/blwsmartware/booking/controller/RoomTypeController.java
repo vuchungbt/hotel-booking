@@ -61,7 +61,7 @@ public class RoomTypeController {
             @RequestParam(defaultValue = PagePrepare.SORT_BY) String sortBy){
         
         DataResponse<RoomTypeResponse> response = roomTypeService.getAllRoomTypesWithFilters(
-                hotelId, isActive, minOccupancy, maxOccupancy, minPrice, maxPrice, pageNumber, pageSize, sortBy);
+                hotelId, minOccupancy, maxOccupancy, minPrice, maxPrice, pageNumber, pageSize, sortBy);
         
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
@@ -110,19 +110,7 @@ public class RoomTypeController {
                         .message("Room type deleted successfully")
                         .build());
     }
-    
-    @PutMapping("/admin/{id}/toggle-status")
-    @IsAdmin
-    public ResponseEntity<MessageResponse<RoomTypeResponse>> toggleRoomTypeStatus(@PathVariable UUID id) {
-        RoomTypeResponse response = roomTypeService.toggleRoomTypeStatus(id);
-        
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(MessageResponse.<RoomTypeResponse>builder()
-                        .message("Room type status toggled successfully")
-                        .result(response)
-                        .build());
-    }
+
     
     // Statistics endpoints
     @GetMapping("/admin/stats/total")
@@ -138,19 +126,7 @@ public class RoomTypeController {
                         .build());
     }
     
-    @GetMapping("/admin/stats/active")
-    @IsAdmin
-    public ResponseEntity<MessageResponse<Long>> getActiveRoomTypesCount() {
-        Long count = roomTypeService.getActiveRoomTypesCount();
-        
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(MessageResponse.<Long>builder()
-                        .message("Active room types count retrieved successfully")
-                        .result(count)
-                        .build());
-    }
-    
+
     @GetMapping("/admin/stats/hotel/{hotelId}")
     @IsAdmin
     public ResponseEntity<MessageResponse<Long>> getRoomTypesCountByHotel(@PathVariable UUID hotelId) {
@@ -201,7 +177,7 @@ public class RoomTypeController {
             @RequestParam(defaultValue = PagePrepare.PAGE_SIZE) Integer pageSize,
             @RequestParam(defaultValue = "name") String sortBy) {
         
-        DataResponse<RoomTypeResponse> response = roomTypeService.getActiveRoomTypesByHotel(hotelId, pageNumber, pageSize, sortBy);
+        DataResponse<RoomTypeResponse> response = roomTypeService.getRoomTypesByHotel(hotelId, pageNumber, pageSize, sortBy);
         
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)

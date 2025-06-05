@@ -52,6 +52,9 @@ public class User {
     @Builder.Default
     boolean emailVerified=false;
 
+    @Builder.Default
+    boolean hostRequested=false;
+
     String code;
 
     Date codeExpr;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
-import { Calendar, Download, Filter, TrendingUp, TrendingDown, Users, Hotel, BedDouble, Star, DollarSign, RefreshCw, FileText, BarChart3 } from 'lucide-react';
+import { Calendar, Download, Filter, TrendingUp, TrendingDown, Users, Hotel, BedDouble, Star, DollarSign, RefreshCw, FileText, BarChart3, Award } from 'lucide-react';
 import { hotelAPI, roomTypeAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 
@@ -15,7 +15,6 @@ interface AnalyticsData {
   };
   roomTypeStats: {
     total: number;
-    active: number;
     byOccupancy: Array<{ occupancy: number; count: number }>;
     priceDistribution: Array<{ range: string; count: number }>;
   };
@@ -65,7 +64,6 @@ const AdminAdvancedAnalytics: React.FC = () => {
     },
     roomTypeStats: {
       total: 487,
-      active: 445,
       byOccupancy: [
         { occupancy: 1, count: 45 },
         { occupancy: 2, count: 156 },
@@ -273,11 +271,11 @@ const AdminAdvancedAnalytics: React.FC = () => {
           color="bg-purple-500"
         />
         <StatCard
-          title="Loại phòng hoạt động"
-          value={analyticsData.roomTypeStats.active.toLocaleString()}
+          title="Khách sạn nổi bật"
+          value={analyticsData.hotelStats.featured.toLocaleString()}
           change={9.8}
-          icon={BedDouble}
-          color="bg-indigo-500"
+          icon={Award}
+          color="bg-yellow-500"
         />
       </div>
 
@@ -447,16 +445,6 @@ const AdminAdvancedAnalytics: React.FC = () => {
               <div className="flex justify-between">
                 <span className="text-gray-600">Tổng số:</span>
                 <span className="font-medium">{analyticsData.roomTypeStats.total}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Đang hoạt động:</span>
-                <span className="font-medium text-green-600">{analyticsData.roomTypeStats.active}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tỷ lệ hoạt động:</span>
-                <span className="font-medium">
-                  {Math.round((analyticsData.roomTypeStats.active / analyticsData.roomTypeStats.total) * 100)}%
-                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Trung bình/khách sạn:</span>

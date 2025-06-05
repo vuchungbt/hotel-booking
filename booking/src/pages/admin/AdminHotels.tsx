@@ -55,32 +55,40 @@ const AdminHotels: React.FC = () => {
       if (cityFilter) filterParams.city = cityFilter;
       if (countryFilter) filterParams.country = countryFilter;
       if (starRatingFilter !== undefined) filterParams.starRating = starRatingFilter;
-      if (statusFilter !== undefined) filterParams.active = statusFilter;
-      if (featuredFilter !== undefined) filterParams.featured = featuredFilter;
+      if (statusFilter !== undefined) filterParams.isActive = statusFilter;
+      if (featuredFilter !== undefined) filterParams.isFeatured = featuredFilter;
       if (minPrice !== undefined) filterParams.minPrice = minPrice;
       if (maxPrice !== undefined) filterParams.maxPrice = maxPrice;
 
+      console.log('🔍 Filter params:', filterParams);
+
       let response;
       if (searchTerm) {
+        console.log('🔍 Using search API with term:', searchTerm);
         response = await hotelAPI.searchHotels(searchTerm, page, size, sortBy);
       } else if (Object.keys(filterParams).length > 3) { // More than just pagination params
-        response = await hotelAPI.getAllHotelsWithFilters(filterParams);
+        console.log('🔍 Using admin filter API');
+        response = await hotelAPI.getAdminHotelsWithFilters(filterParams);
       } else {
-        response = await hotelAPI.getAllHotels(page, size, sortBy);
+        console.log('🔍 Using admin get all API');
+        response = await hotelAPI.getAdminHotels(page, size, sortBy);
       }
 
+      console.log('📡 API Response:', response.data);
       const data = response.data as ApiResponse;
       
       if (data.success) {
+        console.log('✅ Hotels loaded:', data.result.content.length);
         setHotels(data.result.content);
         setTotalPages(data.result.totalPages);
         setTotalElements(data.result.totalElements);
         setCurrentPage(data.result.number);
       } else {
+        console.error('❌ API Error:', data.message);
         showToast('error', 'Lỗi', data.message || 'Không thể tải danh sách khách sạn');
       }
     } catch (error: any) {
-      console.error('Error fetching hotels:', error);
+      console.error('💥 Error fetching hotels:', error);
       showToast('error', 'Lỗi', 'Không thể kết nối đến server');
     } finally {
       setLoading(false);
@@ -143,7 +151,7 @@ const AdminHotels: React.FC = () => {
     if (window.confirm('Bạn có chắc chắn muốn xóa khách sạn này?')) {
       try {
         setActionLoading(hotelId);
-        await hotelAPI.deleteHotel(hotelId);
+        await hotelAPI.deleteHotelByAdmin(hotelId);
         showToast('success', 'Thành công', 'Đã xóa khách sạn');
         fetchHotels(currentPage);
       } catch (error: any) {
@@ -161,7 +169,7 @@ const AdminHotels: React.FC = () => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedHotels.length} khách sạn đã chọn?`)) {
       try {
         setActionLoading('bulk-delete');
-        await Promise.all(selectedHotels.map(id => hotelAPI.deleteHotel(id)));
+        await Promise.all(selectedHotels.map(id => hotelAPI.deleteHotelByAdmin(id)));
         showToast('success', 'Thành công', `Đã xóa ${selectedHotels.length} khách sạn`);
         setSelectedHotels([]);
         setIsSelectAll(false);
@@ -178,11 +186,22 @@ const AdminHotels: React.FC = () => {
   const handleToggleStatus = async (hotelId: string) => {
     try {
       setActionLoading(hotelId);
-      await hotelAPI.toggleHotelStatus(hotelId);
+      console.log('🔄 Toggling status for hotel:', hotelId);
+      
+      const response = await hotelAPI.toggleHotelStatus(hotelId);
+      console.log('✅ Toggle status response:', response.data);
+      
       showToast('success', 'Thành công', 'Đã cập nhật trạng thái khách sạn');
+      
+      // Reset any status filter to ensure updated hotel appears
+      if (statusFilter !== undefined) {
+        console.log('🔄 Clearing status filter to show updated hotel');
+        setStatusFilter(undefined);
+      }
+      
       fetchHotels(currentPage);
     } catch (error: any) {
-      console.error('Error toggling hotel status:', error);
+      console.error('💥 Error toggling hotel status:', error);
       showToast('error', 'Lỗi', 'Không thể cập nhật trạng thái khách sạn');
     } finally {
       setActionLoading(null);
@@ -192,11 +211,22 @@ const AdminHotels: React.FC = () => {
   const handleToggleFeatured = async (hotelId: string) => {
     try {
       setActionLoading(hotelId);
-      await hotelAPI.toggleFeaturedStatus(hotelId);
+      console.log('🔄 Toggling featured for hotel:', hotelId);
+      
+      const response = await hotelAPI.toggleHotelFeatured(hotelId);
+      console.log('✅ Toggle featured response:', response.data);
+      
       showToast('success', 'Thành công', 'Đã cập nhật trạng thái nổi bật');
+      
+      // Reset any featured filter to ensure updated hotel appears
+      if (featuredFilter !== undefined) {
+        console.log('🔄 Clearing featured filter to show updated hotel');
+        setFeaturedFilter(undefined);
+      }
+      
       fetchHotels(currentPage);
     } catch (error: any) {
-      console.error('Error toggling featured status:', error);
+      console.error('💥 Error toggling featured status:', error);
       showToast('error', 'Lỗi', 'Không thể cập nhật trạng thái nổi bật');
     } finally {
       setActionLoading(null);
@@ -450,10 +480,7 @@ const AdminHotels: React.FC = () => {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Trạng thái
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày tạo
-                </th>
+                </th> 
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Thao tác
                 </th>
@@ -546,10 +573,7 @@ const AdminHotels: React.FC = () => {
                       <div className="space-y-1">
                         {getStatusBadge(hotel.active)}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(hotel.createdAt)}
-                    </td>
+                    </td> 
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
                         <button

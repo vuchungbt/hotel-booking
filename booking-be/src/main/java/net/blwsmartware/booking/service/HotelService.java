@@ -10,34 +10,50 @@ import java.util.UUID;
 
 public interface HotelService {
     
+    // ===== ADMIN OPERATIONS =====
     DataResponse<HotelResponse> getAllHotels(Integer pageNumber, Integer pageSize, String sortBy);
     DataResponse<HotelResponse> getAllHotelsWithFilters(
             String city, String country, Integer starRating, Boolean isActive, Boolean isFeatured,
             BigDecimal minPrice, BigDecimal maxPrice, Integer pageNumber, Integer pageSize, String sortBy);
-    HotelResponse getHotelById(UUID id);
-    HotelResponse createHotel(HotelCreateRequest request);
-    HotelResponse updateHotel(UUID id, HotelUpdateRequest request);
-    void deleteHotel(UUID id);
+    HotelResponse createHotelByAdmin(HotelCreateRequest request);
+    HotelResponse updateHotelByAdmin(UUID id, HotelUpdateRequest request);
+    void deleteHotelByAdmin(UUID id);
     HotelResponse toggleHotelStatus(UUID id);
     HotelResponse toggleFeaturedStatus(UUID id);
+    DataResponse<HotelResponse> getHotelsByOwner(UUID ownerId, Integer pageNumber, Integer pageSize, String sortBy);
     
+    // Admin Statistics
+    Long getTotalHotelsCount();
+    Long getActiveHotelsCount();
+    Long getFeaturedHotelsCount();
+    Long getHotelsCountByOwner(UUID ownerId);
+    
+    // ===== HOST OPERATIONS =====
+    DataResponse<HotelResponse> getMyHotels(Integer pageNumber, Integer pageSize, String sortBy);
+    DataResponse<HotelResponse> getMyHotelsWithFilters(
+            String city, String country, Integer starRating, Boolean isActive,
+            Integer pageNumber, Integer pageSize, String sortBy);
+    HotelResponse getMyHotelById(UUID id);
+    HotelResponse createMyHotel(HotelCreateRequest request);
+    HotelResponse updateMyHotel(UUID id, HotelUpdateRequest request);
+    void deleteMyHotel(UUID id);
+    HotelResponse toggleMyHotelStatus(UUID id);
+    
+    // Host Statistics
+    Long getMyHotelsCount();
+    Long getMyActiveHotelsCount();
+    
+    // ===== PUBLIC OPERATIONS =====
+    HotelResponse getHotelById(UUID id);
     DataResponse<HotelResponse> searchHotels(String keyword, Integer pageNumber, Integer pageSize, String sortBy);
     DataResponse<HotelResponse> getHotelsByCity(String city, Integer pageNumber, Integer pageSize, String sortBy);
     DataResponse<HotelResponse> getHotelsByCountry(String country, Integer pageNumber, Integer pageSize, String sortBy);
     DataResponse<HotelResponse> getHotelsByStarRating(Integer starRating, Integer pageNumber, Integer pageSize, String sortBy);
     DataResponse<HotelResponse> getActiveHotels(Integer pageNumber, Integer pageSize, String sortBy);
     DataResponse<HotelResponse> getFeaturedHotels(Integer pageNumber, Integer pageSize, String sortBy);
-
-    DataResponse<HotelResponse> getHotelsByOwner(UUID ownerId, Integer pageNumber, Integer pageSize, String sortBy);
-    DataResponse<HotelResponse> getMyHotels(Integer pageNumber, Integer pageSize, String sortBy); // For current user
-
     DataResponse<HotelResponse> getHotelsNearLocation(
             Double latitude, Double longitude, Double radiusKm, Integer pageNumber, Integer pageSize, String sortBy);
     
-    Long getTotalHotelsCount();
-    Long getActiveHotelsCount();
-    Long getFeaturedHotelsCount();
-    Long getHotelsCountByOwner(UUID ownerId);
-    
+    // ===== UTILITY METHODS =====
     boolean isHotelNameExistsInCity(String name, String city);
 } 

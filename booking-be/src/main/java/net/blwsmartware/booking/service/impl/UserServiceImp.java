@@ -179,6 +179,24 @@ public class UserServiceImp implements UserService {
     }
 
     @Override
+    @IsAdmin
+    public DataResponse<UserResponse> getHostUsers(Integer pageNumber, Integer pageSize, String sortBy) {
+        
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).ascending());
+        
+        // Find role HOST
+        Role hostRole = roleRepository.findByName(PredefinedRole.HOST_ROLE)
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.ROLE_NOT_EXISTED));
+        
+        // Find users with HOST role
+        Page<User> pageOfUsers = userRepository.findByRolesContaining(hostRole, pageable);
+        List<User> userList = pageOfUsers.getContent();
+        List<UserResponse> userResponses = userList.stream().map(userMapper::toUserResponse).toList();
+        
+        return DataResponseUtils.convertPageInfo(pageOfUsers, userResponses);
+    }
+
+    @Override
     public UserResponse getUserByID(UUID id) {
         return userMapper.toUserResponse(userRepository.findById(id)
                 .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND))
@@ -263,6 +281,48 @@ public class UserServiceImp implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
         user.setEmailVerified(!user.isEmailVerified());
+        return userMapper.toUserResponse(userRepository.save(user));
+    }
+
+    @Override
+    public UserResponse requestHost(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
+        
+        // Check if user already has HOST role
+        boolean hasHostRole = user.getRoles().stream()
+                .anyMatch(role -> role.getName().equals(PredefinedRole.HOST_ROLE));
+        
+        if (hasHostRole) {
+            throw new IdentityRuntimeException(ErrorResponse.USER_ALREADY_HOST);
+        }
+        
+        user.setHostRequested(true);
+        return userMapper.toUserResponse(userRepository.save(user));
+    }
+
+    @Override
+    @IsAdmin
+    public UserResponse approveHostRequest(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
+        
+        // Check if user has requested host role
+        if (!user.isHostRequested()) {
+            throw new IdentityRuntimeException(ErrorResponse.HOST_REQUEST_NOT_FOUND);
+        }
+        
+        // Add HOST role to user
+        Role hostRole = roleRepository.findByName(PredefinedRole.HOST_ROLE)
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.ROLE_NOT_EXISTED));
+        
+        Set<Role> userRoles = new HashSet<>(user.getRoles());
+        userRoles.add(hostRole);
+        user.setRoles(userRoles);
+        
+        // Reset host request flag
+        user.setHostRequested(false);
+        
         return userMapper.toUserResponse(userRepository.save(user));
     }
 

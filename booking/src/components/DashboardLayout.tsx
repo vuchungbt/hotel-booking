@@ -57,7 +57,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, type }) => 
 
   const hostMenuItems = [
     { path: '/host', label: 'Tổng quan', icon: <Home size={20} /> },
-    { path: '/host/properties', label: 'Bất động sản', icon: <Hotel size={20} /> },
+    { path: '/host/properties', label: 'Khách sạn', icon: <Hotel size={20} /> },
     { path: '/host/bookings', label: 'Đặt phòng', icon: <BookOpen size={20} /> },
     { path: '/host/calendar', label: 'Lịch đặt phòng', icon: <Calendar size={20} /> },
     { path: '/host/reviews', label: 'Đánh giá', icon: <Star size={20} /> },

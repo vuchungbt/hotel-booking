@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Edit, Trash, Eye, Mail, Phone, Calendar, Filter, RefreshCw, Settings, MailCheck, MailX } from 'lucide-react';
+import { Search, Plus, Edit, Trash, Eye, Mail, Phone, Calendar, Filter, RefreshCw, Settings, MailCheck, MailX, Check } from 'lucide-react';
 import { userAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import UserRoleModal from '../../components/admin/UserRoleModal';
@@ -22,6 +22,7 @@ interface User {
   }>;
   active: boolean;
   emailVerified: boolean;
+  hostRequested?: boolean;
 }
 
 interface ApiResponse {
@@ -233,6 +234,21 @@ const AdminUsers: React.FC = () => {
     setSelectedUserForRole(null);
   };
 
+  const handleApproveHostRequest = async (userId: string) => {
+    try {
+      setActionLoading(userId);
+      await userAPI.approveHostRequest(userId);
+      showToast('success', 'Thành công', 'Yêu cầu trở thành Host đã được phê duyệt');
+      fetchUsers(currentPage); // Refresh current page
+    } catch (error: any) {
+      console.error('Error approving host request:', error);
+      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi phê duyệt yêu cầu';
+      showToast('error', 'Lỗi', errorMessage);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="w-full flex justify-center items-center py-12">
@@ -360,11 +376,12 @@ const AdminUsers: React.FC = () => {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Người dùng
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Liên hệ
-                </th>
+                
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Vai trò
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Host Request
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Trạng thái
@@ -397,36 +414,30 @@ const AdminUsers: React.FC = () => {
                         <div className="text-sm text-gray-500">@{user.username}</div>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 flex items-center">
-                      <Mail className="h-4 w-4 mr-1 text-gray-500" />
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span>{user.email}</span>
-                          {user.emailVerified ? (
-                            <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                              <MailCheck className="h-3 w-3 mr-0.5" /> 
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                              <MailX className="h-3 w-3 mr-0.5" /> 
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {user.tel && (
-                      <div className="text-sm text-gray-500 flex items-center mt-1">
-                        <Phone className="h-4 w-4 mr-1 text-gray-500" />
-                        {user.tel}
-                      </div>
-                    )}
-                  </td>
+                  </td> 
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-wrap gap-1">
                       {getRoleBadges(user.roles)}
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {user.hostRequested ? (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-amber-600 font-medium">Chờ duyệt</span>
+                        <input
+                          type="checkbox"
+                          onChange={() => handleApproveHostRequest(user.id)}
+                          disabled={actionLoading === user.id}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded disabled:opacity-50"
+                          title="Tích vào để phê duyệt yêu cầu Host"
+                        />
+                        {actionLoading === user.id && (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-500">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {getStatusBadge(user.active)}

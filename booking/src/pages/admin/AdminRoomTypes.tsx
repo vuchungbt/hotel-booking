@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Edit, Trash, Eye, Filter, Check, X, RefreshCw, ToggleLeft, ToggleRight, BedDouble, Users, DollarSign, Hotel as HotelIcon } from 'lucide-react';
+import { Search, Plus, Edit, Trash, Eye, Filter, RefreshCw, BedDouble, Users, DollarSign, Hotel as HotelIcon } from 'lucide-react';
 import { roomTypeAPI, hotelAPI, RoomTypeResponse, HotelResponse } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 
@@ -25,7 +25,6 @@ const AdminRoomTypes: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [hotelFilter, setHotelFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<boolean | undefined>();
   const [minOccupancy, setMinOccupancy] = useState<number | undefined>();
   const [maxOccupancy, setMaxOccupancy] = useState<number | undefined>();
   const [minPrice, setMinPrice] = useState<number | undefined>();
@@ -53,7 +52,6 @@ const AdminRoomTypes: React.FC = () => {
       };
 
       if (hotelFilter) filterParams.hotelId = hotelFilter;
-      if (statusFilter !== undefined) filterParams.isActive = statusFilter;
       if (minOccupancy !== undefined) filterParams.minOccupancy = minOccupancy;
       if (maxOccupancy !== undefined) filterParams.maxOccupancy = maxOccupancy;
       if (minPrice !== undefined) filterParams.minPrice = minPrice;
@@ -102,7 +100,7 @@ const AdminRoomTypes: React.FC = () => {
   useEffect(() => {
     fetchRoomTypes();
     fetchHotels();
-  }, [searchTerm, hotelFilter, statusFilter, minOccupancy, maxOccupancy, minPrice, maxPrice]);
+  }, [searchTerm, hotelFilter, minOccupancy, maxOccupancy, minPrice, maxPrice]);
 
   const handleRefresh = () => {
     fetchRoomTypes(currentPage);
@@ -188,46 +186,9 @@ const AdminRoomTypes: React.FC = () => {
     }
   };
 
-  const handleToggleStatus = async (roomTypeId: string) => {
-    try {
-      setActionLoading(roomTypeId);
-      await roomTypeAPI.toggleRoomTypeStatus(roomTypeId);
-      showToast('success', 'Thành công', 'Đã cập nhật trạng thái loại phòng');
-      fetchRoomTypes(currentPage);
-    } catch (error: any) {
-      console.error('Error toggling room type status:', error);
-      showToast('error', 'Lỗi', 'Không thể cập nhật trạng thái loại phòng');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const getStatusBadge = (isActive: boolean) => {
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-        isActive 
-          ? 'bg-green-100 text-green-800' 
-          : 'bg-red-100 text-red-800'
-      }`}>
-        {isActive ? (
-          <>
-            <Check size={12} className="mr-1" />
-            Hoạt động
-          </>
-        ) : (
-          <>
-            <X size={12} className="mr-1" />
-            Tạm dừng
-          </>
-        )}
-      </span>
-    );
-  };
-
   const clearFilters = () => {
     setSearchTerm('');
     setHotelFilter('');
-    setStatusFilter(undefined);
     setMinOccupancy(undefined);
     setMaxOccupancy(undefined);
     setMinPrice(undefined);
@@ -362,7 +323,7 @@ const AdminRoomTypes: React.FC = () => {
               <Filter size={20} className="mr-2" />
               Bộ lọc
             </button>
-            {(hotelFilter || statusFilter !== undefined || minOccupancy || maxOccupancy || minPrice || maxPrice) && (
+            {(hotelFilter || minOccupancy || maxOccupancy || minPrice || maxPrice) && (
               <button
                 onClick={clearFilters}
                 className="text-blue-600 hover:text-blue-800 text-sm font-medium"
@@ -376,7 +337,7 @@ const AdminRoomTypes: React.FC = () => {
         {/* Filters */}
         {showFilters && (
           <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {/* Hotel Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Khách sạn</label>
@@ -392,58 +353,46 @@ const AdminRoomTypes: React.FC = () => {
                 </select>
               </div>
 
-              {/* Status Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-                <select
-                  value={statusFilter === undefined ? '' : statusFilter.toString()}
-                  onChange={(e) => setStatusFilter(e.target.value === '' ? undefined : e.target.value === 'true')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Tất cả</option>
-                  <option value="true">Hoạt động</option>
-                  <option value="false">Tạm dừng</option>
-                </select>
-              </div>
-
               {/* Occupancy Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sức chứa tối thiểu</label>
-                <input
-                  type="number"
-                  placeholder="Từ"
-                  value={minOccupancy || ''}
-                  onChange={(e) => setMinOccupancy(e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  min="1"
-                  max="10"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sức chứa tối đa</label>
-                <input
-                  type="number"
-                  placeholder="Đến"
-                  value={maxOccupancy || ''}
-                  onChange={(e) => setMaxOccupancy(e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  min="1"
-                  max="10"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sức chứa</label>
+                <div className="flex space-x-2">
+                  <input
+                    type="number"
+                    value={minOccupancy || ''}
+                    onChange={(e) => setMinOccupancy(e.target.value ? parseInt(e.target.value) : undefined)}
+                    placeholder="Tối thiểu"
+                    className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <input
+                    type="number"
+                    value={maxOccupancy || ''}
+                    onChange={(e) => setMaxOccupancy(e.target.value ? parseInt(e.target.value) : undefined)}
+                    placeholder="Tối đa"
+                    className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
               </div>
 
               {/* Price Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Giá từ (VND)</label>
-                <input
-                  type="number"
-                  placeholder="Giá tối thiểu"
-                  value={minPrice || ''}
-                  onChange={(e) => setMinPrice(e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  min="0"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Giá phòng</label>
+                <div className="flex space-x-2">
+                  <input
+                    type="number"
+                    value={minPrice || ''}
+                    onChange={(e) => setMinPrice(e.target.value ? parseInt(e.target.value) : undefined)}
+                    placeholder="Tối thiểu"
+                    className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <input
+                    type="number"
+                    value={maxPrice || ''}
+                    onChange={(e) => setMaxPrice(e.target.value ? parseInt(e.target.value) : undefined)}
+                    placeholder="Tối đa"
+                    className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -500,12 +449,7 @@ const AdminRoomTypes: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Phòng
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày tạo
-                </th>
+                
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Thao tác
                 </th>
@@ -514,7 +458,7 @@ const AdminRoomTypes: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
+                  <td colSpan={8} className="px-6 py-12 text-center">
                     <div className="flex items-center justify-center">
                       <RefreshCw className="animate-spin mr-2" size={20} />
                       Đang tải...
@@ -523,7 +467,7 @@ const AdminRoomTypes: React.FC = () => {
                 </tr>
               ) : roomTypes.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
                     Không tìm thấy loại phòng nào
                   </td>
                 </tr>
@@ -586,26 +530,7 @@ const AdminRoomTypes: React.FC = () => {
                         <div>Tổng: {roomType.totalRooms}</div>
                         <div className="text-green-600">Trống: {roomType.availableRooms}</div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        {getStatusBadge(roomType.isActive)}
-                        <button
-                          onClick={() => handleToggleStatus(roomType.id)}
-                          disabled={actionLoading === roomType.id}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          {roomType.isActive ? (
-                            <ToggleRight size={20} className="text-green-500" />
-                          ) : (
-                            <ToggleLeft size={20} className="text-gray-400" />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {formatDate(roomType.createdAt)}
-                    </td>
+                    </td> 
                     <td className="px-6 py-4 text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
                         <button

@@ -79,6 +79,20 @@ public interface HotelRepository extends JpaRepository<Hotel, UUID> {
                                @Param("maxPrice") BigDecimal maxPrice,
                                Pageable pageable);
     
+    // Find my hotels with filters (for Host)
+    @Query("SELECT h FROM Hotel h WHERE " +
+           "h.owner.id = :ownerId AND " +
+           "(:city IS NULL OR LOWER(h.city) = LOWER(:city)) AND " +
+           "(:country IS NULL OR LOWER(h.country) = LOWER(:country)) AND " +
+           "(:starRating IS NULL OR h.starRating = :starRating) AND " +
+           "(:isActive IS NULL OR h.isActive = :isActive)")
+    Page<Hotel> findMyHotelsWithFilters(@Param("ownerId") UUID ownerId,
+                                       @Param("city") String city,
+                                       @Param("country") String country,
+                                       @Param("starRating") Integer starRating,
+                                       @Param("isActive") Boolean isActive,
+                                       Pageable pageable);
+    
     // Legacy method for backward compatibility (if needed)
     @Query("SELECT h FROM Hotel h WHERE " +
            "(:isActive IS NULL OR h.isActive = :isActive) AND " +
@@ -117,6 +131,7 @@ public interface HotelRepository extends JpaRepository<Hotel, UUID> {
     // Count hotels by owner
     long countByOwner(User owner);
     long countByOwnerId(UUID ownerId);
+    long countByOwnerIdAndIsActiveTrue(UUID ownerId);
     
     // Count active hotels
     long countByIsActiveTrue();

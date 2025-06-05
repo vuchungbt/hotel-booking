@@ -12,7 +12,6 @@ export interface RoomType {
   images: string[];
   totalRooms: number;
   availableRooms: number;
-  status: 'active' | 'inactive' | 'maintenance';
 }
 
 export interface SeasonalPricing {

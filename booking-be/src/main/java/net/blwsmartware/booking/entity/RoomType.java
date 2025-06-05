@@ -49,12 +49,8 @@ public class RoomType {
     @Column(name = "image_url")
     String imageUrl;
 
-    @Column(name = "is_active")
-    boolean isActive = true;
-
     @Column(columnDefinition = "TEXT")
     String amenities;
-
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id")

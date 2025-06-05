@@ -38,7 +38,6 @@ public class AdminController {
         Long featuredHotels = hotelService.getFeaturedHotelsCount();
         
         Long totalRoomTypes = roomTypeService.getTotalRoomTypesCount();
-        Long activeRoomTypes = roomTypeService.getActiveRoomTypesCount();
         
         Long totalReviews = reviewService.getTotalReviewsCount();
         Long approvedReviews = reviewService.getApprovedReviewsCount();
@@ -52,8 +51,6 @@ public class AdminController {
                 .featuredHotels(featuredHotels)
                 .inactiveHotels(totalHotels - activeHotels)
                 .totalRoomTypes(totalRoomTypes)
-                .activeRoomTypes(activeRoomTypes)
-                .inactiveRoomTypes(totalRoomTypes - activeRoomTypes)
                 .totalReviews(totalReviews)
                 .approvedReviews(approvedReviews)
                 .verifiedReviews(verifiedReviews)
@@ -97,12 +94,9 @@ public class AdminController {
         log.info("Getting room type statistics");
         
         Long totalRoomTypes = roomTypeService.getTotalRoomTypesCount();
-        Long activeRoomTypes = roomTypeService.getActiveRoomTypesCount();
         
         AdminDashboardResponse.RoomTypeStats stats = AdminDashboardResponse.RoomTypeStats.builder()
                 .totalRoomTypes(totalRoomTypes)
-                .activeRoomTypes(activeRoomTypes)
-                .inactiveRoomTypes(totalRoomTypes - activeRoomTypes)
                 .build();
         
         return ResponseEntity

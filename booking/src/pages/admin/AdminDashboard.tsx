@@ -13,8 +13,6 @@ const AdminDashboard: React.FC = () => {
     inactiveHotels: 0,
     featuredHotels: 0,
     totalRoomTypes: 0,
-    activeRoomTypes: 0,
-    inactiveRoomTypes: 0,
     totalReviews: 0,
     approvedReviews: 0,
     pendingReviews: 0,
@@ -85,13 +83,6 @@ const AdminDashboard: React.FC = () => {
       icon: BedDouble,
       color: 'indigo',
       description: 'Tổng số loại phòng trong hệ thống'
-    },
-    { 
-      label: 'Loại phòng hoạt động', 
-      value: stats.activeRoomTypes.toLocaleString(), 
-      icon: CheckCircle,
-      color: 'teal',
-      description: 'Số loại phòng đang hoạt động'
     },
     { 
       label: 'Tổng đánh giá', 
@@ -175,7 +166,7 @@ const AdminDashboard: React.FC = () => {
           <TrendingUp size={20} className="mr-2 text-blue-500" />
           Tóm tắt nhanh
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-gray-50 rounded-lg">
             <div className="text-2xl font-bold text-green-600">
               {stats.totalHotels > 0 ? Math.round((stats.activeHotels / stats.totalHotels) * 100) : 0}%
@@ -189,12 +180,6 @@ const AdminDashboard: React.FC = () => {
             <div className="text-sm text-gray-600">Tỷ lệ khách sạn nổi bật</div>
           </div>
           <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-indigo-600">
-              {stats.totalRoomTypes > 0 ? Math.round((stats.activeRoomTypes / stats.totalRoomTypes) * 100) : 0}%
-            </div>
-            <div className="text-sm text-gray-600">Tỷ lệ loại phòng hoạt động</div>
-          </div>
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
             <div className="text-2xl font-bold text-blue-600">
               {stats.totalReviews && stats.totalHotels > 0 ? Math.round(stats.totalReviews / stats.totalHotels) : 0}
             </div>
@@ -202,9 +187,9 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="text-center p-4 bg-gray-50 rounded-lg">
             <div className="text-2xl font-bold text-purple-600">
-              {stats.totalReviews && stats.totalHotels > 0 ? Math.round(stats.approvedReviews / stats.totalHotels) : 0}
+              {stats.totalReviews > 0 ? Math.round((stats.approvedReviews / stats.totalReviews) * 100) : 0}%
             </div>
-            <div className="text-sm text-gray-600">Đánh giá đã duyệt/khách sạn</div>
+            <div className="text-sm text-gray-600">Tỷ lệ đánh giá đã duyệt</div>
           </div>
         </div>
       </div>

@@ -22,7 +22,7 @@ const AdminRoomTypeEdit: React.FC = () => {
     totalRooms: 1,
     imageUrl: '',
     amenities: '',
-    isActive: true
+    hotelId: ''
   });
 
   useEffect(() => {
@@ -50,7 +50,7 @@ const AdminRoomTypeEdit: React.FC = () => {
         totalRooms: roomTypeData.totalRooms || 1,
         imageUrl: roomTypeData.imageUrl || '',
         amenities: roomTypeData.amenities || '',
-        isActive: roomTypeData.isActive
+        hotelId: roomTypeData.hotelId || ''
       });
     } catch (error: any) {
       console.error('Error fetching room type:', error);
@@ -92,19 +92,20 @@ const AdminRoomTypeEdit: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.maxOccupancy || !formData.pricePerNight || !formData.totalRooms) {
-      showToast('error', 'Lỗi', 'Vui lòng điền đầy đủ thông tin bắt buộc');
-      return;
-    }
-
     try {
       setSaving(true);
-      await roomTypeAPI.updateRoomType(id!, formData);
-      showToast('success', 'Thành công', 'Đã cập nhật thông tin loại phòng');
-      navigate('/admin/room-types');
+      const response = await roomTypeAPI.updateRoomType(id!, formData);
+      const data = response.data;
+      
+      if (data.success) {
+        showToast('success', 'Thành công', 'Đã cập nhật thông tin loại phòng');
+        navigate(`/admin/room-types/${id}`);
+      } else {
+        showToast('error', 'Lỗi', data.message || 'Không thể cập nhật thông tin loại phòng');
+      }
     } catch (error: any) {
       console.error('Error updating room type:', error);
-      showToast('error', 'Lỗi', 'Không thể cập nhật loại phòng');
+      showToast('error', 'Lỗi', 'Không thể cập nhật thông tin loại phòng');
     } finally {
       setSaving(false);
     }
@@ -380,24 +381,6 @@ const AdminRoomTypeEdit: React.FC = () => {
                 💡 Tip: Click vào các thẻ để thêm/bỏ tiện nghi phòng. Bạn cũng có thể nhập trực tiếp vào ô text phía trên.
               </p>
             </div>
-          </div>
-        </div>
-
-        {/* Status Settings */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold mb-4">Cài đặt trạng thái</h2>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="isActive"
-              name="isActive"
-              checked={formData.isActive}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
-              Loại phòng đang hoạt động
-            </label>
           </div>
         </div>
       </form>

@@ -83,7 +83,7 @@ const SidebarDemo: React.FC = () => {
               ) : (
                 <ul className="space-y-1">
                   <li>• Tổng quan</li>
-                  <li>• Bất động sản</li>
+                  <li>• Khách sạn</li>
                   <li>• Đặt phòng</li>
                   <li>• Lịch đặt phòng</li>
                   <li>• Đánh giá</li>

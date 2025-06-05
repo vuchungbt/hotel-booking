@@ -24,18 +24,6 @@ public interface RoomTypeRepository extends JpaRepository<RoomType, UUID> {
     Page<RoomType> findByHotelId(UUID hotelId, Pageable pageable);
     List<RoomType> findByHotelId(UUID hotelId);
     
-    // Find active room types
-    Page<RoomType> findByIsActiveTrue(Pageable pageable);
-    List<RoomType> findByIsActiveTrue();
-    
-    // Find active room types by hotel
-    Page<RoomType> findByHotelAndIsActiveTrue(Hotel hotel, Pageable pageable);
-    List<RoomType> findByHotelAndIsActiveTrue(Hotel hotel);
-    
-    // Find room types by hotel ID and active status
-    Page<RoomType> findByHotelIdAndIsActiveTrue(UUID hotelId, Pageable pageable);
-    List<RoomType> findByHotelIdAndIsActiveTrue(UUID hotelId);
-    
     // Find room types by max occupancy
     Page<RoomType> findByMaxOccupancyGreaterThanEqual(Integer minOccupancy, Pageable pageable);
     List<RoomType> findByMaxOccupancyGreaterThanEqual(Integer minOccupancy);
@@ -45,19 +33,15 @@ public interface RoomTypeRepository extends JpaRepository<RoomType, UUID> {
     List<RoomType> findByPricePerNightBetween(BigDecimal minPrice, BigDecimal maxPrice);
     
     // Find available room types (where availableRooms > 0)
-    @Query("SELECT rt FROM RoomType rt WHERE rt.availableRooms > 0 AND rt.isActive = true")
+    @Query("SELECT rt FROM RoomType rt WHERE rt.availableRooms > 0")
     Page<RoomType> findAvailableRoomTypes(Pageable pageable);
     
-    @Query("SELECT rt FROM RoomType rt WHERE rt.hotel.id = :hotelId AND rt.availableRooms > 0 AND rt.isActive = true")
+    @Query("SELECT rt FROM RoomType rt WHERE rt.hotel.id = :hotelId AND rt.availableRooms > 0")
     Page<RoomType> findAvailableRoomTypesByHotel(@Param("hotelId") UUID hotelId, Pageable pageable);
     
-    // Find room types by hotel ID and active status with available rooms
-    Page<RoomType> findByHotelIdAndIsActiveTrueAndAvailableRoomsGreaterThan(UUID hotelId, Integer availableRooms, Pageable pageable);
-    List<RoomType> findByHotelIdAndIsActiveTrueAndAvailableRoomsGreaterThan(UUID hotelId, Integer availableRooms);
-    
-    // Find active room types with available rooms
-    Page<RoomType> findByIsActiveTrueAndAvailableRoomsGreaterThan(Integer availableRooms, Pageable pageable);
-    List<RoomType> findByIsActiveTrueAndAvailableRoomsGreaterThan(Integer availableRooms);
+    // Find room types by hotel ID with available rooms
+    Page<RoomType> findByHotelIdAndAvailableRoomsGreaterThan(UUID hotelId, Integer availableRooms, Pageable pageable);
+    List<RoomType> findByHotelIdAndAvailableRoomsGreaterThan(UUID hotelId, Integer availableRooms);
     
     // Search room types by name
     @Query("SELECT rt FROM RoomType rt WHERE LOWER(rt.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
@@ -72,13 +56,11 @@ public interface RoomTypeRepository extends JpaRepository<RoomType, UUID> {
     // Find room types with filters
     @Query("SELECT rt FROM RoomType rt WHERE " +
            "(:hotelId IS NULL OR rt.hotel.id = :hotelId) AND " +
-           "(:isActive IS NULL OR rt.isActive = :isActive) AND " +
            "(:minOccupancy IS NULL OR rt.maxOccupancy >= :minOccupancy) AND " +
            "(:maxOccupancy IS NULL OR rt.maxOccupancy <= :maxOccupancy) AND " +
            "(:minPrice IS NULL OR rt.pricePerNight >= :minPrice) AND " +
            "(:maxPrice IS NULL OR rt.pricePerNight <= :maxPrice)")
     Page<RoomType> findWithFilters(@Param("hotelId") UUID hotelId,
-                                  @Param("isActive") Boolean isActive,
                                   @Param("minOccupancy") Integer minOccupancy,
                                   @Param("maxOccupancy") Integer maxOccupancy,
                                   @Param("minPrice") BigDecimal minPrice,
@@ -89,28 +71,21 @@ public interface RoomTypeRepository extends JpaRepository<RoomType, UUID> {
     long countByHotel(Hotel hotel);
     long countByHotelId(UUID hotelId);
     
-    // Count active room types by hotel
-    long countByHotelAndIsActiveTrue(Hotel hotel);
-    long countByHotelIdAndIsActiveTrue(UUID hotelId);
-    
-    // Count active room types
-    long countByIsActiveTrue();
-    
     // Check if room type name exists for hotel (for validation)
     boolean existsByNameAndHotel(String name, Hotel hotel);
     boolean existsByNameAndHotelId(String name, UUID hotelId);
     
     // Get total and available rooms for hotel
-    @Query("SELECT SUM(rt.totalRooms) FROM RoomType rt WHERE rt.hotel.id = :hotelId AND rt.isActive = true")
+    @Query("SELECT SUM(rt.totalRooms) FROM RoomType rt WHERE rt.hotel.id = :hotelId")
     Long getTotalRoomsByHotel(@Param("hotelId") UUID hotelId);
     
-    @Query("SELECT SUM(rt.availableRooms) FROM RoomType rt WHERE rt.hotel.id = :hotelId AND rt.isActive = true")
+    @Query("SELECT SUM(rt.availableRooms) FROM RoomType rt WHERE rt.hotel.id = :hotelId")
     Long getAvailableRoomsByHotel(@Param("hotelId") UUID hotelId);
     
     // Get price range for hotel
-    @Query("SELECT MIN(rt.pricePerNight) FROM RoomType rt WHERE rt.hotel.id = :hotelId AND rt.isActive = true")
+    @Query("SELECT MIN(rt.pricePerNight) FROM RoomType rt WHERE rt.hotel.id = :hotelId")
     BigDecimal getMinPriceByHotel(@Param("hotelId") UUID hotelId);
     
-    @Query("SELECT MAX(rt.pricePerNight) FROM RoomType rt WHERE rt.hotel.id = :hotelId AND rt.isActive = true")
+    @Query("SELECT MAX(rt.pricePerNight) FROM RoomType rt WHERE rt.hotel.id = :hotelId")
     BigDecimal getMaxPriceByHotel(@Param("hotelId") UUID hotelId);
 } 

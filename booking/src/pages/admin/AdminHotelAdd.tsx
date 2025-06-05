@@ -109,14 +109,10 @@ const AdminHotelAdd: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await hotelAPI.createHotel(formData);
-      
-      if (response.data.success) {
-        showToast('success', 'Thành công', 'Đã tạo khách sạn mới');
-        navigate('/admin/hotels');
-      } else {
-        showToast('error', 'Lỗi', response.data.message || 'Không thể tạo khách sạn');
-      }
+      const response = await hotelAPI.createHotelByAdmin(formData);
+      const hotelId = response.data.result?.id || response.data.id;
+      showToast('success', 'Thành công', 'Đã tạo khách sạn mới');
+      navigate(`/admin/hotels/${hotelId}`);
     } catch (error: any) {
       console.error('Error creating hotel:', error);
       showToast('error', 'Lỗi', 'Không thể kết nối đến server');

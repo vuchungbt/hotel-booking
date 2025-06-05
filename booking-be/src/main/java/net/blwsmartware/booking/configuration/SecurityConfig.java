@@ -49,26 +49,26 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(authorize -> {
                     authorize.requestMatchers(
-                                HttpMethod.POST,PUBLIC_ENDPOINTS).permitAll()
+                                    HttpMethod.POST,PUBLIC_ENDPOINTS).permitAll()
                             .requestMatchers("/swagger-ui/**").permitAll()
                             .requestMatchers("/v3/**").permitAll()
                             .requestMatchers("/actuator/**").permitAll()
-                                .anyRequest().authenticated();
-                    } )
+                            .anyRequest().authenticated();
+                } )
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .exceptionHandling(exception->exception.authenticationEntryPoint(new JwtAuthEntryPoint()))
 
                 .oauth2ResourceServer(oauth2 -> {
-                    oauth2.jwt(jwtConfigurer ->
-                                    jwtConfigurer.decoder(customJwtDecoder)
-                                        .jwtAuthenticationConverter(jwtAuthenticationConverter())
-                                )
+                            oauth2.jwt(jwtConfigurer ->
+                                            jwtConfigurer.decoder(customJwtDecoder)
+                                                    .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                                    )
 
-                            .authenticationEntryPoint(new JwtAuthEntryPoint())
-                    ;
+                                    .authenticationEntryPoint(new JwtAuthEntryPoint())
+                            ;
 
-                }
+                        }
                 )  ;
 
         return http.build();
@@ -82,7 +82,7 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(Arrays.asList("Content-Type", "Authorization", "X-Requested-With"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
@@ -99,7 +99,6 @@ public class SecurityConfig {
         granted.setAuthorityPrefix("");
         JwtAuthenticationConverter converter =  new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(granted);
-         return converter;
+        return converter;
     }
 }
-

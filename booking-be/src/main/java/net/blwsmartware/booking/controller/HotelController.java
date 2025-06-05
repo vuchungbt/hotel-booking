@@ -13,6 +13,7 @@ import net.blwsmartware.booking.dto.response.HotelResponse;
 import net.blwsmartware.booking.dto.response.MessageResponse;
 import net.blwsmartware.booking.service.HotelService;
 import net.blwsmartware.booking.validator.IsAdmin;
+import net.blwsmartware.booking.validator.IsHost;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,20 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+/**
+ * Hotel Management Controller
+ * 
+ * URL Structure (Fixed conflicts):
+ * - Admin URLs:     /hotels/admin/...
+ * - Host URLs:      /hotels/host/...  
+ * - Public URLs:    /hotels/{staticPath} (search, city, country, etc.)
+ * - Public Details: /hotels/{id} (hotel details by ID)
+ * 
+ * This structure avoids URL conflicts and provides clear separation between:
+ * - Admin: Full management of ALL hotels
+ * - Host: Management of OWNED hotels only 
+ * - Public: Read-only access to active hotels
+ */
 @RestController
 @RequestMapping("/hotels")
 @RequiredArgsConstructor
@@ -30,7 +45,7 @@ public class HotelController {
     
     HotelService hotelService;
     
-    // Admin endpoints
+    // ===== ADMIN ENDPOINTS =====
     @GetMapping("/admin")
     @IsAdmin
     public ResponseEntity<MessageResponse<DataResponse<HotelResponse>>> getAllHotels(
@@ -86,41 +101,41 @@ public class HotelController {
     
     @PostMapping("/admin")
     @IsAdmin
-    public ResponseEntity<MessageResponse<HotelResponse>> createHotel(@Valid @RequestBody HotelCreateRequest request) {
-        HotelResponse response = hotelService.createHotel(request);
+    public ResponseEntity<MessageResponse<HotelResponse>> createHotelByAdmin(@Valid @RequestBody HotelCreateRequest request) {
+        HotelResponse response = hotelService.createHotelByAdmin(request);
         
         return ResponseEntity.status(HttpStatus.CREATED)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(MessageResponse.<HotelResponse>builder()
-                        .message("Hotel created successfully")
+                        .message("Hotel created successfully by admin")
                         .result(response)
                         .build());
     }
     
     @PutMapping("/admin/{id}")
     @IsAdmin
-    public ResponseEntity<MessageResponse<HotelResponse>> updateHotel(
+    public ResponseEntity<MessageResponse<HotelResponse>> updateHotelByAdmin(
             @PathVariable UUID id,
             @Valid @RequestBody HotelUpdateRequest request) {
-        HotelResponse response = hotelService.updateHotel(id, request);
+        HotelResponse response = hotelService.updateHotelByAdmin(id, request);
         
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(MessageResponse.<HotelResponse>builder()
-                        .message("Hotel updated successfully")
+                        .message("Hotel updated successfully by admin")
                         .result(response)
                         .build());
     }
     
     @DeleteMapping("/admin/{id}")
     @IsAdmin
-    public ResponseEntity<?> deleteHotel(@PathVariable UUID id) {
-        hotelService.deleteHotel(id);
+    public ResponseEntity<?> deleteHotelByAdmin(@PathVariable UUID id) {
+        hotelService.deleteHotelByAdmin(id);
         
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(MessageResponse.builder()
-                        .message("Hotel deleted successfully")
+                        .message("Hotel deleted successfully by admin")
                         .build());
     }
     
@@ -168,7 +183,7 @@ public class HotelController {
                         .build());
     }
     
-    // Statistics endpoints
+    // Admin Statistics endpoints
     @GetMapping("/admin/stats/total")
     @IsAdmin
     public ResponseEntity<MessageResponse<Long>> getTotalHotelsCount() {
@@ -221,7 +236,140 @@ public class HotelController {
                         .build());
     }
     
-    // Public endpoints
+    // ===== HOST ENDPOINTS =====
+    @GetMapping("/host")
+    @IsHost
+    public ResponseEntity<MessageResponse<DataResponse<HotelResponse>>> getMyHotels(
+            @RequestParam(defaultValue = PagePrepare.PAGE_NUMBER) Integer pageNumber,
+            @RequestParam(defaultValue = PagePrepare.PAGE_SIZE) Integer pageSize,
+            @RequestParam(defaultValue = PagePrepare.SORT_BY) String sortBy) {
+        
+        DataResponse<HotelResponse> response = hotelService.getMyHotels(pageNumber, pageSize, sortBy);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<DataResponse<HotelResponse>>builder()
+                        .message("My hotels retrieved successfully")
+                        .result(response)
+                        .build());
+    }
+    
+    @GetMapping("/host/filter")
+    @IsHost
+    public ResponseEntity<MessageResponse<DataResponse<HotelResponse>>> getMyHotelsWithFilters(
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String country,
+            @RequestParam(required = false) Integer starRating,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(defaultValue = PagePrepare.PAGE_NUMBER) Integer pageNumber,
+            @RequestParam(defaultValue = PagePrepare.PAGE_SIZE) Integer pageSize,
+            @RequestParam(defaultValue = PagePrepare.SORT_BY) String sortBy) {
+        
+        DataResponse<HotelResponse> response = hotelService.getMyHotelsWithFilters(
+                city, country, starRating, isActive, pageNumber, pageSize, sortBy);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<DataResponse<HotelResponse>>builder()
+                        .message("My filtered hotels retrieved successfully")
+                        .result(response)
+                        .build());
+    }
+    
+    @GetMapping("/host/{id}")
+    @IsHost
+    public ResponseEntity<MessageResponse<HotelResponse>> getMyHotelById(@PathVariable UUID id) {
+        HotelResponse response = hotelService.getMyHotelById(id);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<HotelResponse>builder()
+                        .message("Hotel details retrieved successfully")
+                        .result(response)
+                        .build());
+    }
+    
+    @PostMapping("/host")
+    @IsHost
+    public ResponseEntity<MessageResponse<HotelResponse>> createMyHotel(@Valid @RequestBody HotelCreateRequest request) {
+        HotelResponse response = hotelService.createMyHotel(request);
+        
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<HotelResponse>builder()
+                        .message("Hotel created successfully")
+                        .result(response)
+                        .build());
+    }
+    
+    @PutMapping("/host/{id}")
+    @IsHost
+    public ResponseEntity<MessageResponse<HotelResponse>> updateMyHotel(
+            @PathVariable UUID id,
+            @Valid @RequestBody HotelUpdateRequest request) {
+        HotelResponse response = hotelService.updateMyHotel(id, request);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<HotelResponse>builder()
+                        .message("Hotel updated successfully")
+                        .result(response)
+                        .build());
+    }
+    
+    @DeleteMapping("/host/{id}")
+    @IsHost
+    public ResponseEntity<?> deleteMyHotel(@PathVariable UUID id) {
+        hotelService.deleteMyHotel(id);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.builder()
+                        .message("Hotel deleted successfully")
+                        .build());
+    }
+    
+    @PutMapping("/host/{id}/toggle-status")
+    @IsHost
+    public ResponseEntity<MessageResponse<HotelResponse>> toggleMyHotelStatus(@PathVariable UUID id) {
+        HotelResponse response = hotelService.toggleMyHotelStatus(id);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<HotelResponse>builder()
+                        .message("Hotel status updated successfully")
+                        .result(response)
+                        .build());
+    }
+    
+    // Host Statistics endpoints
+    @GetMapping("/host/stats/total")
+    @IsHost
+    public ResponseEntity<MessageResponse<Long>> getMyHotelsCount() {
+        Long count = hotelService.getMyHotelsCount();
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<Long>builder()
+                        .message("My hotels count retrieved successfully")
+                        .result(count)
+                        .build());
+    }
+    
+    @GetMapping("/host/stats/active")
+    @IsHost
+    public ResponseEntity<MessageResponse<Long>> getMyActiveHotelsCount() {
+        Long count = hotelService.getMyActiveHotelsCount();
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<Long>builder()
+                        .message("My active hotels count retrieved successfully")
+                        .result(count)
+                        .build());
+    }
+    
+    // ===== PUBLIC ENDPOINTS =====
     @GetMapping("/{id}")
     public ResponseEntity<MessageResponse<HotelResponse>> getHotelById(@PathVariable UUID id) {
         HotelResponse response = hotelService.getHotelById(id);
@@ -330,22 +478,6 @@ public class HotelController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(MessageResponse.<DataResponse<HotelResponse>>builder()
                         .message("Featured hotels retrieved successfully")
-                        .result(response)
-                        .build());
-    }
-    
-    @GetMapping("/my")
-    public ResponseEntity<MessageResponse<DataResponse<HotelResponse>>> getMyHotels(
-            @RequestParam(defaultValue = PagePrepare.PAGE_NUMBER) Integer pageNumber,
-            @RequestParam(defaultValue = PagePrepare.PAGE_SIZE) Integer pageSize,
-            @RequestParam(defaultValue = PagePrepare.SORT_BY) String sortBy) {
-        
-        DataResponse<HotelResponse> response = hotelService.getMyHotels(pageNumber, pageSize, sortBy);
-        
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(MessageResponse.<DataResponse<HotelResponse>>builder()
-                        .message("My hotels retrieved successfully")
                         .result(response)
                         .build());
     }

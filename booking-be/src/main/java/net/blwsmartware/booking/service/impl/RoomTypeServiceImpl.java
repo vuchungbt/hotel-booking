@@ -61,14 +61,14 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     @Override
     @IsAdmin
     public DataResponse<RoomTypeResponse> getAllRoomTypesWithFilters(
-            UUID hotelId, Boolean isActive, Integer minOccupancy, Integer maxOccupancy,
+            UUID hotelId, Integer minOccupancy, Integer maxOccupancy,
             BigDecimal minPrice, BigDecimal maxPrice, Integer pageNumber, Integer pageSize, String sortBy) {
-        log.info("Getting room types with filters - hotel: {}, active: {}, occupancy: {}-{}, price: {}-{}", 
-                hotelId, isActive, minOccupancy, maxOccupancy, minPrice, maxPrice);
+        log.info("Getting room types with filters - hotel: {}, occupancy: {}-{}, price: {}-{}", 
+                hotelId, minOccupancy, maxOccupancy, minPrice, maxPrice);
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
         Page<RoomType> roomTypePage = roomTypeRepository.findWithFilters(
-                hotelId, isActive, minOccupancy, maxOccupancy, minPrice, maxPrice, pageable);
+                hotelId, minOccupancy, maxOccupancy, minPrice, maxPrice, pageable);
         
         List<RoomTypeResponse> roomTypeResponses = roomTypePage.getContent().stream()
                 .map(roomTypeMapper::toResponse)
@@ -153,24 +153,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
         
         roomTypeRepository.delete(roomType);
     }
-    
-    @Override
-    @IsAdmin
-    @Transactional
-    public RoomTypeResponse toggleRoomTypeStatus(UUID id) {
-        log.info("Toggling room type status: {}", id);
-        
-        RoomType roomType = roomTypeRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.ROOM_TYPE_NOT_FOUND));
-        
-        roomType.setActive(!roomType.isActive());
-        roomType.setUpdatedBy(getCurrentUserId());
-        
-        RoomType updatedRoomType = roomTypeRepository.save(roomType);
-        
-        return roomTypeMapper.toResponse(updatedRoomType);
-    }
-    
+
     @Override
     public DataResponse<RoomTypeResponse> getRoomTypesByHotel(UUID hotelId, Integer pageNumber, Integer pageSize, String sortBy) {
         log.info("Getting room types by hotel: {}", hotelId);
@@ -190,24 +173,6 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     }
     
     @Override
-    public DataResponse<RoomTypeResponse> getActiveRoomTypesByHotel(UUID hotelId, Integer pageNumber, Integer pageSize, String sortBy) {
-        log.info("Getting active room types by hotel: {}", hotelId);
-        
-        // Validate hotel exists
-        hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
-        
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
-        Page<RoomType> roomTypePage = roomTypeRepository.findByHotelIdAndIsActiveTrue(hotelId, pageable);
-        
-        List<RoomTypeResponse> roomTypeResponses = roomTypePage.getContent().stream()
-                .map(roomTypeMapper::toResponseWithoutHotel)
-                .toList();
-        
-        return DataResponseUtils.convertPageInfo(roomTypePage, roomTypeResponses);
-    }
-    
-    @Override
     public DataResponse<RoomTypeResponse> getAvailableRoomTypesByHotel(UUID hotelId, Integer pageNumber, Integer pageSize, String sortBy) {
         log.info("Getting available room types by hotel: {}", hotelId);
         
@@ -216,7 +181,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
                 .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
-        Page<RoomType> roomTypePage = roomTypeRepository.findByHotelIdAndIsActiveTrueAndAvailableRoomsGreaterThan(hotelId, 0, pageable);
+        Page<RoomType> roomTypePage = roomTypeRepository.findByHotelIdAndAvailableRoomsGreaterThan(hotelId, 0, pageable);
         
         List<RoomTypeResponse> roomTypeResponses = roomTypePage.getContent().stream()
                 .map(roomTypeMapper::toResponseWithoutHotel)
@@ -273,7 +238,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
         log.info("Getting available room types");
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
-        Page<RoomType> roomTypePage = roomTypeRepository.findByIsActiveTrueAndAvailableRoomsGreaterThan(0, pageable);
+        Page<RoomType> roomTypePage = roomTypeRepository.findAvailableRoomTypes(pageable);
         
         List<RoomTypeResponse> roomTypeResponses = roomTypePage.getContent().stream()
                 .map(roomTypeMapper::toResponse)
@@ -286,12 +251,6 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     @IsAdmin
     public Long getTotalRoomTypesCount() {
         return roomTypeRepository.count();
-    }
-    
-    @Override
-    @IsAdmin
-    public Long getActiveRoomTypesCount() {
-        return roomTypeRepository.countByIsActiveTrue();
     }
     
     @Override

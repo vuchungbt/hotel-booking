@@ -38,6 +38,7 @@ import AdminHotelDetail from './pages/admin/AdminHotelDetail';
 import AdminHotelAdd from './pages/admin/AdminHotelAdd';
 import AdminHotelEdit from './pages/admin/AdminHotelEdit';
 import AdminRoomTypes from './pages/admin/AdminRoomTypes';
+import AdminRoomTypeDetail from './pages/admin/AdminRoomTypeDetail';
 import AdminRoomTypeEdit from './pages/admin/AdminRoomTypeEdit';
 import AdminRoomTypeAdd from './pages/admin/AdminRoomTypeAdd';
 import AdminUsers from './pages/admin/AdminUsers';
@@ -51,9 +52,14 @@ import AdminSettings from './pages/admin/AdminSettings';
 import HostDashboard from './pages/host/HostDashboard';
 import HostProperties from './pages/host/HostProperties';
 import HostBookings from './pages/host/HostBookings';
+import HostBookingDetail from './pages/host/HostBookingDetail';
 import HostAnalytics from './pages/host/HostAnalytics';
 import AddProperty from './pages/host/AddProperty';
 import PropertyDetail from './pages/host/PropertyDetail';
+import HostHotels from './pages/host/HostHotels';
+import HostHotelAdd from './pages/host/HostHotelAdd';
+import HostHotelDetail from './pages/host/HostHotelDetail';
+import HostHotelEdit from './pages/host/HostHotelEdit';
 
 // Layout component for public pages
 const PublicLayout = ({ children }: { children: React.ReactNode }) => (
@@ -78,6 +84,18 @@ const HomeLayout = ({ children }: { children: React.ReactNode }) => (
     <Footer />
   </div>
 );
+
+// Host routes
+const hostRoutes = [
+  { path: '/host', element: <HostDashboard /> },
+  { path: '/host/hotels', element: <HostHotels /> },
+  { path: '/host/hotels/add', element: <HostHotelAdd /> },
+  { path: '/host/hotels/:id', element: <HostHotelDetail /> },
+  { path: '/host/hotels/edit/:id', element: <HostHotelEdit /> },
+  { path: '/host/bookings', element: <HostBookings /> },
+  { path: '/host/bookings/:id', element: <HostBookingDetail /> },
+  { path: '/host/analytics', element: <HostAnalytics /> }
+];
 
 function App() {
   return (
@@ -200,6 +218,11 @@ function App() {
                 <DashboardLayout type="admin"><AdminRoomTypes /></DashboardLayout>
               </ProtectedRoute>
             } />
+            <Route path="/admin/room-types/:id" element={
+              <ProtectedRoute requiredRole="ADMIN">
+                <DashboardLayout type="admin"><AdminRoomTypeDetail /></DashboardLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/admin/room-types/edit/:id" element={
               <ProtectedRoute requiredRole="ADMIN">
                 <DashboardLayout type="admin"><AdminRoomTypeEdit /></DashboardLayout>
@@ -265,6 +288,11 @@ function App() {
             <Route path="/host/bookings" element={
               <ProtectedRoute requiredRole="HOST">
                 <DashboardLayout type="host"><HostBookings /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/host/bookings/:id" element={
+              <ProtectedRoute requiredRole="HOST">
+                <DashboardLayout type="host"><HostBookingDetail /></DashboardLayout>
               </ProtectedRoute>
             } />
             <Route path="/host/analytics" element={

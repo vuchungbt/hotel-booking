@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -61,6 +62,8 @@ public class HotelUpdateRequest {
 
     @Size(max = 1000, message = "Pet policy cannot exceed 1000 characters")
     String petPolicy;
+
+    UUID ownerId; // Optional - only admin can change owner
 
     boolean isActive;
     boolean isFeatured;

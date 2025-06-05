@@ -33,6 +33,8 @@ public enum ErrorResponse {
     USER_NOT_LOGIN(1001, "Incorrect password!", HttpStatus.BAD_REQUEST),
     USER_BLOCKED(4008, "User has been blocked!", HttpStatus.FORBIDDEN),
     USER_NOT_VERIFICATION(4009, "Email not verified!", HttpStatus.FORBIDDEN),
+    USER_ALREADY_HOST(4010, "User already has host role!", HttpStatus.CONFLICT),
+    HOST_REQUEST_NOT_FOUND(4011, "Host request not found!", HttpStatus.NOT_FOUND),
     CODE_EXPIRED(4012, "Code has expired!", HttpStatus.BAD_REQUEST),
     CODE_INVALID(4017, "Invalid code!", HttpStatus.BAD_REQUEST),
     CODE_NOT_FOUND(4113, "Code not found!", HttpStatus.BAD_REQUEST),

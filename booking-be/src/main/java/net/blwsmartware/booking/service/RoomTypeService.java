@@ -12,17 +12,15 @@ public interface RoomTypeService {
     // Admin operations
     DataResponse<RoomTypeResponse> getAllRoomTypes(Integer pageNumber, Integer pageSize, String sortBy);
     DataResponse<RoomTypeResponse> getAllRoomTypesWithFilters(
-            UUID hotelId, Boolean isActive, Integer minOccupancy, Integer maxOccupancy,
+            UUID hotelId, Integer minOccupancy, Integer maxOccupancy,
             BigDecimal minPrice, BigDecimal maxPrice, Integer pageNumber, Integer pageSize, String sortBy);
     RoomTypeResponse getRoomTypeById(UUID id);
     RoomTypeResponse createRoomType(RoomTypeCreateRequest request);
     RoomTypeResponse updateRoomType(UUID id, RoomTypeCreateRequest request);
     void deleteRoomType(UUID id);
-    RoomTypeResponse toggleRoomTypeStatus(UUID id);
-    
+
     // Hotel-specific operations
     DataResponse<RoomTypeResponse> getRoomTypesByHotel(UUID hotelId, Integer pageNumber, Integer pageSize, String sortBy);
-    DataResponse<RoomTypeResponse> getActiveRoomTypesByHotel(UUID hotelId, Integer pageNumber, Integer pageSize, String sortBy);
     DataResponse<RoomTypeResponse> getAvailableRoomTypesByHotel(UUID hotelId, Integer pageNumber, Integer pageSize, String sortBy);
     
     // Search and filter operations
@@ -34,7 +32,6 @@ public interface RoomTypeService {
     
     // Statistics
     Long getTotalRoomTypesCount();
-    Long getActiveRoomTypesCount();
     Long getRoomTypesCountByHotel(UUID hotelId);
     
     // Validation methods

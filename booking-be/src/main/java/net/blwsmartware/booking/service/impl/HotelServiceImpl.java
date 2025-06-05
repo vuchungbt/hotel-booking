@@ -18,6 +18,7 @@ import net.blwsmartware.booking.repository.UserRepository;
 import net.blwsmartware.booking.service.HotelService;
 import net.blwsmartware.booking.util.DataResponseUtils;
 import net.blwsmartware.booking.validator.IsAdmin;
+import net.blwsmartware.booking.validator.IsHost;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -108,8 +109,8 @@ public class HotelServiceImpl implements HotelService {
     @Override
     @IsAdmin
     @Transactional
-    public HotelResponse createHotel(HotelCreateRequest request) {
-        log.info("Creating new hotel: {}", request.getName());
+    public HotelResponse createHotelByAdmin(HotelCreateRequest request) {
+        log.info("Admin creating new hotel: {}", request.getName());
         
         // Determine owner - use provided ownerId or current user
         User owner;
@@ -141,8 +142,8 @@ public class HotelServiceImpl implements HotelService {
     @Override
     @IsAdmin
     @Transactional
-    public HotelResponse updateHotel(UUID id, HotelUpdateRequest request) {
-        log.info("Updating hotel: {}", id);
+    public HotelResponse updateHotelByAdmin(UUID id, HotelUpdateRequest request) {
+        log.info("Admin updating hotel: {}", id);
 
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
@@ -154,18 +155,20 @@ public class HotelServiceImpl implements HotelService {
                 throw new AppException(ErrorCode.HOTEL_NAME_ALREADY_EXISTS);
             }
         }
-        log.info("hotel.isActive: {}", hotel.isActive());
-        log.info("hotel.isFeatured: {}", hotel.isFeatured());
-        log.info("request.isActive: {}", request.isActive());
-        log.info("request.isFeatured: {}", request.isFeatured());
+
+        // Handle owner change (only admin can do this)
+        if (request.getOwnerId() != null && !request.getOwnerId().equals(hotel.getOwner().getId())) {
+            log.info("Admin changing hotel owner from {} to {}", hotel.getOwner().getId(), request.getOwnerId());
+            
+            // Validate new owner exists
+            User newOwner = userRepository.findById(request.getOwnerId())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            
+            hotel.setOwner(newOwner);
+        }
 
         // Update hotel
         hotelMapper.updateEntity(hotel, request);
-
-        log.info("Updated");
-        log.info("hotel.isActive: {}", hotel.isActive());
-        log.info("hotel.isFeatured: {}", hotel.isFeatured());
-
         hotel.setUpdatedBy(getCurrentUserId());
 
         Hotel updatedHotel = hotelRepository.save(hotel);
@@ -176,8 +179,8 @@ public class HotelServiceImpl implements HotelService {
     @Override
     @IsAdmin
     @Transactional
-    public void deleteHotel(UUID id) {
-        log.info("Deleting hotel: {}", id);
+    public void deleteHotelByAdmin(UUID id) {
+        log.info("Admin deleting hotel: {}", id);
         
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
@@ -348,12 +351,33 @@ public class HotelServiceImpl implements HotelService {
     }
     
     @Override
+    @IsHost
     public DataResponse<HotelResponse> getMyHotels(Integer pageNumber, Integer pageSize, String sortBy) {
         log.info("Getting current user's hotels");
         
         UUID currentUserId = getCurrentUserId();
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
         Page<Hotel> hotelPage = hotelRepository.findByOwnerId(currentUserId, pageable);
+        
+        List<HotelResponse> hotelResponses = hotelPage.getContent().stream()
+                .map(hotelMapper::toResponseWithoutRelations)
+                .toList();
+        
+        return DataResponseUtils.convertPageInfo(hotelPage, hotelResponses);
+    }
+    
+    @Override
+    @IsHost
+    public DataResponse<HotelResponse> getMyHotelsWithFilters(
+            String city, String country, Integer starRating, Boolean isActive,
+            Integer pageNumber, Integer pageSize, String sortBy) {
+        log.info("Getting current user's hotels with filters - city: {}, country: {}, stars: {}, active: {}", 
+                city, country, starRating, isActive);
+        
+        UUID currentUserId = getCurrentUserId();
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
+        Page<Hotel> hotelPage = hotelRepository.findMyHotelsWithFilters(
+                currentUserId, city, country, starRating, isActive, pageable);
         
         List<HotelResponse> hotelResponses = hotelPage.getContent().stream()
                 .map(hotelMapper::toResponseWithoutRelations)
@@ -421,5 +445,149 @@ public class HotelServiceImpl implements HotelService {
     private UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return UUID.fromString(authentication.getName());
+    }
+    
+    /**
+     * Validate that the current user owns the specified hotel
+     */
+    private void validateHotelOwnership(UUID hotelId) {
+        UUID currentUserId = getCurrentUserId();
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+        
+        if (!hotel.getOwner().getId().equals(currentUserId)) {
+            throw new AppException(ErrorCode.HOTEL_ACCESS_DENIED);
+        }
+    }
+    
+    /**
+     * Get hotel by ID and validate ownership
+     */
+    private Hotel getMyHotelEntity(UUID hotelId) {
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+        
+        UUID currentUserId = getCurrentUserId();
+        if (!hotel.getOwner().getId().equals(currentUserId)) {
+            throw new AppException(ErrorCode.HOTEL_ACCESS_DENIED);
+        }
+        
+        return hotel;
+    }
+
+    // ===== HOST OPERATIONS =====
+    
+    @Override
+    @IsHost
+    public HotelResponse getMyHotelById(UUID id) {
+        log.info("Host getting hotel details: {}", id);
+        
+        Hotel hotel = getMyHotelEntity(id);
+        return hotelMapper.toResponse(hotel);
+    }
+    
+    @Override
+    @IsHost
+    @Transactional
+    public HotelResponse createMyHotel(HotelCreateRequest request) {
+        log.info("Host creating new hotel: {}", request.getName());
+        
+        // Host can only create hotel for themselves
+        User currentUser = getCurrentUser();
+        
+        // Check if hotel name already exists in the same city
+        if (hotelRepository.existsByNameAndCity(request.getName(), request.getCity())) {
+            throw new AppException(ErrorCode.HOTEL_NAME_ALREADY_EXISTS);
+        }
+        
+        // Convert request to entity
+        Hotel hotel = hotelMapper.toEntity(request);
+        hotel.setOwner(currentUser);
+        hotel.setCreatedBy(getCurrentUserId());
+        hotel.setUpdatedBy(getCurrentUserId());
+        
+        // Host cannot set featured status - only admin can
+        hotel.setFeatured(false);
+        
+        // Save hotel
+        Hotel savedHotel = hotelRepository.save(hotel);
+        
+        return hotelMapper.toResponse(savedHotel);
+    }
+    
+    @Override
+    @IsHost  
+    @Transactional
+    public HotelResponse updateMyHotel(UUID id, HotelUpdateRequest request) {
+        log.info("Host updating hotel: {}", id);
+
+        Hotel hotel = getMyHotelEntity(id);
+
+        // Check if new name conflicts with existing hotels in the same city
+        if (request.getName() != null && !request.getName().equals(hotel.getName())) {
+            String city = request.getCity() != null ? request.getCity() : hotel.getCity();
+            if (hotelRepository.existsByNameAndCity(request.getName(), city)) {
+                throw new AppException(ErrorCode.HOTEL_NAME_ALREADY_EXISTS);
+            }
+        }
+
+        // Save current featured status - host cannot change this
+        boolean currentFeaturedStatus = hotel.isFeatured();
+
+        // Update hotel
+        hotelMapper.updateEntity(hotel, request);
+        hotel.setUpdatedBy(getCurrentUserId());
+        
+        // Restore featured status - only admin can change this
+        hotel.setFeatured(currentFeaturedStatus);
+
+        Hotel updatedHotel = hotelRepository.save(hotel);
+
+        return hotelMapper.toResponse(updatedHotel);
+    }
+    
+    @Override
+    @IsHost
+    @Transactional
+    public void deleteMyHotel(UUID id) {
+        log.info("Host deleting hotel: {}", id);
+        
+        Hotel hotel = getMyHotelEntity(id);
+        
+        // TODO: Check if hotel has any bookings when booking entity is implemented
+        // For now, we'll allow deletion
+        
+        hotelRepository.delete(hotel);
+    }
+    
+    @Override
+    @IsHost
+    @Transactional
+    public HotelResponse toggleMyHotelStatus(UUID id) {
+        log.info("Host toggling hotel status: {}", id);
+        
+        Hotel hotel = getMyHotelEntity(id);
+        
+        hotel.setActive(!hotel.isActive());
+        hotel.setUpdatedBy(getCurrentUserId());
+        
+        Hotel updatedHotel = hotelRepository.save(hotel);
+        
+        return hotelMapper.toResponse(updatedHotel);
+    }
+    
+    // Host Statistics
+    @Override
+    @IsHost
+    public Long getMyHotelsCount() {
+        UUID currentUserId = getCurrentUserId();
+        return hotelRepository.countByOwnerId(currentUserId);
+    }
+    
+    @Override
+    @IsHost  
+    public Long getMyActiveHotelsCount() {
+        UUID currentUserId = getCurrentUserId();
+        return hotelRepository.countByOwnerIdAndIsActiveTrue(currentUserId);
     }
 } 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   User, Mail, Key, Save, BookOpen, Calendar, Gift, CreditCard, 
   MapPin, Clock, CheckCircle, AlertCircle, Copy, Trash2, Plus,
-  Phone, Camera, Edit, Star, Eye, EyeOff
+  Phone, Camera, Edit, Star, Eye, EyeOff, Shield, Crown
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -16,6 +16,7 @@ const ProfilePage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [hostRequestLoading, setHostRequestLoading] = useState(false);
   const { user, fetchUserInfo } = useAuth();
   const { showToast } = useToast();
   
@@ -188,17 +189,34 @@ const ProfilePage: React.FC = () => {
     setIsEditing(false);
   };
 
+  const handleHostRequest = async () => {
+    if (!user) return;
+
+    setHostRequestLoading(true);
+    try {
+      await userAPI.requestHost();
+      await fetchUserInfo(); // Refresh user info
+      showToast('success', 'Thành công', 'Yêu cầu trở thành Host đã được gửi thành công!');
+    } catch (error: any) {
+      console.error('Host request error:', error);
+      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi gửi yêu cầu';
+      showToast('error', 'Lỗi', errorMessage);
+    } finally {
+      setHostRequestLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN');
   };
 
   const tabs = [
     { id: 'profile', label: 'Thông tin cá nhân', icon: User },
-    { id: 'password', label: 'Đổi mật khẩu', icon: Key },
-    { id: 'upcoming', label: 'Đặt phòng sắp tới', icon: Calendar },
-    { id: 'history', label: 'Lịch sử đặt phòng', icon: BookOpen },
+    { id: 'password', label: 'Đổi mật khẩu', icon: Key }, 
+    { id: 'history', label: 'Đặt phòng', icon: BookOpen },
     { id: 'vouchers', label: 'Mã giảm giá', icon: Gift },
-    { id: 'payment', label: 'Phương thức thanh toán', icon: CreditCard }
+    { id: 'payment', label: 'Phương thức thanh toán', icon: CreditCard },
+    { id: 'roles', label: 'Quản lý vai trò', icon: Shield }, 
   ];
 
   const renderProfileTab = () => (
@@ -498,6 +516,122 @@ const ProfilePage: React.FC = () => {
     </div>
   );
 
+  const renderRolesTab = () => {
+    const hasHostRole = user?.roles?.some(role => role.name === 'HOST');
+    const hasAdminRole = user?.roles?.some(role => role.name === 'ADMIN');
+    
+    return (
+      <div className="space-y-6">
+        {/* Current Roles */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <Shield className="h-5 w-5 mr-2 text-blue-600" />
+            Vai trò hiện tại
+          </h3>
+          
+          <div className="space-y-3">
+            {user?.roles && user.roles.length > 0 ? (
+              user.roles.map((role) => (
+                <div key={role.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className={`w-3 h-3 rounded-full mr-3 ${
+                      role.name === 'ADMIN' ? 'bg-red-500' :
+                      role.name === 'HOST' ? 'bg-green-500' : 'bg-blue-500'
+                    }`}></div>
+                    <div>
+                      <span className="font-medium text-gray-900">
+                        {role.name === 'ADMIN' ? 'Quản trị viên' :
+                         role.name === 'HOST' ? 'Chủ khách sạn' :
+                         role.name === 'USER' ? 'Người dùng' : role.name}
+                      </span>
+                      <p className="text-sm text-gray-500">{role.description}</p>
+                    </div>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    role.name === 'ADMIN' ? 'bg-red-100 text-red-800' :
+                    role.name === 'HOST' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    Đã kích hoạt
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-center py-4">Chưa có vai trò nào được gán</p>
+            )}
+          </div>
+        </div>
+
+        {/* Host Request Section */}
+        {!hasHostRole && !hasAdminRole && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Crown className="h-5 w-5 mr-2 text-amber-600" />
+              Trở thành Host
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="text-gray-700">
+                <h4 className="font-medium mb-2">Quyền lợi khi trở thành Host:</h4>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Đăng tải và quản lý khách sạn của riêng bạn</li>
+                  <li>Tiếp nhận và quản lý đặt phòng từ khách hàng</li>
+                  <li>Tạo và quản lý các loại phòng khác nhau</li>
+                  <li>Xem thống kê doanh thu và báo cáo chi tiết</li>
+                  <li>Nhận hoa hồng từ mỗi booking thành công</li>
+                </ul>
+              </div>
+
+              <div className="border-t border-blue-200 pt-4">
+                {user?.hostRequested ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center text-amber-600">
+                      <Clock className="h-5 w-5 mr-2" />
+                      <span className="font-medium">Yêu cầu đang chờ phê duyệt</span>
+                    </div>
+                    <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-sm font-medium">
+                      Chờ duyệt
+                    </span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleHostRequest}
+                    disabled={hostRequestLoading}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
+                  >
+                    {hostRequestLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        Đang gửi yêu cầu...
+                      </>
+                    ) : (
+                      <>
+                        <Crown className="h-5 w-5 mr-2" />
+                        Gửi yêu cầu trở thành Host
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Admin Role Info */}
+        {hasAdminRole && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+              <Shield className="h-5 w-5 mr-2 text-red-600" />
+              Quyền Quản trị viên
+            </h3>
+            <p className="text-gray-700">
+              Bạn có quyền quản trị toàn bộ hệ thống. Vui lòng sử dụng quyền này một cách có trách nhiệm.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderOtherTabs = () => (
     <div className="text-center py-12">
       <div className="text-gray-400 mb-4">
@@ -545,7 +679,8 @@ const ProfilePage: React.FC = () => {
           <div className="p-6">
             {activeTab === 'profile' && renderProfileTab()}
             {activeTab === 'password' && renderPasswordTab()}
-            {activeTab !== 'profile' && activeTab !== 'password' && renderOtherTabs()}
+            {activeTab === 'roles' && renderRolesTab()}
+            {activeTab !== 'profile' && activeTab !== 'password' && activeTab !== 'roles' && renderOtherTabs()}
           </div>
         </div>
       </div>

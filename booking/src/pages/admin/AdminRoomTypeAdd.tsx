@@ -24,8 +24,7 @@ const AdminRoomTypeAdd: React.FC = () => {
     totalRooms: 1,
     imageUrl: '',
     amenities: '',
-    hotelId: preselectedHotelId || '',
-    isActive: true
+    hotelId: preselectedHotelId || ''
   });
 
   useEffect(() => {
@@ -82,25 +81,20 @@ const AdminRoomTypeAdd: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.hotelId || !formData.maxOccupancy || !formData.pricePerNight || !formData.totalRooms) {
-      showToast('error', 'Lỗi', 'Vui lòng điền đầy đủ thông tin bắt buộc');
-      return;
-    }
-
     try {
       setLoading(true);
-      await roomTypeAPI.createRoomType(formData);
-      showToast('success', 'Thành công', 'Đã tạo loại phòng mới');
+      const response = await roomTypeAPI.createRoomType(formData);
+      const data = response.data;
       
-      // Navigate back to hotel detail if came from there, otherwise to room types list
-      if (preselectedHotelId) {
-        navigate(`/admin/hotels/${preselectedHotelId}?tab=room-types`);
+      if (data.success) {
+        showToast('success', 'Thành công', 'Đã thêm loại phòng mới');
+        navigate(`/admin/room-types/${data.result.id}`);
       } else {
-        navigate('/admin/room-types');
+        showToast('error', 'Lỗi', data.message || 'Không thể thêm loại phòng');
       }
     } catch (error: any) {
       console.error('Error creating room type:', error);
-      showToast('error', 'Lỗi', 'Không thể tạo loại phòng');
+      showToast('error', 'Lỗi', 'Không thể thêm loại phòng');
     } finally {
       setLoading(false);
     }
@@ -395,24 +389,6 @@ const AdminRoomTypeAdd: React.FC = () => {
                 💡 Tip: Click vào các thẻ để thêm/bỏ tiện nghi phòng. Bạn cũng có thể nhập trực tiếp vào ô text phía trên.
               </p>
             </div>
-          </div>
-        </div>
-
-        {/* Status Settings */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold mb-4">Cài đặt trạng thái</h2>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="isActive"
-              name="isActive"
-              checked={formData.isActive}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
-              Loại phòng đang hoạt động
-            </label>
           </div>
         </div>
       </form>
