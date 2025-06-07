@@ -24,6 +24,13 @@ public interface RoomTypeRepository extends JpaRepository<RoomType, UUID> {
     Page<RoomType> findByHotelId(UUID hotelId, Pageable pageable);
     List<RoomType> findByHotelId(UUID hotelId);
     
+    // Find room types by host (owner of the hotel)
+    @Query("SELECT rt FROM RoomType rt WHERE rt.hotel.owner.id = :hostId")
+    Page<RoomType> findByHostId(@Param("hostId") UUID hostId, Pageable pageable);
+    
+    @Query("SELECT rt FROM RoomType rt WHERE rt.hotel.owner.id = :hostId")
+    List<RoomType> findByHostId(@Param("hostId") UUID hostId);
+    
     // Find room types by max occupancy
     Page<RoomType> findByMaxOccupancyGreaterThanEqual(Integer minOccupancy, Pageable pageable);
     List<RoomType> findByMaxOccupancyGreaterThanEqual(Integer minOccupancy);

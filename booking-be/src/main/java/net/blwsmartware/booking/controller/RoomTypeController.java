@@ -12,6 +12,7 @@ import net.blwsmartware.booking.dto.response.MessageResponse;
 import net.blwsmartware.booking.dto.response.RoomTypeResponse;
 import net.blwsmartware.booking.service.RoomTypeService;
 import net.blwsmartware.booking.validator.IsAdmin;
+import net.blwsmartware.booking.validator.IsHost;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -111,7 +112,95 @@ public class RoomTypeController {
                         .build());
     }
 
+    // Host endpoints
+    @GetMapping("/host/my-room-types")
+    @IsHost
+    public ResponseEntity<MessageResponse<DataResponse<RoomTypeResponse>>> getMyRoomTypes(
+            @RequestParam(defaultValue = PagePrepare.PAGE_NUMBER) Integer pageNumber,
+            @RequestParam(defaultValue = PagePrepare.PAGE_SIZE) Integer pageSize,
+            @RequestParam(defaultValue = "name") String sortBy) {
+        
+        DataResponse<RoomTypeResponse> response = roomTypeService.getMyRoomTypes(pageNumber, pageSize, sortBy);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<DataResponse<RoomTypeResponse>>builder()
+                        .message("My room types retrieved successfully")
+                        .result(response)
+                        .build());
+    }
     
+    @GetMapping("/host/hotel/{hotelId}/room-types")
+    @IsHost
+    public ResponseEntity<MessageResponse<DataResponse<RoomTypeResponse>>> getMyHotelRoomTypes(
+            @PathVariable UUID hotelId,
+            @RequestParam(defaultValue = PagePrepare.PAGE_NUMBER) Integer pageNumber,
+            @RequestParam(defaultValue = PagePrepare.PAGE_SIZE) Integer pageSize,
+            @RequestParam(defaultValue = "name") String sortBy) {
+        
+        DataResponse<RoomTypeResponse> response = roomTypeService.getMyHotelRoomTypes(hotelId, pageNumber, pageSize, sortBy);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<DataResponse<RoomTypeResponse>>builder()
+                        .message("My hotel room types retrieved successfully")
+                        .result(response)
+                        .build());
+    }
+    
+    @PostMapping("/host")
+    @IsHost
+    public ResponseEntity<MessageResponse<RoomTypeResponse>> createMyRoomType(@Valid @RequestBody RoomTypeCreateRequest request) {
+        RoomTypeResponse response = roomTypeService.createMyRoomType(request);
+        
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<RoomTypeResponse>builder()
+                        .message("Room type created successfully")
+                        .result(response)
+                        .build());
+    }
+    
+    @PutMapping("/host/{id}")
+    @IsHost
+    public ResponseEntity<MessageResponse<RoomTypeResponse>> updateMyRoomType(
+            @PathVariable UUID id,
+            @Valid @RequestBody RoomTypeCreateRequest request) {
+        RoomTypeResponse response = roomTypeService.updateMyRoomType(id, request);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<RoomTypeResponse>builder()
+                        .message("Room type updated successfully")
+                        .result(response)
+                        .build());
+    }
+    
+    @DeleteMapping("/host/{id}")
+    @IsHost
+    public ResponseEntity<?> deleteMyRoomType(@PathVariable UUID id) {
+        roomTypeService.deleteMyRoomType(id);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.builder()
+                        .message("Room type deleted successfully")
+                        .build());
+    }
+    
+    @GetMapping("/host/{id}")
+    @IsHost
+    public ResponseEntity<MessageResponse<RoomTypeResponse>> getMyRoomTypeById(@PathVariable UUID id) {
+        RoomTypeResponse response = roomTypeService.getMyRoomTypeById(id);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<RoomTypeResponse>builder()
+                        .message("Room type retrieved successfully")
+                        .result(response)
+                        .build());
+    }
+
     // Statistics endpoints
     @GetMapping("/admin/stats/total")
     @IsAdmin

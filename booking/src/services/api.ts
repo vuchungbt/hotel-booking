@@ -117,8 +117,10 @@ export interface HotelUpdateRequest {
   petPolicy?: string;
   ownerId?: string;
   active?: boolean;
-  featured?: boolean;
+  featured?: boolean; // Note: Only admin can modify this field
 }
+
+
 
 export interface HotelFilterParams {
   city?: string;
@@ -413,7 +415,7 @@ export const hotelAPI = {
   createMyHotel: (data: HotelCreateRequest) =>
     api.post('/hotels/host', data),
 
-  updateMyHotel: (id: string, data: HotelUpdateRequest) =>
+  updateMyHotel: (id: string, data: Omit<HotelUpdateRequest, 'featured'>) =>
     api.put(`/hotels/host/${id}`, data),
 
   deleteMyHotel: (id: string) =>
@@ -555,6 +557,33 @@ export const roomTypeAPI = {
   toggleRoomTypeStatus: (roomTypeId: string) =>
     api.patch(`/room-types/admin/${roomTypeId}/toggle-status`)
 };
+
+// Host Room Type APIs
+export const hostRoomTypeAPI = {
+  // Get all room types for current host
+  getMyRoomTypes: (pageNumber = 0, pageSize = 10, sortBy = 'name') =>
+    api.get('/room-types/host/my-room-types', { params: { pageNumber, pageSize, sortBy } }),
+  
+  // Get room types for specific hotel (host must own the hotel)
+  getMyHotelRoomTypes: (hotelId: string, pageNumber = 0, pageSize = 10, sortBy = 'name') =>
+    api.get(`/room-types/host/hotel/${hotelId}/room-types`, { params: { pageNumber, pageSize, sortBy } }),
+  
+  // Get specific room type by ID (host must own the hotel)
+  getMyRoomTypeById: (id: string) => api.get(`/room-types/host/${id}`),
+  
+  // Create new room type for host's hotel
+  createMyRoomType: (data: RoomTypeCreateRequest) =>
+    api.post('/room-types/host', data),
+  
+  // Update room type (host must own the hotel)
+  updateMyRoomType: (id: string, data: RoomTypeUpdateRequest) =>
+    api.put(`/room-types/host/${id}`, data),
+  
+  // Delete room type (host must own the hotel)
+  deleteMyRoomType: (id: string) => api.delete(`/room-types/host/${id}`)
+};
+
+
 
 // Review Types
 export interface ReviewCreateRequest {

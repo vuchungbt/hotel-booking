@@ -19,7 +19,7 @@ const HostHotelDetail: React.FC = () => {
   const fetchHotel = async () => {
     try {
       setLoading(true);
-      const response = await hotelAPI.getHostHotelById(id!);
+      const response = await hotelAPI.getMyHotelById(id!);
       setHotel(response.data.result);
     } catch (error: any) {
       console.error('Error fetching hotel:', error);
@@ -35,15 +35,17 @@ const HostHotelDetail: React.FC = () => {
   };
 
   const handleAddRoomType = () => {
-    navigate(`/host/hotels/${id}/room-types/add`);
+    navigate(`/host/room-types/add?hotelId=${id}`);
   };
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Đang tải thông tin khách sạn...</p>
+      <div className="min-h-screen bg-gray-100 pt-20">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Đang tải thông tin khách sạn...</p>
+          </div>
         </div>
       </div>
     );
@@ -51,16 +53,19 @@ const HostHotelDetail: React.FC = () => {
 
   if (!hotel) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <p className="text-gray-600">Không tìm thấy thông tin khách sạn</p>
+      <div className="min-h-screen bg-gray-100 pt-20">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <p className="text-gray-600">Không tìm thấy thông tin khách sạn</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-100 pt-20">
+      <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
@@ -244,6 +249,7 @@ const HostHotelDetail: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

@@ -101,7 +101,11 @@ const HostHotelAdd: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await hotelAPI.createMyHotel(formData);
+      
+      // Ensure featured is not set by host - backend will handle this
+      const submitData = { ...formData, isFeatured: false };
+      
+      const response = await hotelAPI.createMyHotel(submitData);
       
       if (response.data.success) {
         showToast('success', 'Thành công', 'Đã thêm khách sạn mới');
@@ -118,29 +122,37 @@ const HostHotelAdd: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 pt-20">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center mb-6">
-            <button
-              onClick={() => navigate('/host/hotels')}
-              className="mr-4 text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-2xl font-bold">Thêm khách sạn mới</h1>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Section */}
+      <div className="bg-white border-b border-gray-200 pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <button
+                onClick={() => navigate('/host/hotels')}
+                className="mr-4 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft size={24} />
+              </button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Thêm khách sạn mới</h1>
+                <p className="text-gray-600 mt-1">Điền thông tin chi tiết để tạo khách sạn mới</p>
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6">
+      {/* Content Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <form onSubmit={handleSubmit} className="space-y-8">
             {/* Basic Information */}
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold mb-4 flex items-center">
-                <Hotel className="mr-2" />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-8">
+              <h2 className="text-xl font-semibold mb-6 flex items-center text-gray-900">
+                <Hotel className="mr-3 text-blue-600" size={24} />
                 Thông tin cơ bản
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Tên khách sạn *
@@ -151,7 +163,7 @@ const HostHotelAdd: React.FC = () => {
                     required
                     value={formData.name}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                       errors.name ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
@@ -198,7 +210,7 @@ const HostHotelAdd: React.FC = () => {
                   />
                 </div>
               </div>
-              <div className="mt-4">
+              <div className="mt-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Mô tả
                 </label>
@@ -207,18 +219,19 @@ const HostHotelAdd: React.FC = () => {
                   rows={4}
                   value={formData.description}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  placeholder="Mô tả chi tiết về khách sạn của bạn..."
                 />
               </div>
             </div>
 
             {/* Contact Information */}
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold mb-4 flex items-center">
-                <Phone className="mr-2" />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-8">
+              <h2 className="text-xl font-semibold mb-6 flex items-center text-gray-900">
+                <Phone className="mr-3 text-green-600" size={24} />
                 Thông tin liên hệ
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Số điện thoại
@@ -268,12 +281,12 @@ const HostHotelAdd: React.FC = () => {
             </div>
 
             {/* Hotel Details */}
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold mb-4 flex items-center">
-                <Star className="mr-2" />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-8">
+              <h2 className="text-xl font-semibold mb-6 flex items-center text-gray-900">
+                <Star className="mr-3 text-yellow-600" size={24} />
                 Chi tiết khách sạn
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Hạng sao
@@ -338,10 +351,8 @@ const HostHotelAdd: React.FC = () => {
                   {errors.checkOutTime && <p className="mt-1 text-sm text-red-600">{errors.checkOutTime}</p>}
                 </div>
               </div>
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tiện nghi
-                </label>
+              <div className="mt-8">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Tiện nghi khách sạn</h3>
                 <textarea
                   name="amenities"
                   rows={3}
@@ -350,13 +361,73 @@ const HostHotelAdd: React.FC = () => {
                   placeholder="VD: WiFi miễn phí, Bể bơi, Gym, Spa, Nhà hàng, Bar..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+                
+                {/* Predefined Amenity Tags */}
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Chọn tiện nghi có sẵn (click để thêm/bỏ)
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      'Wifi miễn phí', 'Hồ bơi', 'Spa & Massage', 'Nhà hàng', 'Phòng gym', 
+                      'Bãi đỗ xe', 'Dịch vụ phòng 24/7', 'Lễ tân 24/7', 'Thang máy',
+                      'Điều hòa', 'Tivi', 'Tủ lạnh mini', 'Két an toàn', 'Máy sấy tóc',
+                      'Bồn tắm', 'Vòi sen', 'Dép đi trong phòng', 'Áo choàng tắm',
+                      'Bàn làm việc', 'Ghế sofa', 'Ban công', 'Tầm nhìn ra biển',
+                      'Tầm nhìn ra thành phố', 'Tầm nhìn ra núi', 'Quầy bar', 'Karaoke',
+                      'Sân tennis', 'Sân golf', 'Bãi biển riêng', 'Dịch vụ giặt ủi',
+                      'Dịch vụ đưa đón sân bay', 'Cho thuê xe đạp', 'Khu vui chơi trẻ em',
+                      'Phòng họp', 'Trung tâm thương mại', 'ATM', 'Cửa hàng lưu niệm'
+                    ].map((amenity) => {
+                      const isSelected = (formData.amenities || '').split(',').map(a => a.trim()).includes(amenity);
+                      return (
+                        <button
+                          key={amenity}
+                          type="button"
+                          onClick={() => {
+                            const currentAmenities = (formData.amenities || '').split(',').map(a => a.trim()).filter(a => a);
+                            if (isSelected) {
+                              // Remove amenity
+                              const updatedAmenities = currentAmenities.filter(a => a !== amenity);
+                              setFormData(prev => ({
+                                ...prev,
+                                amenities: updatedAmenities.join(', ')
+                              }));
+                            } else {
+                              // Add amenity
+                              const updatedAmenities = [...currentAmenities, amenity];
+                              setFormData(prev => ({
+                                ...prev,
+                                amenities: updatedAmenities.join(', ')
+                              }));
+                            }
+                          }}
+                          className={`px-3 py-1.5 text-sm rounded-full border transition-all duration-200 hover:shadow-md ${
+                            isSelected
+                              ? 'bg-blue-500 text-white border-blue-500 shadow-sm'
+                              : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400'
+                          }`}
+                        >
+                          {isSelected && <span className="mr-1">✓</span>}
+                          {amenity}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    💡 Tip: Click vào các thẻ để thêm/bỏ tiện nghi. Bạn cũng có thể nhập trực tiếp vào ô text phía trên.
+                  </p>
+                </div>
               </div>
             </div>
 
             {/* Policies */}
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold mb-4">Chính sách</h2>
-              <div className="space-y-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-8">
+              <h2 className="text-xl font-semibold mb-6 flex items-center text-gray-900">
+                <Clock className="mr-3 text-purple-600" size={24} />
+                Chính sách khách sạn
+              </h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Chính sách hủy phòng
@@ -387,10 +458,10 @@ const HostHotelAdd: React.FC = () => {
             </div>
 
             {/* Image */}
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold mb-4 flex items-center">
-                <ImageIcon className="mr-2" />
-                Hình ảnh
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-8">
+              <h2 className="text-xl font-semibold mb-6 flex items-center text-gray-900">
+                <ImageIcon className="mr-3 text-indigo-600" size={24} />
+                Hình ảnh khách sạn
               </h2>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -424,18 +495,18 @@ const HostHotelAdd: React.FC = () => {
             </div>
 
             {/* Submit Button */}
-            <div className="flex justify-end space-x-4">
+            <div className="flex flex-col sm:flex-row gap-4 sm:justify-end pt-6 border-t border-gray-200">
               <button
                 type="button"
                 onClick={() => navigate('/host/hotels')}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="w-full sm:w-auto px-8 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
               >
-                Hủy
+                Hủy bỏ
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center disabled:opacity-50"
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg"
               >
                 {loading ? (
                   <>
@@ -445,7 +516,7 @@ const HostHotelAdd: React.FC = () => {
                 ) : (
                   <>
                     <Save size={20} className="mr-2" />
-                    Thêm khách sạn
+                    Tạo khách sạn
                   </>
                 )}
               </button>
@@ -453,7 +524,6 @@ const HostHotelAdd: React.FC = () => {
           </form>
         </div>
       </div>
-    </div>
   );
 };
 

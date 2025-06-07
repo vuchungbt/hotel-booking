@@ -19,6 +19,14 @@ public interface RoomTypeService {
     RoomTypeResponse updateRoomType(UUID id, RoomTypeCreateRequest request);
     void deleteRoomType(UUID id);
 
+    // Host operations
+    DataResponse<RoomTypeResponse> getMyRoomTypes(Integer pageNumber, Integer pageSize, String sortBy);
+    DataResponse<RoomTypeResponse> getMyHotelRoomTypes(UUID hotelId, Integer pageNumber, Integer pageSize, String sortBy);
+    RoomTypeResponse getMyRoomTypeById(UUID id);
+    RoomTypeResponse createMyRoomType(RoomTypeCreateRequest request);
+    RoomTypeResponse updateMyRoomType(UUID id, RoomTypeCreateRequest request);
+    void deleteMyRoomType(UUID id);
+
     // Hotel-specific operations
     DataResponse<RoomTypeResponse> getRoomTypesByHotel(UUID hotelId, Integer pageNumber, Integer pageSize, String sortBy);
     DataResponse<RoomTypeResponse> getAvailableRoomTypesByHotel(UUID hotelId, Integer pageNumber, Integer pageSize, String sortBy);

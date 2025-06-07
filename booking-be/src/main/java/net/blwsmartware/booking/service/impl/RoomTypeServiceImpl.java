@@ -19,6 +19,7 @@ import net.blwsmartware.booking.repository.UserRepository;
 import net.blwsmartware.booking.service.RoomTypeService;
 import net.blwsmartware.booking.util.DataResponseUtils;
 import net.blwsmartware.booking.validator.IsAdmin;
+import net.blwsmartware.booking.validator.IsHost;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -281,5 +282,154 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     private UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return UUID.fromString(authentication.getName());
+    }
+
+    // Host operations
+    @Override
+    @IsHost
+    public DataResponse<RoomTypeResponse> getMyRoomTypes(Integer pageNumber, Integer pageSize, String sortBy) {
+        log.info("Getting my room types for host: {}", getCurrentUserId());
+        
+        UUID hostId = getCurrentUserId();
+        
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
+        Page<RoomType> roomTypePage = roomTypeRepository.findByHostId(hostId, pageable);
+        
+        List<RoomTypeResponse> roomTypeResponses = roomTypePage.getContent().stream()
+                .map(roomTypeMapper::toResponse)
+                .toList();
+        
+        return DataResponseUtils.convertPageInfo(roomTypePage, roomTypeResponses);
+    }
+    
+    @Override
+    @IsHost
+    public DataResponse<RoomTypeResponse> getMyHotelRoomTypes(UUID hotelId, Integer pageNumber, Integer pageSize, String sortBy) {
+        log.info("Getting room types for my hotel: {} by host: {}", hotelId, getCurrentUserId());
+        
+        UUID hostId = getCurrentUserId();
+        
+        // Validate hotel exists and belongs to the host
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+        
+        if (!hotel.getOwner().getId().equals(hostId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
+        Page<RoomType> roomTypePage = roomTypeRepository.findByHotelId(hotelId, pageable);
+        
+        List<RoomTypeResponse> roomTypeResponses = roomTypePage.getContent().stream()
+                .map(roomTypeMapper::toResponse)
+                .toList();
+        
+        return DataResponseUtils.convertPageInfo(roomTypePage, roomTypeResponses);
+    }
+    
+    @Override
+    @IsHost
+    public RoomTypeResponse getMyRoomTypeById(UUID id) {
+        log.info("Getting my room type by ID: {} for host: {}", id, getCurrentUserId());
+        
+        UUID hostId = getCurrentUserId();
+        
+        RoomType roomType = roomTypeRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.ROOM_TYPE_NOT_FOUND));
+        
+        // Validate room type belongs to the host
+        if (!roomType.getHotel().getOwner().getId().equals(hostId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        
+        return roomTypeMapper.toResponse(roomType);
+    }
+    
+    @Override
+    @IsHost
+    @Transactional
+    public RoomTypeResponse createMyRoomType(RoomTypeCreateRequest request) {
+        log.info("Creating new room type: {} for hotel: {} by host: {}", 
+                request.getName(), request.getHotelId(), getCurrentUserId());
+        
+        UUID hostId = getCurrentUserId();
+        
+        // Validate hotel exists and belongs to the host
+        Hotel hotel = hotelRepository.findById(request.getHotelId())
+                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+        
+        if (!hotel.getOwner().getId().equals(hostId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        
+        // Check if room type name already exists for this hotel
+        if (roomTypeRepository.existsByNameAndHotel(request.getName(), hotel)) {
+            throw new AppException(ErrorCode.ROOM_TYPE_NAME_ALREADY_EXISTS);
+        }
+        
+        // Convert request to entity
+        RoomType roomType = roomTypeMapper.toEntity(request);
+        roomType.setHotel(hotel);
+        roomType.setCreatedBy(hostId);
+        roomType.setUpdatedBy(hostId);
+        
+        // Save room type
+        RoomType savedRoomType = roomTypeRepository.save(roomType);
+        
+        return roomTypeMapper.toResponse(savedRoomType);
+    }
+    
+    @Override
+    @IsHost
+    @Transactional
+    public RoomTypeResponse updateMyRoomType(UUID id, RoomTypeCreateRequest request) {
+        log.info("Updating my room type: {} by host: {}", id, getCurrentUserId());
+        
+        UUID hostId = getCurrentUserId();
+        
+        RoomType roomType = roomTypeRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.ROOM_TYPE_NOT_FOUND));
+        
+        // Validate room type belongs to the host
+        if (!roomType.getHotel().getOwner().getId().equals(hostId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        
+        // Check if new name conflicts with existing room types for the same hotel
+        if (request.getName() != null && !request.getName().equals(roomType.getName())) {
+            if (roomTypeRepository.existsByNameAndHotel(request.getName(), roomType.getHotel())) {
+                throw new AppException(ErrorCode.ROOM_TYPE_NAME_ALREADY_EXISTS);
+            }
+        }
+        
+        // Update room type
+        roomTypeMapper.updateEntity(roomType, request);
+        roomType.setUpdatedBy(hostId);
+        
+        RoomType updatedRoomType = roomTypeRepository.save(roomType);
+        
+        return roomTypeMapper.toResponse(updatedRoomType);
+    }
+    
+    @Override
+    @IsHost
+    @Transactional
+    public void deleteMyRoomType(UUID id) {
+        log.info("Deleting my room type: {} by host: {}", id, getCurrentUserId());
+        
+        UUID hostId = getCurrentUserId();
+        
+        RoomType roomType = roomTypeRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.ROOM_TYPE_NOT_FOUND));
+        
+        // Validate room type belongs to the host
+        if (!roomType.getHotel().getOwner().getId().equals(hostId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        
+        // TODO: Check if room type has any bookings when booking entity is implemented
+        // For now, we'll allow deletion
+        
+        roomTypeRepository.delete(roomType);
     }
 } 
