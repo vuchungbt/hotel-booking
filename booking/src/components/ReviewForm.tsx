@@ -41,14 +41,14 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
     const newErrors: FormErrors = {};
 
     if (formData.rating === 0) {
-      newErrors.rating = 'Vui lòng chọn số sao đánh giá';
+      newErrors.rating = 'Please select a rating';
     } else if (formData.rating < 1 || formData.rating > 5) {
-      newErrors.rating = 'Đánh giá phải từ 1 đến 5 sao';
+              newErrors.rating = 'Rating must be between 1 and 5 stars';
     }
 
     // Comment is optional, but if provided, check length limits
     if (formData.comment.trim().length > 0 && formData.comment.length > 2000) {
-      newErrors.comment = 'Nội dung đánh giá không được vượt quá 2000 ký tự';
+              newErrors.comment = 'Review content must not exceed 2000 characters';
     }
 
     setErrors(newErrors);
@@ -96,24 +96,24 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
       if (onSuccess) {
         onSuccess(reviewId);
       } else {
-        alert('Đánh giá của bạn đã được gửi thành công!');
+        alert('Your review has been submitted successfully!');
       }
     } catch (error: any) {
       console.error('Error creating review:', error);
       
-      let errorMessage = 'Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.';
+              let errorMessage = 'An error occurred while submitting the review. Please try again.';
       
       if (error.response?.status === 400) {
         const backendError = error.response?.data?.message;
         if (backendError?.includes('already reviewed')) {
-          errorMessage = 'Bạn đã đánh giá khách sạn này rồi. Mỗi khách hàng chỉ có thể đánh giá một lần.';
+          errorMessage = 'You have already reviewed this hotel. Each customer can only review once.';
         } else {
           errorMessage = backendError || errorMessage;
         }
       } else if (error.response?.status === 401) {
-        errorMessage = 'Bạn cần đăng nhập để có thể đánh giá.';
+                  errorMessage = 'You need to login to be able to review.';
       } else if (error.response?.status === 404) {
-        errorMessage = 'Không tìm thấy khách sạn. Vui lòng thử lại.';
+                  errorMessage = 'Hotel not found. Please try again.';
       }
       
       setErrors({ submit: errorMessage });
@@ -163,7 +163,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
     <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
       <div className="mb-6">
         <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          Đánh giá khách sạn
+          Rate Hotel
         </h3>
         <p className="text-gray-600">
           Chia sẻ trải nghiệm của bạn tại <span className="font-medium">{hotelName}</span>
@@ -174,7 +174,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
         {/* Rating Section */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
-            Đánh giá tổng thể *
+            Overall Rating *
           </label>
           <div className="flex items-center space-x-2">
             <div className="flex">
@@ -197,14 +197,14 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
         {/* Comment Section */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nội dung đánh giá (tùy chọn)
+            Review Content (Optional)
           </label>
           <div className="relative">
             <MessageSquare className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
             <textarea
               value={formData.comment}
               onChange={handleCommentChange}
-              placeholder="Chia sẻ trải nghiệm của bạn về khách sạn này. Điều gì bạn thích nhất? Có điều gì cần cải thiện không?"
+                              placeholder="Share your experience about this hotel. What did you like most? Is there anything that needs improvement?"
               rows={5}
               className={`w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${
                 errors.comment ? 'border-red-300' : 'border-gray-300'
@@ -265,7 +265,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
             ) : (
               <>
                 <Send className="h-4 w-4 mr-2" />
-                Gửi đánh giá
+                Submit Review
               </>
             )}
           </button>

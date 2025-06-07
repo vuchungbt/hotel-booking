@@ -66,7 +66,7 @@ const AdminHotelEdit: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error fetching hosts:', error);
-      showToast('error', 'Lỗi', 'Không thể tải danh sách chủ sở hữu');
+              showToast('error', 'Error', 'Unable to load owner list');
     } finally {
       setHostsLoading(false);
     }
@@ -103,7 +103,7 @@ const AdminHotelEdit: React.FC = () => {
       });
     } catch (error: any) {
       console.error('Error fetching hotel:', error);
-      showToast('error', 'Lỗi', 'Không thể tải thông tin khách sạn');
+              showToast('error', 'Error', 'Unable to load hotel information');
       navigate('/admin/hotels');
     } finally {
       setLoading(false);
@@ -130,18 +130,18 @@ const AdminHotelEdit: React.FC = () => {
     e.preventDefault();
     
     if (!formData.name || !formData.address) {
-      showToast('error', 'Lỗi', 'Vui lòng điền đầy đủ thông tin bắt buộc');
+              showToast('error', 'Error', 'Please fill in all required information');
       return;
     }
 
     try {
       setSaving(true);
       await hotelAPI.updateHotelByAdmin(id!, formData);
-      showToast('success', 'Thành công', 'Đã cập nhật thông tin khách sạn');
+      showToast('success', 'Success', 'Hotel information updated successfully');
       navigate(`/admin/hotels/${id}`);
     } catch (error: any) {
       console.error('Error updating hotel:', error);
-      showToast('error', 'Lỗi', 'Không thể cập nhật khách sạn');
+      showToast('error', 'Error', 'Unable to update hotel');
     } finally {
       setSaving(false);
     }
@@ -158,7 +158,7 @@ const AdminHotelEdit: React.FC = () => {
   if (!hotel) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500">Không tìm thấy khách sạn</p>
+        <p className="text-gray-500">Hotel not found</p>
       </div>
     );
   }
@@ -175,7 +175,7 @@ const AdminHotelEdit: React.FC = () => {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="text-2xl font-bold">Chỉnh sửa khách sạn</h1>
+            <h1 className="text-2xl font-bold">Edit Hotel</h1>
             <p className="text-gray-600">{hotel.name}</p>
           </div>
         </div>
@@ -184,7 +184,7 @@ const AdminHotelEdit: React.FC = () => {
             onClick={() => navigate(`/admin/hotels/${id}`)}
             className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
           >
-            Hủy
+            Cancel
           </button>
           <button
             onClick={handleSubmit}
@@ -192,7 +192,7 @@ const AdminHotelEdit: React.FC = () => {
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center disabled:opacity-50"
           >
             <Save size={20} className="mr-2" />
-            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+            {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>
@@ -203,12 +203,12 @@ const AdminHotelEdit: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center">
             <FileText size={20} className="mr-2 text-blue-500" />
-            Thông tin cơ bản
+            Basic Information
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tên khách sạn <span className="text-red-500">*</span>
+                Hotel Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -221,7 +221,7 @@ const AdminHotelEdit: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Số sao
+                Star Rating
               </label>
               <select
                 name="starRating"
@@ -230,13 +230,13 @@ const AdminHotelEdit: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {[1, 2, 3, 4, 5].map(star => (
-                  <option key={star} value={star}>{star} sao</option>
+                  <option key={star} value={star}>{star} stars</option>
                 ))}
               </select>
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mô tả
+                Description
               </label>
               <textarea
                 name="description"
@@ -253,12 +253,12 @@ const AdminHotelEdit: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center">
             <MapPin size={20} className="mr-2 text-green-500" />
-            Thông tin vị trí
+            Location Information
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Địa chỉ <span className="text-red-500">*</span>
+                Address <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -271,7 +271,7 @@ const AdminHotelEdit: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Thành phố
+                City
               </label>
               <input
                 type="text"
@@ -283,7 +283,7 @@ const AdminHotelEdit: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Quốc gia
+                Country
               </label>
               <input
                 type="text"
@@ -300,12 +300,12 @@ const AdminHotelEdit: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center">
             <Phone size={20} className="mr-2 text-purple-500" />
-            Thông tin liên hệ
+            Contact Information
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Số điện thoại
+                Phone Number
               </label>
               <input
                 type="tel"
@@ -409,14 +409,14 @@ const AdminHotelEdit: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tiện nghi (phân cách bằng dấu phẩy)
+                Amenities (comma separated)
               </label>
               <textarea
                 name="amenities"
                 value={formData.amenities}
                 onChange={handleInputChange}
                 rows={2}
-                placeholder="WiFi, Hồ bơi, Spa, Nhà hàng..."
+                placeholder="WiFi, Pool, Spa, Restaurant..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -424,7 +424,7 @@ const AdminHotelEdit: React.FC = () => {
             {/* Predefined Amenity Tags */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Chọn tiện nghi có sẵn (click để thêm/bỏ)
+                Select available amenities (click to add/remove)
               </label>
               <div className="flex flex-wrap gap-2">
                 {[
@@ -474,12 +474,12 @@ const AdminHotelEdit: React.FC = () => {
                 })}
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                💡 Tip: Click vào các thẻ để thêm/bỏ tiện nghi. Bạn cũng có thể nhập trực tiếp vào ô text phía trên.
+                💡 Tip: Click on tags to add/remove amenities. You can also type directly in the text box above.
               </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Chính sách hủy
+                Cancellation Policy
               </label>
               <textarea
                 name="cancellationPolicy"
@@ -491,7 +491,7 @@ const AdminHotelEdit: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Chính sách thú cưng
+                Pet Policy
               </label>
               <textarea
                 name="petPolicy"
@@ -508,24 +508,24 @@ const AdminHotelEdit: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center">
             <User size={20} className="mr-2 text-purple-500" />
-            Quản lý chủ sở hữu
+            Owner Management
           </h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Chủ sở hữu hiện tại
+                Current Owner
               </label>
               {hotel && (
                 <div className="bg-gray-50 p-3 rounded-md">
                   <p className="font-medium text-gray-900">{hotel.ownerName || 'N/A'}</p>
-                  <p className="text-sm text-gray-600">{hotel.ownerEmail || 'Không có email'}</p>
+                  <p className="text-sm text-gray-600">{hotel.ownerEmail || 'No email'}</p>
                 </div>
               )}
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Chọn chủ sở hữu mới
+                Select New Owner
               </label>
               <select
                 name="ownerId"
@@ -534,9 +534,9 @@ const AdminHotelEdit: React.FC = () => {
                 disabled={hostsLoading}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
               >
-                <option value="">-- Giữ nguyên chủ sở hữu hiện tại --</option>
+                <option value="">-- Keep current owner --</option>
                 {hostsLoading ? (
-                  <option value="">Đang tải danh sách...</option>
+                  <option value="">Loading list...</option>
                 ) : (
                   hosts.map((host) => (
                     <option key={host.id} value={host.id}>
@@ -548,16 +548,16 @@ const AdminHotelEdit: React.FC = () => {
               {hostsLoading && (
                 <p className="text-sm text-gray-500 mt-1 flex items-center">
                   <RefreshCw size={12} className="animate-spin mr-1" />
-                  Đang tải danh sách chủ sở hữu...
+                  Loading owner list...
                 </p>
               )}
               {!hostsLoading && hosts.length === 0 && (
                 <p className="text-sm text-yellow-600 mt-1">
-                  ⚠️ Không tìm thấy user nào có quyền HOST
+                  ⚠️ No users found with HOST role
                 </p>
               )}
               <p className="text-xs text-gray-500 mt-1">
-                💡 Tip: Chỉ hiển thị những user có role HOST. Để thay đổi chủ sở hữu, chọn người mới từ danh sách.
+                💡 Tip: Only shows users with HOST role. To change owner, select a new person from the list.
               </p>
             </div>
           </div>
@@ -565,7 +565,7 @@ const AdminHotelEdit: React.FC = () => {
 
         {/* Status Settings */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold mb-4">Cài đặt trạng thái</h2>
+          <h2 className="text-lg font-semibold mb-4">Status Settings</h2>
           <div className="space-y-4">
             <div className="flex items-center">
               <input
@@ -577,7 +577,7 @@ const AdminHotelEdit: React.FC = () => {
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
-                Khách sạn đang hoạt động
+                Hotel is active
               </label>
             </div>
             <div className="flex items-center">
@@ -590,7 +590,7 @@ const AdminHotelEdit: React.FC = () => {
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="featured" className="ml-2 block text-sm text-gray-900">
-                Khách sạn nổi bật
+                Featured hotel
               </label>
             </div>
           </div>

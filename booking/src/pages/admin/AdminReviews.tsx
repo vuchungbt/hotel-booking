@@ -80,7 +80,7 @@ const AdminReviews: React.FC = () => {
       setState(prev => ({
         ...prev,
         loading: false,
-        error: 'Có lỗi xảy ra khi tải danh sách đánh giá'
+        error: 'An error occurred while loading the review list'
       }));
     }
   };
@@ -130,7 +130,7 @@ const AdminReviews: React.FC = () => {
 
 
   const handleDeleteReview = async (reviewId: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa đánh giá này không? Hành động này không thể hoàn tác.')) {
+          if (!window.confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
       return;
     }
 
@@ -138,10 +138,10 @@ const AdminReviews: React.FC = () => {
       setActionLoading(reviewId);
       await reviewAPI.deleteReview(reviewId);
       await fetchReviews(currentPage);
-      alert('Đã xóa đánh giá thành công!');
+              alert('Review deleted successfully!');
     } catch (error: any) {
       console.error('Error deleting review:', error);
-      alert('Có lỗi xảy ra khi xóa đánh giá');
+              alert('An error occurred while deleting the review');
     } finally {
       setActionLoading(null);
     }
@@ -150,9 +150,9 @@ const AdminReviews: React.FC = () => {
   const handleBulkAction = async (action: 'delete') => {
     if (selectedReviews.length === 0) return;
     
-    const actionText = 'xóa';
+    const actionText = 'delete';
     
-    if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} ${selectedReviews.length} đánh giá đã chọn không?`)) {
+    if (!window.confirm(`Are you sure you want to ${actionText} ${selectedReviews.length} selected reviews?`)) {
       return;
     }
 
@@ -167,10 +167,10 @@ const AdminReviews: React.FC = () => {
       await fetchReviews(currentPage);
       setSelectedReviews([]);
       setIsSelectAll(false);
-      alert(`Đã ${actionText} ${selectedReviews.length} đánh giá thành công!`);
+      alert(`Successfully ${actionText}d ${selectedReviews.length} reviews!`);
     } catch (error: any) {
       console.error(`Error performing bulk ${action}:`, error);
-      alert(`Có lỗi xảy ra khi ${actionText} đánh giá`);
+      alert(`An error occurred while ${action}ing reviews`);
     } finally {
       setActionLoading(null);
     }
@@ -187,7 +187,7 @@ const AdminReviews: React.FC = () => {
   };
 
   const getStatusBadge = (review: ReviewResponse) => {
-    return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Đã đăng</span>;
+    return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Published</span>;
   };
 
   const handlePageChange = (newPage: number) => {
@@ -211,7 +211,7 @@ const AdminReviews: React.FC = () => {
   return (
     <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
-        <h1 className="text-xl sm:text-2xl font-bold">Quản lý đánh giá</h1>
+                  <h1 className="text-xl sm:text-2xl font-bold">Review Management</h1>
         <div className="flex space-x-2">
           <button
             onClick={handleRefresh}
@@ -219,7 +219,7 @@ const AdminReviews: React.FC = () => {
             className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${state.loading ? 'animate-spin' : ''}`} />
-            Tải lại
+            Refresh
           </button>
         </div>
       </div>
@@ -237,7 +237,7 @@ const AdminReviews: React.FC = () => {
           <div className="flex-1 relative">
             <input
               type="text"
-              placeholder="Tìm kiếm theo nội dung đánh giá..."
+                              placeholder="Search by review content..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -252,13 +252,13 @@ const AdminReviews: React.FC = () => {
                 onChange={(e) => setRatingFilter(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">Tất cả đánh giá</option>
-                <option value="5">5 sao</option>
-                <option value="4">4 sao</option>
-                <option value="3">3 sao</option>
-                <option value="2">2 sao</option>
-                <option value="1">1 sao</option>
-                <option value="low">Đánh giá thấp (≤ 3 sao)</option>
+                <option value="all">All Reviews</option>
+                <option value="5">5 Stars</option>
+                <option value="4">4 Stars</option>
+                <option value="3">3 Stars</option>
+                <option value="2">2 Stars</option>
+                <option value="1">1 Star</option>
+                <option value="low">Low Rating (≤ 3 stars)</option>
               </select>
             </div>
           </div>
@@ -268,7 +268,7 @@ const AdminReviews: React.FC = () => {
       {/* Bulk Actions */}
       {selectedReviews.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex justify-between items-center">
-          <span className="text-blue-700">Đã chọn {selectedReviews.length} đánh giá</span>
+          <span className="text-blue-700">Selected {selectedReviews.length} reviews</span>
           <div className="flex gap-2">
             <button
               onClick={() => handleBulkAction('delete')}
@@ -276,7 +276,7 @@ const AdminReviews: React.FC = () => {
               className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors flex items-center disabled:opacity-50"
             >
               <Trash size={16} className="mr-1" />
-              Xóa đã chọn
+                              Delete Selected
             </button>
           </div>
         </div>
@@ -287,11 +287,11 @@ const AdminReviews: React.FC = () => {
         {state.reviews.length === 0 ? (
           <div className="text-center py-12">
             <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy đánh giá nào</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No reviews found</h3>
             <p className="text-gray-600">
               {searchTerm || ratingFilter !== 'all' 
-                ? 'Thử thay đổi bộ lọc để xem kết quả khác'
-                : 'Chưa có đánh giá nào trong hệ thống'
+                ? 'Try changing the filters to see different results'
+                : 'No reviews in the system yet'
               }
             </p>
           </div>
@@ -311,20 +311,20 @@ const AdminReviews: React.FC = () => {
                     </div>
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Đánh giá
+                    Review
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Khách sạn
+                    Hotel
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Người đánh giá
+                    Reviewer
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ngày đánh giá
+                    Review Date
                   </th>
                  
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Thao tác
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -349,7 +349,7 @@ const AdminReviews: React.FC = () => {
                         
                       </div>
                       <p className="text-sm text-gray-900">
-                        {review.comment || <em className="text-gray-500">Không có bình luận</em>}
+                        {review.comment || <em className="text-gray-500">No comment</em>}
                       </p>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -382,7 +382,7 @@ const AdminReviews: React.FC = () => {
                           onClick={() => handleDeleteReview(review.id)}
                           disabled={actionLoading === review.id}
                           className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                          title="Xóa"
+                          title="Delete"
                         >
                           <Trash size={18} />
                         </button>
@@ -408,7 +408,7 @@ const AdminReviews: React.FC = () => {
                     : 'bg-white text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                Trước
+                Previous
               </button>
               <button
                 onClick={() => handlePageChange(Math.min(state.totalPages - 1, currentPage + 1))}
@@ -419,17 +419,17 @@ const AdminReviews: React.FC = () => {
                     : 'bg-white text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                Sau
+                Next
               </button>
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  Hiển thị <span className="font-medium">{currentPage * pageSize + 1}</span> đến{' '}
+                  Showing <span className="font-medium">{currentPage * pageSize + 1}</span> to{' '}
                   <span className="font-medium">
                     {Math.min((currentPage + 1) * pageSize, state.totalReviews)}
                   </span>{' '}
-                  trong tổng số <span className="font-medium">{state.totalReviews}</span> đánh giá
+                  of <span className="font-medium">{state.totalReviews}</span> reviews
                 </p>
               </div>
               <div>
@@ -442,9 +442,9 @@ const AdminReviews: React.FC = () => {
                         ? 'text-gray-300 cursor-not-allowed'
                         : 'text-gray-500 hover:bg-gray-50'
                     }`}
-                  >
-                    Trước
-                  </button>
+                                      >
+                      Previous
+                    </button>
                   
                   {Array.from({ length: Math.min(5, state.totalPages) }, (_, i) => {
                     const pageNum = Math.max(0, Math.min(currentPage - 2, state.totalPages - 5)) + i;
@@ -474,9 +474,9 @@ const AdminReviews: React.FC = () => {
                         ? 'text-gray-300 cursor-not-allowed'
                         : 'text-gray-500 hover:bg-gray-50'
                     }`}
-                  >
-                    Sau
-                  </button>
+                                      >
+                      Next
+                    </button>
                 </nav>
               </div>
             </div>

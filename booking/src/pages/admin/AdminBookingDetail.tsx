@@ -116,19 +116,19 @@ const AdminBookingDetail: React.FC = () => {
 
   const handleConfirmBooking = () => {
     // Confirm booking logic would go here
-    alert(`Đã xác nhận đặt phòng có ID: ${id}`);
+    alert(`Confirmed booking with ID: ${id}`);
   };
 
   const handleCancelBooking = () => {
-    if (window.confirm('Bạn có chắc chắn muốn hủy đặt phòng này không?')) {
+    if (window.confirm('Are you sure you want to cancel this booking?')) {
       // Cancel booking logic would go here
-      alert(`Đã hủy đặt phòng có ID: ${id}`);
+      alert(`Cancelled booking with ID: ${id}`);
     }
   };
 
   const handleSendEmail = () => {
     // Send email logic would go here
-    alert(`Đã gửi email đến khách hàng: ${booking.guestEmail}`);
+    alert(`Sent email to customer: ${booking.guestEmail}`);
   };
 
   const handlePrintBooking = () => {
@@ -137,7 +137,7 @@ const AdminBookingDetail: React.FC = () => {
 
   const handleDownloadInvoice = () => {
     // Download invoice logic would go here
-    alert(`Đã tải xuống hóa đơn có ID: ${booking.invoiceId}`);
+    alert(`Downloaded invoice with ID: ${booking.invoiceId}`);
   };
 
   const handleViewInvoice = () => {
@@ -159,20 +159,20 @@ const AdminBookingDetail: React.FC = () => {
 
   const handleSaveNotes = () => {
     // Save notes logic would go here
-    alert('Đã lưu ghi chú');
+    alert('Saved notes');
     setIsEditingNotes(false);
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Đã xác nhận</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Confirmed</span>;
       case 'pending':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Chờ xác nhận</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Pending</span>;
       case 'cancelled':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Đã hủy</span>;
+            return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Cancelled</span>;
       case 'completed':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Đã hoàn thành</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Completed</span>;
       default:
         return null;
     }
@@ -181,11 +181,11 @@ const AdminBookingDetail: React.FC = () => {
   const getPaymentStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Đã thanh toán</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Paid</span>;
       case 'pending':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Chờ thanh toán</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Pending</span>;
       case 'refunded':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Đã hoàn tiền</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Refunded</span>;
       default:
         return null;
     }
@@ -194,11 +194,11 @@ const AdminBookingDetail: React.FC = () => {
   const getCommissionStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Đã thanh toán</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Paid</span>;
       case 'pending':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Chờ thanh toán</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Pending</span>;
       case 'processing':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Đang xử lý</span>;
+          return <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Processing</span>;
       default:
         return null;
     }
@@ -212,7 +212,7 @@ const AdminBookingDetail: React.FC = () => {
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-xl sm:text-2xl font-bold">Chi tiết đặt phòng #{booking.id}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Booking Detail #{booking.id}</h1>
         </div>
 
         {/* Action Buttons */}
@@ -224,7 +224,7 @@ const AdminBookingDetail: React.FC = () => {
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center"
               >
                 <Check size={18} className="mr-2" />
-                Xác nhận đặt phòng
+                Confirm Booking
               </button>
               <button
                 onClick={handleCancelBooking}
@@ -519,7 +519,7 @@ const AdminBookingDetail: React.FC = () => {
                 className="text-blue-600 hover:text-blue-800 flex items-center"
               >
                 <Edit size={16} className="mr-1" />
-                Chỉnh sửa
+                Edit  
               </button>
             )}
           </div>
@@ -537,19 +537,19 @@ const AdminBookingDetail: React.FC = () => {
                   onClick={() => setIsEditingNotes(false)}
                   className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   onClick={handleSaveNotes}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
-                  Lưu
+                  Save
                 </button>
               </div>
             </div>
           ) : (
             <p className="text-gray-700 bg-gray-50 p-4 rounded-lg min-h-[60px]">
-              {booking.notes || 'Chưa có ghi chú nào.'}
+              {booking.notes || 'No notes yet.'}
             </p>
           )}
         </div>

@@ -14,21 +14,21 @@ const testimonials: TestimonialProps[] = [
     name: 'Nguyễn Văn A',
     location: 'Hà Nội',
     rating: 5,
-    comment: 'Dịch vụ tuyệt vời, đặt phòng nhanh chóng và dễ dàng. Tôi đã tìm được khách sạn ưng ý với giá cả phải chăng!',
+          comment: 'Excellent service, quick and easy booking. I found a great hotel at an affordable price!',
     image: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg'
   },
   {
     name: 'Trần Thị B',
     location: 'TP. Hồ Chí Minh',
     rating: 4,
-    comment: 'Rất hài lòng với trải nghiệm đặt phòng. Giao diện dễ sử dụng và có nhiều ưu đãi hấp dẫn.',
+          comment: 'Very satisfied with the booking experience. Easy-to-use interface with many attractive offers.',
     image: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg'
   },
   {
     name: 'Lê Văn C',
     location: 'Đà Nẵng',
     rating: 5,
-    comment: 'Đã sử dụng dịch vụ nhiều lần và luôn hài lòng. Khách sạn chất lượng và giá cả hợp lý.',
+          comment: 'Have used the service many times and always satisfied. Quality hotels at reasonable prices.',
     image: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg'
   }
 ];
@@ -40,7 +40,7 @@ const Testimonials: React.FC = () => {
         <div className="mb-12 text-center">
           <h2 className="text-3xl font-bold mb-4">Khách hàng nói gì về chúng tôi</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Trải nghiệm và đánh giá từ những khách hàng đã sử dụng dịch vụ đặt phòng của chúng tôi
+            Experiences and reviews from customers who have used our booking service
           </p>
         </div>
 

@@ -49,10 +49,10 @@ const MyReviews: React.FC = () => {
     } catch (error: any) {
       console.error('Error fetching my reviews:', error);
       
-      let errorMessage = 'Có lỗi xảy ra khi tải danh sách đánh giá.';
+      let errorMessage = 'An error occurred while loading reviews.';
       
       if (error.response?.status === 401) {
-        errorMessage = 'Bạn cần đăng nhập để xem đánh giá của mình.';
+        errorMessage = 'You need to log in to view your reviews.';
         // Redirect to login
         navigate('/login');
         return;
@@ -86,12 +86,12 @@ const MyReviews: React.FC = () => {
   const handleEditSubmit = async (reviewId: string) => {
     try {
       if (editForm.rating === 0) {
-        alert('Vui lòng chọn số sao đánh giá');
+        alert('Please select a star rating');
         return;
       }
 
       if (editForm.comment.length > 2000) {
-        alert('Nội dung đánh giá không được vượt quá 2000 ký tự');
+        alert('Review content must not exceed 2000 characters');
         return;
       }
 
@@ -103,15 +103,15 @@ const MyReviews: React.FC = () => {
       // Refresh reviews
       await fetchMyReviews(state.currentPage);
       setEditingReview(null);
-      alert('Cập nhật đánh giá thành công!');
+      alert('Review updated successfully!');
     } catch (error: any) {
       console.error('Error updating review:', error);
-      alert('Có lỗi xảy ra khi cập nhật đánh giá. Vui lòng thử lại.');
+      alert('An error occurred while updating the review. Please try again.');
     }
   };
 
   const handleDelete = async (reviewId: string, hotelName: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa đánh giá về "${hotelName}" không? Hành động này không thể hoàn tác.`)) {
+    if (!window.confirm(`Are you sure you want to delete the review for "${hotelName}"? This action cannot be undone.`)) {
       return;
     }
 
@@ -125,18 +125,18 @@ const MyReviews: React.FC = () => {
         totalReviews: prev.totalReviews - 1
       }));
       
-      alert('Đánh giá đã được xóa thành công!');
+      alert('Review has been deleted successfully!');
     } catch (error: any) {
       console.error('Error deleting review:', error);
       
       if (error.response?.status === 401) {
-        alert('Bạn cần đăng nhập để xóa đánh giá.');
+        alert('You need to log in to delete reviews.');
       } else if (error.response?.status === 403) {
-        alert('Bạn không có quyền xóa đánh giá này.');
+        alert('You do not have permission to delete this review.');
       } else if (error.response?.status === 404) {
-        alert('Không tìm thấy đánh giá.');
+        alert('Review not found.');
       } else {
-        alert('Có lỗi xảy ra khi xóa đánh giá. Vui lòng thử lại.');
+        alert('An error occurred while deleting the review. Please try again.');
       }
     }
   };
@@ -174,7 +174,7 @@ const MyReviews: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -185,7 +185,7 @@ const MyReviews: React.FC = () => {
     return (
       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
         <Star className="w-3 h-3 mr-1" />
-        Đã đăng
+        Published
       </span>
     );
   };
@@ -208,13 +208,13 @@ const MyReviews: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-red-800 mb-2">Có lỗi xảy ra</h3>
+            <h3 className="text-lg font-medium text-red-800 mb-2">An error occurred</h3>
             <p className="text-red-600 mb-4">{state.error}</p>
             <button
               onClick={() => fetchMyReviews()}
               className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
             >
-              Thử lại
+              Try again
             </button>
           </div>
         </div>
@@ -227,9 +227,9 @@ const MyReviews: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Đánh giá của tôi</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Reviews</h1>
           <p className="text-gray-600">
-            Quản lý và chỉnh sửa các đánh giá bạn đã viết ({state.totalReviews} đánh giá)
+            Manage and edit your written reviews ({state.totalReviews} reviews)
           </p>
         </div>
 
@@ -237,15 +237,15 @@ const MyReviews: React.FC = () => {
         {state.reviews.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
             <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-gray-900 mb-2">Chưa có đánh giá nào</h3>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">No reviews yet</h3>
             <p className="text-gray-600 mb-6">
-              Bạn chưa viết đánh giá nào. Hãy đặt phòng và chia sẻ trải nghiệm của bạn!
+              You haven't written any reviews. Book a stay and share your experience!
             </p>
             <button
               onClick={() => navigate('/hotels')}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
             >
-              Khám phá khách sạn
+              Explore hotels
             </button>
           </div>
         ) : (
@@ -276,21 +276,21 @@ const MyReviews: React.FC = () => {
                       <button
                         onClick={() => handleViewHotel(review.hotelId)}
                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-                        title="Xem khách sạn"
+                        title="View hotel"
                       >
                         <Eye size={18} />
                       </button>
                       <button
                         onClick={() => handleEditClick(review)}
                         className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg"
-                        title="Chỉnh sửa"
+                        title="Edit"
                       >
                         <Edit size={18} />
                       </button>
                       <button
-                        onClick={() => handleDelete(review.id, review.hotelName || 'khách sạn này')}
+                        onClick={() => handleDelete(review.id, review.hotelName || 'this hotel')}
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                        title="Xóa"
+                        title="Delete"
                       >
                         <Trash size={18} />
                       </button>
@@ -303,7 +303,7 @@ const MyReviews: React.FC = () => {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Đánh giá
+                          Rating
                         </label>
                         <div className="flex">
                           {renderStars(editForm.rating, true, (rating) => 
@@ -314,14 +314,14 @@ const MyReviews: React.FC = () => {
                       
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Nội dung đánh giá
+                          Review content
                         </label>
                         <textarea
                           value={editForm.comment}
                           onChange={(e) => setEditForm(prev => ({ ...prev, comment: e.target.value }))}
                           rows={4}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Chia sẻ trải nghiệm của bạn..."
+                          placeholder="Share your experience..."
                           maxLength={2000}
                         />
                         <div className="text-right text-sm text-gray-500 mt-1">
@@ -334,13 +334,13 @@ const MyReviews: React.FC = () => {
                           onClick={handleEditCancel}
                           className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200"
                         >
-                          Hủy
+                          Cancel
                         </button>
                         <button
                           onClick={() => handleEditSubmit(review.id)}
                           className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700"
                         >
-                          Lưu thay đổi
+                          Save changes
                         </button>
                       </div>
                     </div>
@@ -350,7 +350,7 @@ const MyReviews: React.FC = () => {
                       <div className="flex items-center mb-3">
                         {renderStars(review.rating)}
                         <span className="ml-2 text-sm text-gray-600">
-                          {review.rating}/5 sao
+                          {review.rating}/5 stars
                         </span>
                       </div>
                       
@@ -380,7 +380,7 @@ const MyReviews: React.FC = () => {
                     : 'text-gray-500 hover:bg-gray-50'
                 }`}
               >
-                Trước
+                Previous
               </button>
               
               {Array.from({ length: Math.min(5, state.totalPages) }, (_, i) => {
@@ -411,7 +411,7 @@ const MyReviews: React.FC = () => {
                     : 'text-gray-500 hover:bg-gray-50'
                 }`}
               >
-                Sau
+                Next
               </button>
             </nav>
           </div>

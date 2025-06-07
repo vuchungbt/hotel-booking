@@ -163,7 +163,7 @@ const ReviewDisplay: React.FC<ReviewDisplayProps> = ({
       {/* Review Statistics */}
       {showStats && stats && (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold mb-4">Tổng quan đánh giá</h3>
+          <h3 className="text-lg font-semibold mb-4">Reviews</h3>
           <div className="grid md:grid-cols-2 gap-6">
             {/* Average Rating */}
             <div className="text-center">
@@ -286,7 +286,7 @@ const ReviewDisplay: React.FC<ReviewDisplayProps> = ({
                         onClick={() => toggleReviewExpansion(review.id)}
                         className="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2"
                       >
-                        {isExpanded ? 'Thu gọn' : 'Xem thêm'}
+                        {isExpanded ? 'Show Less' : 'Show More'}
                       </button>
                     )}
                   </div>

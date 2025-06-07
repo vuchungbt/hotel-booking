@@ -50,8 +50,7 @@
 
 ### Tích Hợp API
 - `hotelAPI.getHotelDetails()` - Lấy thông tin chi tiết khách sạn
-- `roomTypeAPI.getRoomTypesByHotel()` - Lấy danh sách loại phòng
-- `reviewAPI.getApprovedReviewsByHotel()` - Lấy đánh giá đã duyệt
+- `roomTypeAPI.getRoomTypesByHotel()` - Lấy danh sách loại phòng 
 
 ### Tab Navigation
 - **Tổng quan**: Mô tả, tiện nghi, chính sách, thông tin liên hệ

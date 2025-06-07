@@ -56,8 +56,7 @@ GET    /reviews/admin/user/{userId}     - Đánh giá theo user
 #### Public Operations
 ```
 GET    /reviews/{id}                    - Chi tiết đánh giá
-GET    /reviews/hotel/{hotelId}         - Đánh giá theo khách sạn
-GET    /reviews/hotel/{hotelId}/approved - Đánh giá đã duyệt
+GET    /reviews/hotel/{hotelId}         - Đánh giá theo khách sạn 
 GET    /reviews/hotel/{hotelId}/verified - Đánh giá đã xác minh
 GET    /reviews/hotel/{hotelId}/average-rating - Điểm TB
 GET    /reviews/rating/{rating}         - Đánh giá theo số sao
@@ -73,8 +72,7 @@ GET    /reviews/my                     - Đánh giá của tôi
 
 #### Statistics
 ```
-GET    /reviews/admin/stats/total      - Tổng số đánh giá
-GET    /reviews/admin/stats/approved   - Số đánh giá đã duyệt
+GET    /reviews/admin/stats/total      - Tổng số đánh giá 
 GET    /reviews/admin/stats/verified   - Số đánh giá đã xác minh
 GET    /reviews/admin/stats/hotel/{id} - Thống kê theo khách sạn
 GET    /reviews/admin/stats/user/{id}  - Thống kê theo user

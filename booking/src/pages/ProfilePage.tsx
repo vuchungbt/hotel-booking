@@ -81,22 +81,22 @@ const ProfilePage: React.FC = () => {
 
   const validatePasswordForm = (): boolean => {
     if (!passwordData.currentPassword) {
-      showToast('error', 'Lỗi', 'Vui lòng nhập mật khẩu hiện tại');
+      showToast('error', 'Error', 'Please enter current password');
       return false;
     }
     
     if (!passwordData.newPassword) {
-      showToast('error', 'Lỗi', 'Vui lòng nhập mật khẩu mới');
+      showToast('error', 'Error', 'Please enter new password');
       return false;
     }
     
     if (passwordData.newPassword.length < 8) {
-      showToast('error', 'Lỗi', 'Mật khẩu mới phải có ít nhất 8 ký tự');
+      showToast('error', 'Error', 'New password must be at least 8 characters');
       return false;
     }
     
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      showToast('error', 'Lỗi', 'Mật khẩu xác nhận không khớp');
+      showToast('error', 'Error', 'Password confirmation does not match');
       return false;
     }
 
@@ -127,12 +127,12 @@ const ProfilePage: React.FC = () => {
       // Refresh user info
       await fetchUserInfo();
       
-      showToast('success', 'Thành công', 'Thông tin đã được cập nhật thành công!');
+      showToast('success', 'Success', 'Information has been updated successfully!');
       setIsEditing(false);
       
     } catch (error: any) {
       console.error('Update profile error:', error);
-      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin';
+      const errorMessage = error.response?.data?.message || 'An error occurred while updating information';
       showToast('error', 'Lỗi', errorMessage);
     } finally {
       setLoading(false);
@@ -156,7 +156,7 @@ const ProfilePage: React.FC = () => {
 
       await userAPI.updateMyPassword(passwordUpdateData);
       
-      showToast('success', 'Thành công', 'Mật khẩu đã được thay đổi thành công!');
+      showToast('success', 'Success', 'Password has been changed successfully!');
       
       // Clear password fields
       setPasswordData({
@@ -167,7 +167,7 @@ const ProfilePage: React.FC = () => {
       
     } catch (error: any) {
       console.error('Update password error:', error);
-      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi thay đổi mật khẩu';
+      const errorMessage = error.response?.data?.message || 'An error occurred while changing password';
       showToast('error', 'Lỗi', errorMessage);
     } finally {
       setPasswordLoading(false);
@@ -196,7 +196,7 @@ const ProfilePage: React.FC = () => {
     try {
       await userAPI.requestHost();
       await fetchUserInfo(); // Refresh user info
-      showToast('success', 'Thành công', 'Yêu cầu trở thành Host đã được gửi thành công!');
+              showToast('success', 'Success', 'Host request has been sent successfully!');
     } catch (error: any) {
       console.error('Host request error:', error);
       const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi gửi yêu cầu';
@@ -211,9 +211,9 @@ const ProfilePage: React.FC = () => {
   };
 
   const tabs = [
-    { id: 'profile', label: 'Thông tin cá nhân', icon: User },
-    { id: 'password', label: 'Đổi mật khẩu', icon: Key }, 
-    { id: 'history', label: 'Đặt phòng', icon: BookOpen },
+    { id: 'profile', label: 'Personal Information', icon: User },
+    { id: 'password', label: 'Change Password', icon: Key }, 
+    { id: 'history', label: 'Bookings', icon: BookOpen },
     { id: 'vouchers', label: 'Mã giảm giá', icon: Gift },
     { id: 'payment', label: 'Phương thức thanh toán', icon: CreditCard },
     { id: 'roles', label: 'Quản lý vai trò', icon: Shield }, 
@@ -540,8 +540,8 @@ const ProfilePage: React.FC = () => {
                     }`}></div>
                     <div>
                       <span className="font-medium text-gray-900">
-                        {role.name === 'ADMIN' ? 'Quản trị viên' :
-                         role.name === 'HOST' ? 'Chủ khách sạn' :
+                                                  {role.name === 'ADMIN' ? 'Administrator' :
+                         role.name === 'HOST' ? 'Hotel Owner' :
                          role.name === 'USER' ? 'Người dùng' : role.name}
                       </span>
                       <p className="text-sm text-gray-500">{role.description}</p>
@@ -566,15 +566,15 @@ const ProfilePage: React.FC = () => {
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <Crown className="h-5 w-5 mr-2 text-amber-600" />
-              Trở thành Host
+                                Become a Host
             </h3>
             
             <div className="space-y-4">
               <div className="text-gray-700">
-                <h4 className="font-medium mb-2">Quyền lợi khi trở thành Host:</h4>
+                                  <h4 className="font-medium mb-2">Benefits of becoming a Host:</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>Đăng tải và quản lý khách sạn của riêng bạn</li>
-                  <li>Tiếp nhận và quản lý đặt phòng từ khách hàng</li>
+                                        <li>Upload and manage your own hotels</li>
+                      <li>Receive and manage bookings from customers</li>
                   <li>Tạo và quản lý các loại phòng khác nhau</li>
                   <li>Xem thống kê doanh thu và báo cáo chi tiết</li>
                   <li>Nhận hoa hồng từ mỗi booking thành công</li>
@@ -606,7 +606,7 @@ const ProfilePage: React.FC = () => {
                     ) : (
                       <>
                         <Crown className="h-5 w-5 mr-2" />
-                        Gửi yêu cầu trở thành Host
+                        Send Host Request
                       </>
                     )}
                   </button>
@@ -648,7 +648,7 @@ const ProfilePage: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Tài khoản của tôi</h1>
-          <p className="text-gray-600 mt-2">Quản lý thông tin cá nhân và hoạt động của bạn</p>
+                      <p className="text-gray-600 mt-2">Manage your personal information and activities</p>
         </div>
 
         {/* Tab Navigation */}

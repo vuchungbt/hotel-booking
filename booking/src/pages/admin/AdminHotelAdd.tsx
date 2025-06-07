@@ -33,50 +33,50 @@ const AdminHotelAdd: React.FC = () => {
 
     // Required fields validation
     if (!formData.name?.trim()) {
-      newErrors.name = 'Tên khách sạn là bắt buộc';
+      newErrors.name = 'Hotel name is required';
     }
     if (!formData.description?.trim()) {
-      newErrors.description = 'Mô tả là bắt buộc';
+      newErrors.description = 'Description is required';
     }
     if (!formData.address?.trim()) {
-      newErrors.address = 'Địa chỉ là bắt buộc';
+      newErrors.address = 'Address is required';
     }
     if (!formData.city?.trim()) {
-      newErrors.city = 'Thành phố là bắt buộc';
+      newErrors.city = 'City is required';
     }
     if (!formData.country?.trim()) {
-      newErrors.country = 'Quốc gia là bắt buộc';
+      newErrors.country = 'Country is required';
     }
     if (!formData.phone?.trim()) {
-      newErrors.phone = 'Số điện thoại là bắt buộc';
+      newErrors.phone = 'Phone number is required';
     }
     if (!formData.email?.trim()) {
-      newErrors.email = 'Email là bắt buộc';
+      newErrors.email = 'Email is required';
     }
 
     // Email validation
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Email không hợp lệ';
+      newErrors.email = 'Invalid email address';
     }
 
     // Phone validation
     if (formData.phone && !/^[0-9+\-\s()]+$/.test(formData.phone)) {
-      newErrors.phone = 'Số điện thoại không hợp lệ';
+      newErrors.phone = 'Invalid phone number';
     }
 
     // Price validation
     if (!formData.pricePerNight || formData.pricePerNight <= 0) {
-      newErrors.pricePerNight = 'Giá phòng phải lớn hơn 0';
+      newErrors.pricePerNight = 'Room price must be greater than 0';
     }
 
     // Star rating validation
     if (!formData.starRating || formData.starRating < 1 || formData.starRating > 5) {
-      newErrors.starRating = 'Xếp hạng sao phải từ 1 đến 5';
+      newErrors.starRating = 'Star rating must be from 1 to 5';
     }
 
     // Website validation
     if (formData.website && !/^https?:\/\/.+/.test(formData.website)) {
-      newErrors.website = 'Website phải bắt đầu bằng http:// hoặc https://';
+      newErrors.website = 'Website must start with http:// or https://';
     }
 
     setErrors(newErrors);
@@ -103,7 +103,7 @@ const AdminHotelAdd: React.FC = () => {
     e.preventDefault();
     
     if (!validateForm()) {
-      showToast('error', 'Lỗi', 'Vui lòng kiểm tra lại thông tin đã nhập');
+      showToast('error', 'Error', 'Please check the information entered');
       return;
     }
 
@@ -111,18 +111,18 @@ const AdminHotelAdd: React.FC = () => {
       setLoading(true);
       const response = await hotelAPI.createHotelByAdmin(formData);
       const hotelId = response.data.result?.id || response.data.id;
-      showToast('success', 'Thành công', 'Đã tạo khách sạn mới');
+      showToast('success', 'Success', 'New hotel has been created');
       navigate(`/admin/hotels/${hotelId}`);
     } catch (error: any) {
       console.error('Error creating hotel:', error);
-      showToast('error', 'Lỗi', 'Không thể kết nối đến server');
+      showToast('error', 'Error', 'Unable to connect to server');
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    if (window.confirm('Bạn có chắc chắn muốn hủy? Tất cả thông tin đã nhập sẽ bị mất.')) {
+    if (window.confirm('Are you sure you want to cancel? All entered information will be lost.')) {
       navigate('/admin/hotels');
     }
   };
@@ -139,8 +139,8 @@ const AdminHotelAdd: React.FC = () => {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Thêm khách sạn mới</h1>
-            <p className="text-gray-600 mt-1">Nhập thông tin chi tiết khách sạn</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Add New Hotel</h1>
+            <p className="text-gray-600 mt-1">Enter detailed hotel information</p>
           </div>
         </div>
       </div>
@@ -150,13 +150,13 @@ const AdminHotelAdd: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <MapPin size={20} className="mr-2 text-blue-500" />
-            Thông tin cơ bản
+            Basic Information
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tên khách sạn <span className="text-red-500">*</span>
+                Hotel Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -166,14 +166,14 @@ const AdminHotelAdd: React.FC = () => {
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.name ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Nhập tên khách sạn"
+                placeholder="Enter hotel name"
               />
               {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Xếp hạng sao <span className="text-red-500">*</span>
+                Star Rating <span className="text-red-500">*</span>
               </label>
               <select
                 name="starRating"
@@ -185,7 +185,7 @@ const AdminHotelAdd: React.FC = () => {
               >
                 {[1, 2, 3, 4, 5].map(star => (
                   <option key={star} value={star}>
-                    {star} sao
+                    {star} star{star > 1 ? 's' : ''}
                   </option>
                 ))}
               </select>
@@ -194,7 +194,7 @@ const AdminHotelAdd: React.FC = () => {
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mô tả <span className="text-red-500">*</span>
+                Description <span className="text-red-500">*</span>
               </label>
               <textarea
                 name="description"
@@ -204,14 +204,14 @@ const AdminHotelAdd: React.FC = () => {
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.description ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Nhập mô tả chi tiết về khách sạn"
+                placeholder="Enter detailed description about the hotel"
               />
               {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
             </div>
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Địa chỉ <span className="text-red-500">*</span>
+                Address <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -221,14 +221,14 @@ const AdminHotelAdd: React.FC = () => {
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.address ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Nhập địa chỉ đầy đủ"
+                placeholder="Enter full address"
               />
               {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Thành phố <span className="text-red-500">*</span>
+                City <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -238,14 +238,14 @@ const AdminHotelAdd: React.FC = () => {
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.city ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Nhập tên thành phố"
+                placeholder="Enter city name"
               />
               {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Quốc gia <span className="text-red-500">*</span>
+                Country <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -255,14 +255,14 @@ const AdminHotelAdd: React.FC = () => {
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.country ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Nhập tên quốc gia"
+                placeholder="Enter country name"
               />
               {errors.country && <p className="mt-1 text-sm text-red-600">{errors.country}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Giá cơ bản/đêm (VND) <span className="text-red-500">*</span>
+                Base Price/Night (VND) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -274,14 +274,14 @@ const AdminHotelAdd: React.FC = () => {
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.pricePerNight ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Nhập giá phòng"
+                placeholder="Enter room price"
               />
               {errors.pricePerNight && <p className="mt-1 text-sm text-red-600">{errors.pricePerNight}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                URL hình ảnh
+                Image URL
               </label>
               <input
                 type="url"
@@ -299,13 +299,13 @@ const AdminHotelAdd: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Phone size={20} className="mr-2 text-blue-500" />
-            Thông tin liên hệ
+            Contact Information
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Số điện thoại <span className="text-red-500">*</span>
+                Phone Number <span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"
@@ -315,7 +315,7 @@ const AdminHotelAdd: React.FC = () => {
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.phone ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Nhập số điện thoại"
+                placeholder="Enter phone number"
               />
               {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
             </div>
@@ -332,7 +332,7 @@ const AdminHotelAdd: React.FC = () => {
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.email ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Nhập địa chỉ email"
+                placeholder="Enter email address"
               />
               {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
             </div>
@@ -360,13 +360,13 @@ const AdminHotelAdd: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Clock size={20} className="mr-2 text-blue-500" />
-            Thời gian nhận/trả phòng
+            Check-in/Check-out Times
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Giờ nhận phòng
+                Check-in Time
               </label>
               <input
                 type="time"
@@ -379,7 +379,7 @@ const AdminHotelAdd: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Giờ trả phòng
+                Check-out Time
               </label>
               <input
                 type="time"
@@ -396,13 +396,13 @@ const AdminHotelAdd: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Star size={20} className="mr-2 text-blue-500" />
-            Tiện nghi
+            Amenities
           </h2>
           
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Danh sách tiện nghi (phân cách bằng dấu phẩy)
+                Amenities List (separated by commas)
               </label>
               <textarea
                 name="amenities"
@@ -410,26 +410,26 @@ const AdminHotelAdd: React.FC = () => {
                 onChange={handleInputChange}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Wifi, Hồ bơi, Spa, Nhà hàng, Phòng gym, Bãi đỗ xe"
+                placeholder="Wi-Fi, Swimming Pool, Spa, Restaurant, Gym, Parking"
               />
             </div>
 
             {/* Predefined Amenity Tags */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Chọn tiện nghi có sẵn (click để thêm)
+                Select Available Amenities (click to add)
               </label>
               <div className="flex flex-wrap gap-2">
                 {[
-                  'Wifi miễn phí', 'Hồ bơi', 'Spa & Massage', 'Nhà hàng', 'Phòng gym', 
-                  'Bãi đỗ xe', 'Dịch vụ phòng 24/7', 'Lễ tân 24/7', 'Thang máy',
-                  'Điều hòa', 'Tivi', 'Tủ lạnh mini', 'Két an toàn', 'Máy sấy tóc',
-                  'Bồn tắm', 'Vòi sen', 'Dép đi trong phòng', 'Áo choàng tắm',
-                  'Bàn làm việc', 'Ghế sofa', 'Ban công', 'Tầm nhìn ra biển',
-                  'Tầm nhìn ra thành phố', 'Tầm nhìn ra núi', 'Quầy bar', 'Karaoke',
-                  'Sân tennis', 'Sân golf', 'Bãi biển riêng', 'Dịch vụ giặt ủi',
-                  'Dịch vụ đưa đón sân bay', 'Cho thuê xe đạp', 'Khu vui chơi trẻ em',
-                  'Phòng họp', 'Trung tâm thương mại', 'ATM', 'Cửa hàng lưu niệm'
+                  'Free Wi-Fi', 'Swimming Pool', 'Spa & Massage', 'Restaurant', 'Fitness Center', 
+                  'Parking', '24-hour Room Service', '24-hour Front Desk', 'Elevator',
+                  'Air Conditioning', 'Television', 'Mini Fridge', 'Safe', 'Hair Dryer',
+                  'Bathtub', 'Shower', 'Slippers', 'Bathrobe',
+                  'Work Desk', 'Sofa', 'Balcony', 'Ocean View',
+                  'City View', 'Mountain View', 'Bar', 'Karaoke',
+                  'Tennis Court', 'Golf Course', 'Private Beach', 'Laundry Service',
+                  'Airport Shuttle', 'Bicycle Rental', 'Kids Play Area',
+                  'Meeting Rooms', 'Shopping Center', 'ATM', 'Gift Shop'
                 ].map((amenity) => {
                   const isSelected = (formData.amenities || '').split(',').map(a => a.trim()).includes(amenity);
                   return (
@@ -467,7 +467,7 @@ const AdminHotelAdd: React.FC = () => {
                 })}
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                💡 Tip: Click vào các thẻ để thêm/bỏ tiện nghi. Bạn cũng có thể nhập trực tiếp vào ô text phía trên.
+                💡 Tip: Click on the tags to add/remove amenities. You can also type directly in the text box above.
               </p>
             </div>
           </div>
@@ -477,13 +477,13 @@ const AdminHotelAdd: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Shield size={20} className="mr-2 text-blue-500" />
-            Chính sách
+            Policies
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Chính sách hủy phòng
+                Cancellation Policy
               </label>
               <textarea
                 name="cancellationPolicy"
@@ -491,13 +491,13 @@ const AdminHotelAdd: React.FC = () => {
                 onChange={handleInputChange}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Miễn phí hủy trước 24 giờ"
+                placeholder="Free cancellation before 24 hours"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Chính sách thú cưng
+                Pet Policy
               </label>
               <textarea
                 name="petPolicy"
@@ -505,7 +505,7 @@ const AdminHotelAdd: React.FC = () => {
                 onChange={handleInputChange}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Không cho phép thú cưng"
+                placeholder="Pets are not allowed"
               />
             </div>
           </div>
@@ -518,7 +518,7 @@ const AdminHotelAdd: React.FC = () => {
             onClick={handleCancel}
             className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            Hủy
+            Cancel
           </button>
           <button
             type="submit"
@@ -526,7 +526,7 @@ const AdminHotelAdd: React.FC = () => {
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center disabled:opacity-50"
           >
             <Save size={20} className="mr-2" />
-            {loading ? 'Đang lưu...' : 'Lưu khách sạn'}
+            {loading ? 'Saving...' : 'Save Hotel'}
           </button>
         </div>
       </form>

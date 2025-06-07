@@ -85,11 +85,11 @@ const AdminHotels: React.FC = () => {
         setCurrentPage(data.result.number);
       } else {
         console.error('❌ API Error:', data.message);
-        showToast('error', 'Lỗi', data.message || 'Không thể tải danh sách khách sạn');
+        showToast('error', 'Error', data.message || 'Unable to load hotel list');
       }
     } catch (error: any) {
       console.error('💥 Error fetching hotels:', error);
-      showToast('error', 'Lỗi', 'Không thể kết nối đến server');
+              showToast('error', 'Error', 'Unable to connect to server');
     } finally {
       setLoading(false);
     }
@@ -148,15 +148,15 @@ const AdminHotels: React.FC = () => {
   };
 
   const handleDeleteHotel = async (hotelId: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa khách sạn này?')) {
+          if (window.confirm('Are you sure you want to delete this hotel?')) {
       try {
         setActionLoading(hotelId);
         await hotelAPI.deleteHotelByAdmin(hotelId);
-        showToast('success', 'Thành công', 'Đã xóa khách sạn');
+                  showToast('success', 'Success', 'Hotel deleted successfully');
         fetchHotels(currentPage);
       } catch (error: any) {
         console.error('Error deleting hotel:', error);
-        showToast('error', 'Lỗi', 'Không thể xóa khách sạn');
+                  showToast('error', 'Error', 'Unable to delete hotel');
       } finally {
         setActionLoading(null);
       }
@@ -166,17 +166,17 @@ const AdminHotels: React.FC = () => {
   const handleDeleteSelected = async () => {
     if (selectedHotels.length === 0) return;
     
-    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedHotels.length} khách sạn đã chọn?`)) {
+          if (window.confirm(`Are you sure you want to delete ${selectedHotels.length} selected hotels?`)) {
       try {
         setActionLoading('bulk-delete');
         await Promise.all(selectedHotels.map(id => hotelAPI.deleteHotelByAdmin(id)));
-        showToast('success', 'Thành công', `Đã xóa ${selectedHotels.length} khách sạn`);
+                  showToast('success', 'Success', `${selectedHotels.length} hotels deleted successfully`);
         setSelectedHotels([]);
         setIsSelectAll(false);
         fetchHotels(currentPage);
       } catch (error: any) {
         console.error('Error deleting hotels:', error);
-        showToast('error', 'Lỗi', 'Không thể xóa một số khách sạn');
+                  showToast('error', 'Error', 'Unable to delete some hotels');
       } finally {
         setActionLoading(null);
       }
@@ -191,7 +191,7 @@ const AdminHotels: React.FC = () => {
       const response = await hotelAPI.toggleHotelStatus(hotelId);
       console.log('✅ Toggle status response:', response.data);
       
-      showToast('success', 'Thành công', 'Đã cập nhật trạng thái khách sạn');
+      showToast('success', 'Success', 'Hotel status updated successfully');
       
       // Reset any status filter to ensure updated hotel appears
       if (statusFilter !== undefined) {
@@ -202,7 +202,7 @@ const AdminHotels: React.FC = () => {
       fetchHotels(currentPage);
     } catch (error: any) {
       console.error('💥 Error toggling hotel status:', error);
-      showToast('error', 'Lỗi', 'Không thể cập nhật trạng thái khách sạn');
+              showToast('error', 'Error', 'Unable to update hotel status');
     } finally {
       setActionLoading(null);
     }
@@ -216,7 +216,7 @@ const AdminHotels: React.FC = () => {
       const response = await hotelAPI.toggleHotelFeatured(hotelId);
       console.log('✅ Toggle featured response:', response.data);
       
-      showToast('success', 'Thành công', 'Đã cập nhật trạng thái nổi bật');
+      showToast('success', 'Success', 'Featured status updated successfully');
       
       // Reset any featured filter to ensure updated hotel appears
       if (featuredFilter !== undefined) {
@@ -227,7 +227,7 @@ const AdminHotels: React.FC = () => {
       fetchHotels(currentPage);
     } catch (error: any) {
       console.error('💥 Error toggling featured status:', error);
-      showToast('error', 'Lỗi', 'Không thể cập nhật trạng thái nổi bật');
+              showToast('error', 'Error', 'Unable to update featured status');
     } finally {
       setActionLoading(null);
     }
@@ -238,14 +238,14 @@ const AdminHotels: React.FC = () => {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
           <Check size={12} className="mr-1" />
-          Hoạt động
+          Active
         </span>
       );
     } else {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
           <X size={12} className="mr-1" />
-          Không hoạt động
+          Inactive
         </span>
       );
     }
@@ -255,8 +255,7 @@ const AdminHotels: React.FC = () => {
     if (featured) {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-          <Award size={12} className="mr-1" />
-          Nổi bật
+          <Award size={12} className="mr-1" /> 
         </span>
       );
     }
@@ -278,8 +277,8 @@ const AdminHotels: React.FC = () => {
     <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold">Quản lý khách sạn</h1>
-          <p className="text-gray-600 mt-1">Tổng cộng {totalElements} khách sạn</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Hotel Management</h1>
+          <p className="text-gray-600 mt-1">Total {totalElements} hotels</p>
         </div>
         <div className="flex space-x-3">
           <button
@@ -288,14 +287,14 @@ const AdminHotels: React.FC = () => {
             className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center disabled:opacity-50"
           >
             <RefreshCw size={20} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Làm mới
+                          Refresh
           </button> 
           <button
             onClick={handleAddHotel}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
           >
             <Plus size={20} className="mr-2" />
-            Thêm khách sạn
+                          Add Hotel
           </button>
         </div>
       </div>
@@ -308,7 +307,7 @@ const AdminHotels: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Tìm kiếm theo tên khách sạn, địa chỉ..."
+                placeholder="Search by hotel name, address..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -321,7 +320,7 @@ const AdminHotels: React.FC = () => {
             className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center"
           >
             <Filter size={20} className="mr-2" />
-            Bộ lọc
+                          Filters
           </button>
         </div>
 
@@ -352,49 +351,49 @@ const AdminHotels: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Xếp hạng sao</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Star Rating</label>
                 <select
                   value={starRatingFilter || ''}
                   onChange={(e) => setStarRatingFilter(e.target.value ? Number(e.target.value) : undefined)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Tất cả</option>
-                  <option value="1">1 sao</option>
-                  <option value="2">2 sao</option>
-                  <option value="3">3 sao</option>
-                  <option value="4">4 sao</option>
-                  <option value="5">5 sao</option>
+                  <option value="">All</option>
+                  <option value="1">1 star</option>
+                  <option value="2">2 stars</option>
+                  <option value="3">3 stars</option>
+                  <option value="4">4 stars</option>
+                  <option value="5">5 stars</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
                   value={statusFilter === undefined ? '' : statusFilter.toString()}
                   onChange={(e) => setStatusFilter(e.target.value === '' ? undefined : e.target.value === 'true')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Tất cả</option>
-                  <option value="true">Hoạt động</option>
-                  <option value="false">Không hoạt động</option>
+                  <option value="">All</option>
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nổi bật</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Featured</label>
                 <select
                   value={featuredFilter === undefined ? '' : featuredFilter.toString()}
                   onChange={(e) => setFeaturedFilter(e.target.value === '' ? undefined : e.target.value === 'true')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Tất cả</option>
-                  <option value="true">Nổi bật</option>
-                  <option value="false">Không nổi bật</option>
+                  <option value="">All</option>
+                  <option value="true">Featured</option>
+                  <option value="false">Not Featured</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Giá tối thiểu</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Min Price</label>
                 <input
                   type="number"
                   placeholder="VND"
@@ -405,7 +404,7 @@ const AdminHotels: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Giá tối đa</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Max Price</label>
                 <input
                   type="number"
                   placeholder="VND"
@@ -420,7 +419,7 @@ const AdminHotels: React.FC = () => {
                   onClick={clearFilters}
                   className="w-full bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
                 >
-                  Xóa bộ lọc
+                  Clear Filters
                 </button>
               </div>
             </div>
@@ -433,7 +432,7 @@ const AdminHotels: React.FC = () => {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between">
             <span className="text-blue-800 font-medium">
-              Đã chọn {selectedHotels.length} khách sạn
+              Selected {selectedHotels.length} hotels
             </span>
             <div className="flex space-x-2">
               <button
@@ -442,7 +441,7 @@ const AdminHotels: React.FC = () => {
                 className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center disabled:opacity-50"
               >
                 <Trash size={16} className="mr-2" />
-                {actionLoading === 'bulk-delete' ? 'Đang xóa...' : 'Xóa đã chọn'}
+                {actionLoading === 'bulk-delete' ? 'Deleting...' : 'Delete Selected'}
               </button>
             </div>
           </div>
@@ -464,25 +463,25 @@ const AdminHotels: React.FC = () => {
                   />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Khách sạn
+                  Hotel
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Địa điểm
+                  Location
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Chủ sở hữu
+                  Owner
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Giá/đêm
+                  Price/night
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Đánh giá
+                  Rating
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
+                  Status
                 </th> 
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -492,14 +491,14 @@ const AdminHotels: React.FC = () => {
                   <td colSpan={9} className="px-6 py-12 text-center">
                     <div className="flex justify-center items-center">
                       <RefreshCw className="animate-spin mr-2" size={20} />
-                      Đang tải...
+                      Loading...
                     </div>
                   </td>
                 </tr>
               ) : hotels.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
-                    Không tìm thấy khách sạn nào
+                    No hotels found
                   </td>
                 </tr>
               ) : (

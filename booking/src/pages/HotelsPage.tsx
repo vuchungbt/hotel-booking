@@ -120,7 +120,7 @@ const HotelsPage: React.FC = () => {
           totalPages: result.totalPages || 0
         }));
       } else {
-        setError('Không thể tải danh sách khách sạn');
+        setError('Unable to load hotel list');
       }
     } catch (err) {
       console.error('Error fetching hotels:', err);
@@ -176,7 +176,7 @@ const HotelsPage: React.FC = () => {
 
   // Format price
   const formatPrice = (price: number | undefined) => {
-    if (!price) return 'Liên hệ';
+    if (!price) return 'Contact';
     return price.toLocaleString('vi-VN') + 'đ';
   };
 
@@ -252,10 +252,10 @@ const HotelsPage: React.FC = () => {
       {/* Page Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-12">
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Khách sạn & Resort</h1>
-          <p className="text-xl text-blue-100">
-            Khám phá hàng ngàn khách sạn tuyệt vời trên khắp Việt Nam
-          </p>
+                          <h1 className="text-4xl font-bold mb-4">Hotels & Resorts</h1>
+                <p className="text-xl text-blue-100">
+                  Explore thousands of amazing hotels across Vietnam
+                </p>
         </div>
       </div>
 
@@ -265,7 +265,7 @@ const HotelsPage: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center gap-2 text-blue-800 mb-2">
               <Search size={18} />
-              <span className="font-medium">Tìm kiếm của bạn:</span>
+                              <span className="font-medium">Your search:</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {location && (
@@ -301,7 +301,7 @@ const HotelsPage: React.FC = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Tìm kiếm khách sạn..."
+                                        placeholder="Search hotels..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -314,7 +314,7 @@ const HotelsPage: React.FC = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Địa điểm"
+                  placeholder="Location"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -327,7 +327,7 @@ const HotelsPage: React.FC = () => {
               onClick={handleSearch}
               className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
             >
-              Tìm kiếm
+                                  Search
             </button>
           </div>
         </div>
@@ -340,44 +340,44 @@ const HotelsPage: React.FC = () => {
           <div className="lg:w-1/4">
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Bộ lọc</h3>
+                <h3 className="text-lg font-semibold">Filter</h3>
                 <Filter size={20} className="text-gray-500" />
               </div>
 
               {/* Price Range */}
               <div className="mb-6">
-                <h4 className="font-medium mb-3 text-gray-700">Khoảng giá</h4>
+                <h4 className="font-medium mb-3 text-gray-700">Price Range</h4>
                 <select
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   value={filters.priceRange}
                   onChange={(e) => handleFilterChange({priceRange: e.target.value})}
                 >
-                  <option value="all">Tất cả</option>
-                  <option value="0-1000000">Dưới 1 triệu</option>
-                  <option value="1000000-2000000">1 - 2 triệu</option>
-                  <option value="2000000-5000000">2 - 5 triệu</option>
-                  <option value="5000000-+">Trên 5 triệu</option>
+                  <option value="all">All</option>
+                  <option value="0-1000000">Under 1 million</option>
+                  <option value="1000000-2000000">1 - 2 million</option>
+                  <option value="2000000-5000000">2 - 5 million</option>
+                  <option value="5000000-+">Over 5 million</option>
                 </select>
               </div>
 
               {/* Rating */}
               <div className="mb-6">
-                <h4 className="font-medium mb-3 text-gray-700">Đánh giá</h4>
+                <h4 className="font-medium mb-3 text-gray-700">Rating</h4>
                 <select
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   value={filters.rating}
                   onChange={(e) => handleFilterChange({rating: e.target.value})}
                 >
-                  <option value="all">Tất cả</option>
-                  <option value="5">5 sao</option>
-                  <option value="4">4 sao trở lên</option>
-                  <option value="3">3 sao trở lên</option>
+                  <option value="all">All</option>
+                  <option value="5">5 stars</option>
+                  <option value="4">4 stars or higher</option>
+                  <option value="3">3 stars or higher</option>
                 </select>
               </div>
 
               {/* Amenities */}
               <div>
-                <h4 className="font-medium mb-3 text-gray-700">Tiện nghi</h4>
+                <h4 className="font-medium mb-3 text-gray-700">Amenities</h4>
                 <div className="space-y-3 max-h-48 overflow-y-auto">
                   {availableAmenities.map((amenity) => (
                     <label key={amenity} className="flex items-center cursor-pointer">
@@ -396,12 +396,12 @@ const HotelsPage: React.FC = () => {
                     </label>
                   ))}
                   {availableAmenities.length === 0 && (
-                    <div className="text-gray-500 text-sm">Đang tải tiện nghi...</div>
+                    <div className="text-gray-500 text-sm">Loading amenities...</div>
                   )}
                 </div>
                 {filters.amenities.length > 0 && (
                   <div className="mt-3 pt-3 border-t">
-                    <div className="text-sm text-gray-600 mb-2">Đã chọn ({filters.amenities.length}):</div>
+                    <div className="text-sm text-gray-600 mb-2">Selected ({filters.amenities.length}):</div>
                     <div className="flex flex-wrap gap-1">
                       {filters.amenities.map((amenity) => (
                         <span 
@@ -432,17 +432,17 @@ const HotelsPage: React.FC = () => {
             {/* Header and Sort */}
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
-                {loading ? 'Đang tải...' : `Tìm thấy ${pagination.totalElements} khách sạn`}
+                {loading ? 'Loading...' : `Found ${pagination.totalElements} hotels`}
               </h2>
               <select 
                 className="p-2 border border-gray-300 rounded-lg"
                 value={sortBy}
                 onChange={(e) => handleSortChange(e.target.value)}
               >
-                <option value="name">Sắp xếp theo tên</option>
-                <option value="pricePerNight">Giá thấp đến cao</option>
-                <option value="starRating">Đánh giá cao nhất</option>
-                <option value="createdAt">Mới nhất</option>
+                <option value="name">Sort by name</option>
+                <option value="pricePerNight">Sort by price</option>
+                <option value="starRating">Sort by rating</option>
+                <option value="createdAt">Sort by date</option>
               </select>
             </div>
 
@@ -458,8 +458,8 @@ const HotelsPage: React.FC = () => {
               <LoadingSkeleton />
             ) : hotels.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-gray-500 text-lg mb-4">Không tìm thấy khách sạn nào</div>
-                <p className="text-gray-400">Vui lòng thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                <div className="text-gray-500 text-lg mb-4">No hotels found</div>
+                <p className="text-gray-400">Please try changing your filters or search keywords</p>
               </div>
             ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -477,7 +477,7 @@ const HotelsPage: React.FC = () => {
                     />
                       {hotel.featured && (
                         <div className="absolute top-4 left-4 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                          Nổi bật
+                          Featured
                         </div>
                       )}
                     <div className="absolute top-4 right-4 bg-white px-2 py-1 rounded-full shadow-md">
@@ -488,7 +488,7 @@ const HotelsPage: React.FC = () => {
                               <span className="ml-1 text-sm font-medium">{hotel.starRating}</span>
                             </>
                           ) : (
-                            <span className="text-sm text-gray-500">Chưa xếp hạng</span>
+                            <span className="text-sm text-gray-500">No rating</span>
                           )}
                       </div>
                     </div>
@@ -518,12 +518,12 @@ const HotelsPage: React.FC = () => {
                               {renderStars(Math.round(hotel.averageRating))}
                             </div>
                             <span className="text-sm text-gray-600">
-                              {hotel.averageRating.toFixed(1)} ({hotel.totalReviews || 0} đánh giá)
+                              {hotel.averageRating.toFixed(1)} ({hotel.totalReviews || 0} reviews)
                             </span>
                           </>
                         ) : (
                           <span className="text-sm text-gray-500">
-                            Chưa có đánh giá từ khách hàng
+                              No reviews
                           </span>
                         )}
                       </div>
@@ -534,14 +534,14 @@ const HotelsPage: React.FC = () => {
                             {formatPrice(hotel.pricePerNight)}
                         </span>
                           {hotel.pricePerNight && (
-                        <span className="text-gray-500 text-sm ml-1">/đêm</span>
+                        <span className="text-gray-500 text-sm ml-1">/night</span>
                           )}
                       </div>
                         <Link
                           to={`/hotels/${hotel.id}`}
                           className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                         >
-                        Xem chi tiết
+                        View details
                         </Link>
                     </div>
                   </div>
@@ -560,7 +560,7 @@ const HotelsPage: React.FC = () => {
                     className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
                     <ChevronLeft size={16} className="mr-1" />
-                  Trước
+                  Previous
                 </button>
                   
                   {/* Page numbers */}
@@ -586,7 +586,7 @@ const HotelsPage: React.FC = () => {
                     disabled={pagination.pageNumber >= pagination.totalPages - 1}
                     className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
-                    Sau
+                        Next
                     <ChevronRight size={16} className="ml-1" />
                 </button>
               </div>

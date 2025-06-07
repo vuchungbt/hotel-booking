@@ -74,11 +74,11 @@ const AdminRoomTypes: React.FC = () => {
         setTotalElements(data.result.totalElements);
         setCurrentPage(data.result.number);
       } else {
-        showToast('error', 'Lỗi', data.message || 'Không thể tải danh sách loại phòng');
+        showToast('error', 'Error', data.message || 'Unable to load room type list');
       }
     } catch (error: any) {
       console.error('Error fetching room types:', error);
-      showToast('error', 'Lỗi', 'Không thể kết nối đến server');
+      showToast('error', 'Error', 'Unable to connect to server');
     } finally {
       setLoading(false);
     }
@@ -151,15 +151,15 @@ const AdminRoomTypes: React.FC = () => {
   };
 
   const handleDeleteRoomType = async (roomTypeId: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa loại phòng này?')) {
+          if (window.confirm('Are you sure you want to delete this room type?')) {
       try {
         setActionLoading(roomTypeId);
         await roomTypeAPI.deleteRoomType(roomTypeId);
-        showToast('success', 'Thành công', 'Đã xóa loại phòng');
+                  showToast('success', 'Success', 'Room type deleted successfully');
         fetchRoomTypes(currentPage);
       } catch (error: any) {
         console.error('Error deleting room type:', error);
-        showToast('error', 'Lỗi', 'Không thể xóa loại phòng');
+        showToast('error', 'Error', 'Unable to delete room type');
       } finally {
         setActionLoading(null);
       }
@@ -169,17 +169,17 @@ const AdminRoomTypes: React.FC = () => {
   const handleDeleteSelected = async () => {
     if (selectedRoomTypes.length === 0) return;
     
-    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedRoomTypes.length} loại phòng đã chọn?`)) {
+    if (window.confirm(`Are you sure you want to delete ${selectedRoomTypes.length} selected room types?`)) {
       try {
         setActionLoading('bulk-delete');
         await Promise.all(selectedRoomTypes.map(id => roomTypeAPI.deleteRoomType(id)));
-        showToast('success', 'Thành công', `Đã xóa ${selectedRoomTypes.length} loại phòng`);
+        showToast('success', 'Success', `Deleted ${selectedRoomTypes.length} room types`);
         setSelectedRoomTypes([]);
         setIsSelectAll(false);
         fetchRoomTypes(currentPage);
       } catch (error: any) {
         console.error('Error deleting room types:', error);
-        showToast('error', 'Lỗi', 'Không thể xóa một số loại phòng');
+        showToast('error', 'Error', 'Unable to delete some room types');
       } finally {
         setActionLoading(null);
       }
@@ -226,24 +226,24 @@ const AdminRoomTypes: React.FC = () => {
             disabled={currentPage === 0}
             className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Trước
+            Previous
           </button>
           <button
             onClick={() => handlePageChange(Math.min(totalPages - 1, currentPage + 1))}
             disabled={currentPage === totalPages - 1}
             className="relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sau
+            Next
           </button>
         </div>
         <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-gray-700">
-              Hiển thị <span className="font-medium">{currentPage * itemsPerPage + 1}</span> đến{' '}
+              Showing <span className="font-medium">{currentPage * itemsPerPage + 1}</span> to{' '}
               <span className="font-medium">
                 {Math.min((currentPage + 1) * itemsPerPage, totalElements)}
               </span>{' '}
-              trong tổng số <span className="font-medium">{totalElements}</span> kết quả
+              of <span className="font-medium">{totalElements}</span> results
             </p>
           </div>
           <div>
@@ -253,7 +253,7 @@ const AdminRoomTypes: React.FC = () => {
                 disabled={currentPage === 0}
                 className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Trước
+                Previous
               </button>
               {pages}
               <button
@@ -261,7 +261,7 @@ const AdminRoomTypes: React.FC = () => {
                 disabled={currentPage === totalPages - 1}
                 className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sau
+                Next
               </button>
             </nav>
           </div>
@@ -275,8 +275,8 @@ const AdminRoomTypes: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Quản lý loại phòng</h1>
-          <p className="text-gray-600 mt-1">Quản lý các loại phòng trong hệ thống</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Room Type Management</h1>
+          <p className="text-gray-600 mt-1">Manage room types in the system</p>
         </div>
         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
           <button
@@ -285,14 +285,14 @@ const AdminRoomTypes: React.FC = () => {
             className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center disabled:opacity-50"
           >
             <RefreshCw size={20} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Làm mới
+            Refresh
           </button>
           <button
             onClick={handleAddRoomType}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
           >
             <Plus size={20} className="mr-2" />
-            Thêm loại phòng
+                          Add Room Type
           </button>
         </div>
       </div>
@@ -306,7 +306,7 @@ const AdminRoomTypes: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Tìm kiếm loại phòng..."
+                placeholder="Search room types..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -321,14 +321,14 @@ const AdminRoomTypes: React.FC = () => {
               className="flex items-center px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
               <Filter size={20} className="mr-2" />
-              Bộ lọc
+              Filters
             </button>
             {(hotelFilter || minOccupancy || maxOccupancy || minPrice || maxPrice) && (
               <button
                 onClick={clearFilters}
                 className="text-blue-600 hover:text-blue-800 text-sm font-medium"
               >
-                Xóa bộ lọc
+                Clear Filters
               </button>
             )}
           </div>
@@ -340,13 +340,13 @@ const AdminRoomTypes: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {/* Hotel Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Khách sạn</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Hotel</label>
                 <select
                   value={hotelFilter}
                   onChange={(e) => setHotelFilter(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Tất cả khách sạn</option>
+                  <option value="">All Hotels</option>
                   {hotels.map(hotel => (
                     <option key={hotel.id} value={hotel.id}>{hotel.name}</option>
                   ))}
@@ -355,7 +355,7 @@ const AdminRoomTypes: React.FC = () => {
 
               {/* Occupancy Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sức chứa</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Occupancy</label>
                 <div className="flex space-x-2">
                   <input
                     type="number"
@@ -376,20 +376,20 @@ const AdminRoomTypes: React.FC = () => {
 
               {/* Price Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Giá phòng</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Room Price</label>
                 <div className="flex space-x-2">
                   <input
                     type="number"
                     value={minPrice || ''}
                     onChange={(e) => setMinPrice(e.target.value ? parseInt(e.target.value) : undefined)}
-                    placeholder="Tối thiểu"
+                    placeholder="Min"
                     className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   <input
                     type="number"
                     value={maxPrice || ''}
                     onChange={(e) => setMaxPrice(e.target.value ? parseInt(e.target.value) : undefined)}
-                    placeholder="Tối đa"
+                    placeholder="Max"
                     className="w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -404,7 +404,7 @@ const AdminRoomTypes: React.FC = () => {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between">
             <span className="text-blue-800 font-medium">
-              Đã chọn {selectedRoomTypes.length} loại phòng
+              Selected {selectedRoomTypes.length} room types
             </span>
             <div className="flex space-x-2">
               <button
@@ -413,7 +413,7 @@ const AdminRoomTypes: React.FC = () => {
                 className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center disabled:opacity-50"
               >
                 <Trash size={16} className="mr-2" />
-                {actionLoading === 'bulk-delete' ? 'Đang xóa...' : 'Xóa đã chọn'}
+                {actionLoading === 'bulk-delete' ? 'Deleting...' : 'Delete Selected'}
               </button>
             </div>
           </div>
@@ -435,23 +435,23 @@ const AdminRoomTypes: React.FC = () => {
                   />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Loại phòng
+                  Room Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Khách sạn
+                  Hotel
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sức chứa
+                  Occupancy
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Giá/đêm
+                  Price/night
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Phòng
+                  Rooms
                 </th>
                 
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -461,14 +461,14 @@ const AdminRoomTypes: React.FC = () => {
                   <td colSpan={8} className="px-6 py-12 text-center">
                     <div className="flex items-center justify-center">
                       <RefreshCw className="animate-spin mr-2" size={20} />
-                      Đang tải...
+                      Loading...
                     </div>
                   </td>
                 </tr>
               ) : roomTypes.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
-                    Không tìm thấy loại phòng nào
+                    No room types found
                   </td>
                 </tr>
               ) : (
@@ -514,7 +514,7 @@ const AdminRoomTypes: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <Users size={16} className="text-gray-400 mr-2" />
-                        <span className="text-sm text-gray-900">{roomType.maxOccupancy} người</span>
+                        <span className="text-sm text-gray-900">{roomType.maxOccupancy} people</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -527,8 +527,8 @@ const AdminRoomTypes: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
-                        <div>Tổng: {roomType.totalRooms}</div>
-                        <div className="text-green-600">Trống: {roomType.availableRooms}</div>
+                        <div>Total: {roomType.totalRooms}</div>
+                        <div className="text-green-600">Available: {roomType.availableRooms}</div>
                       </div>
                     </td> 
                     <td className="px-6 py-4 text-right text-sm font-medium">
@@ -536,14 +536,14 @@ const AdminRoomTypes: React.FC = () => {
                         <button
                           onClick={() => handleViewRoomType(roomType.id)}
                           className="text-blue-600 hover:text-blue-900 p-1 rounded"
-                          title="Xem chi tiết"
+                          title="View Details"
                         >
                           <Eye size={16} />
                         </button>
                         <button
                           onClick={() => handleEditRoomType(roomType.id)}
                           className="text-yellow-600 hover:text-yellow-900 p-1 rounded"
-                          title="Chỉnh sửa"
+                          title="Edit"
                         >
                           <Edit size={16} />
                         </button>
@@ -551,7 +551,7 @@ const AdminRoomTypes: React.FC = () => {
                           onClick={() => handleDeleteRoomType(roomType.id)}
                           disabled={actionLoading === roomType.id}
                           className="text-red-600 hover:text-red-900 p-1 rounded disabled:opacity-50"
-                          title="Xóa"
+                          title="Delete"
                         >
                           <Trash size={16} />
                         </button>

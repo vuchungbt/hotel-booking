@@ -48,15 +48,15 @@ const AdminRoomTypeDetail: React.FC = () => {
   const handleDeleteRoomType = async () => {
     if (!roomType) return;
     
-    if (window.confirm(`Bạn có chắc chắn muốn xóa loại phòng "${roomType.name}"?`)) {
+          if (window.confirm(`Are you sure you want to delete room type "${roomType.name}"?`)) {
       try {
         setActionLoading('delete');
         await roomTypeAPI.deleteRoomType(roomType.id);
-        showToast('success', 'Thành công', 'Đã xóa loại phòng');
+                  showToast('success', 'Success', 'Room type deleted successfully');
         navigate('/admin/room-types');
       } catch (error: any) {
         console.error('Error deleting room type:', error);
-        showToast('error', 'Lỗi', 'Không thể xóa loại phòng');
+                  showToast('error', 'Error', 'Unable to delete room type');
       } finally {
         setActionLoading(null);
       }
@@ -128,7 +128,7 @@ const AdminRoomTypeDetail: React.FC = () => {
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
           >
             <Edit size={20} className="mr-2" />
-            Chỉnh sửa
+                          Edit
           </button>
           <button
             onClick={handleDeleteRoomType}
@@ -136,7 +136,7 @@ const AdminRoomTypeDetail: React.FC = () => {
             className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center disabled:opacity-50"
           >
             <Trash size={20} className="mr-2" />
-            {actionLoading === 'delete' ? 'Đang xóa...' : 'Xóa'}
+                          {actionLoading === 'delete' ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>
@@ -274,7 +274,7 @@ const AdminRoomTypeDetail: React.FC = () => {
                 <p className="text-gray-900 text-sm">{formatDate(roomType.createdAt)}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cập nhật lần cuối</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Updated</label>
                 <p className="text-gray-900 text-sm">{formatDate(roomType.updatedAt)}</p>
               </div>
               {roomType.createdBy && (
@@ -288,7 +288,7 @@ const AdminRoomTypeDetail: React.FC = () => {
               )}
               {roomType.updatedBy && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cập nhật bởi</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Updated By</label>
                   <div className="flex items-center">
                     <User size={16} className="text-gray-400 mr-2" />
                     <span className="text-gray-900 text-sm">{roomType.updatedBy}</span>

@@ -41,7 +41,7 @@ const HotelDetailPage: React.FC = () => {
       if (hotelResponse.data.success) {
         setHotel(hotelResponse.data.result);
       } else {
-        setError('Không tìm thấy thông tin khách sạn');
+        setError('Hotel information not found');
       }
 
       if (roomTypesResponse.data.success) {
@@ -54,7 +54,7 @@ const HotelDetailPage: React.FC = () => {
 
     } catch (err) {
       console.error('Error fetching hotel details:', err);
-      setError('Có lỗi xảy ra khi tải thông tin khách sạn');
+      setError('An error occurred while loading hotel information');
     } finally {
       setLoading(false);
     }
@@ -74,8 +74,8 @@ const HotelDetailPage: React.FC = () => {
 
   // Format price
   const formatPrice = (price: number | undefined) => {
-    if (!price) return 'Liên hệ';
-    return price.toLocaleString('vi-VN') + 'đ';
+    if (!price) return 'Contact';
+    return price.toLocaleString('en-US') + ' VND';
   };
 
   // Render stars
@@ -93,10 +93,10 @@ const HotelDetailPage: React.FC = () => {
   const getAmenityIcon = (amenity: string) => {
     const lowerAmenity = amenity.toLowerCase();
     if (lowerAmenity.includes('wifi') || lowerAmenity.includes('internet')) return <Wifi className="h-5 w-5" />;
-    if (lowerAmenity.includes('parking') || lowerAmenity.includes('đỗ xe')) return <Car className="h-5 w-5" />;
-    if (lowerAmenity.includes('restaurant') || lowerAmenity.includes('nhà hàng')) return <Utensils className="h-5 w-5" />;
+    if (lowerAmenity.includes('parking') || lowerAmenity.includes('car park')) return <Car className="h-5 w-5" />;
+    if (lowerAmenity.includes('restaurant') || lowerAmenity.includes('dining')) return <Utensils className="h-5 w-5" />;
     if (lowerAmenity.includes('gym') || lowerAmenity.includes('fitness')) return <Dumbbell className="h-5 w-5" />;
-    if (lowerAmenity.includes('pool') || lowerAmenity.includes('hồ bơi')) return <Waves className="h-5 w-5" />;
+    if (lowerAmenity.includes('pool') || lowerAmenity.includes('swimming')) return <Waves className="h-5 w-5" />;
     if (lowerAmenity.includes('bar') || lowerAmenity.includes('coffee')) return <Coffee className="h-5 w-5" />;
     return <Star className="h-5 w-5" />;
   };
@@ -134,7 +134,7 @@ const HotelDetailPage: React.FC = () => {
     setUserExistingReview(null); // Reset so we can fetch updated review
     // Refresh reviews and check user review again
     Promise.all([fetchHotelDetails(), checkUserExistingReview()]);
-    alert('Đánh giá của bạn đã được gửi thành công!');
+    alert('Your review has been submitted successfully!');
   };
 
   // Handle review update success
@@ -142,7 +142,7 @@ const HotelDetailPage: React.FC = () => {
     setShowReviewForm(false);
     // Refresh reviews and user review
     Promise.all([fetchHotelDetails(), checkUserExistingReview()]);
-    alert('Đánh giá của bạn đã được cập nhật!');
+    alert('Your review has been updated!');
   };
 
   // Handle review delete success
@@ -151,7 +151,7 @@ const HotelDetailPage: React.FC = () => {
     setUserExistingReview(null); // Clear existing review
     // Refresh reviews
     fetchHotelDetails();
-    alert('Đánh giá của bạn đã được xóa!');
+    alert('Your review has been deleted!');
   };
 
   if (loading) {
@@ -185,12 +185,12 @@ const HotelDetailPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-gray-500 text-lg mb-4">{error || 'Không tìm thấy khách sạn'}</div>
+          <div className="text-gray-500 text-lg mb-4">{error || 'Hotel not found'}</div>
           <Link
             to="/hotels"
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Quay lại danh sách khách sạn
+            Back to hotel list
           </Link>
         </div>
       </div>
@@ -203,14 +203,14 @@ const HotelDetailPage: React.FC = () => {
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Link to="/" className="hover:text-blue-600">Trang chủ</Link>
+            <Link to="/" className="hover:text-blue-600">Home</Link>
             <ChevronLeft className="h-4 w-4 rotate-180" />
-            <Link to="/hotels" className="hover:text-blue-600">Khách sạn</Link>
+            <Link to="/hotels" className="hover:text-blue-600">Hotels</Link>
             <ChevronLeft className="h-4 w-4 rotate-180" />
             <span className="text-gray-900 font-medium">{hotel.name}</span>
           </div>
-              </div>
-            </div>
+        </div>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Image */}
@@ -226,7 +226,7 @@ const HotelDetailPage: React.FC = () => {
           />
           {hotel.featured && (
             <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-              Nổi bật
+              Featured
             </div>
           )}
         </div>
@@ -253,12 +253,12 @@ const HotelDetailPage: React.FC = () => {
                   {hotel.starRating && (
                     <div className="flex items-center mb-2">
                       {renderStars(hotel.starRating)}
-                      <span className="ml-2 text-lg font-medium">{hotel.starRating} sao</span>
+                      <span className="ml-2 text-lg font-medium">{hotel.starRating} stars</span>
                     </div>
                   )}
                   {hotel.averageRating && (
                     <div className="text-sm text-gray-600">
-                      {hotel.averageRating.toFixed(1)}/5 ({hotel.totalReviews || 0} đánh giá)
+                      {hotel.averageRating.toFixed(1)}/5 ({hotel.totalReviews || 0} reviews)
                     </div>
                   )}
                 </div>
@@ -269,9 +269,9 @@ const HotelDetailPage: React.FC = () => {
             <div className="border-b border-gray-200 mb-6">
               <nav className="-mb-px flex space-x-8">
                 {[
-                  { id: 'overview', label: 'Tổng quan' },
-                  { id: 'rooms', label: `Phòng (${roomTypes.length})` },
-                  { id: 'reviews', label: `Đánh giá (${reviews.length})` }
+                  { id: 'overview', label: 'Overview' },
+                  { id: 'rooms', label: `Rooms (${roomTypes.length})` },
+                  { id: 'reviews', label: `Reviews (${reviews.length})` }
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -294,7 +294,7 @@ const HotelDetailPage: React.FC = () => {
                 {/* Description */}
                 {hotel.description && (
                   <div>
-                    <h3 className="text-xl font-semibold mb-4">Mô tả</h3>
+                    <h3 className="text-xl font-semibold mb-4">Description</h3>
                     <p className="text-gray-700 leading-relaxed">{hotel.description}</p>
                   </div>
                 )}
@@ -302,7 +302,7 @@ const HotelDetailPage: React.FC = () => {
                 {/* Amenities */}
                 {hotel.amenities && (
                   <div>
-                    <h3 className="text-xl font-semibold mb-4">Tiện nghi</h3>
+                    <h3 className="text-xl font-semibold mb-4">Amenities</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {hotel.amenities.split(',').map((amenity, index) => (
                         <div key={index} className="flex items-center p-3 bg-gray-50 rounded-lg">
@@ -318,21 +318,21 @@ const HotelDetailPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {hotel.cancellationPolicy && (
                     <div>
-                      <h3 className="text-lg font-semibold mb-3">Chính sách hủy phòng</h3>
+                      <h3 className="text-lg font-semibold mb-3">Cancellation Policy</h3>
                       <p className="text-gray-700">{hotel.cancellationPolicy}</p>
                     </div>
                   )}
                   {hotel.petPolicy && (
-            <div>
-                      <h3 className="text-lg font-semibold mb-3">Chính sách thú cưng</h3>
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">Pet Policy</h3>
                       <p className="text-gray-700">{hotel.petPolicy}</p>
                     </div>
                   )}
                 </div>
 
                 {/* Contact Info */}
-                      <div>
-                  <h3 className="text-xl font-semibold mb-4">Thông tin liên hệ</h3>
+                <div>
+                  <h3 className="text-xl font-semibold mb-4">Contact Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {hotel.phone && (
                       <div className="flex items-center p-3 bg-gray-50 rounded-lg">
@@ -368,7 +368,7 @@ const HotelDetailPage: React.FC = () => {
               <div className="space-y-6">
                 {roomTypes.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    Chưa có thông tin phòng
+                    No room information available
                   </div>
                 ) : (
                   roomTypes.map((roomType) => (
@@ -395,27 +395,27 @@ const HotelDetailPage: React.FC = () => {
                             <div className="flex items-center">
                               <Users className="h-4 w-4 text-gray-500 mr-2" />
                               <span className="text-sm text-gray-700">
-                                Tối đa {roomType.maxOccupancy} người
+                                Max {roomType.maxOccupancy} guests
                               </span>
                             </div>
                             {roomType.bedType && (
                               <div className="text-sm text-gray-700">
-                                Loại giường: {roomType.bedType}
+                                Bed type: {roomType.bedType}
                               </div>
                             )}
                             {roomType.roomSize && (
                               <div className="text-sm text-gray-700">
-                                Diện tích: {roomType.roomSize}m²
+                                Size: {roomType.roomSize}m²
                               </div>
                             )}
                             <div className="text-sm text-gray-700">
-                              Còn trống: {roomType.availableRooms} phòng
+                              Available: {roomType.availableRooms} rooms
                             </div>
                           </div>
 
                           {roomType.amenities && (
                             <div className="mb-4">
-                              <div className="text-xs text-gray-600 mb-2">Tiện ích phòng:</div>
+                              <div className="text-xs text-gray-600 mb-2">Room amenities:</div>
                               <div className="flex flex-wrap gap-2">
                                 {roomType.amenities.split(',').map((amenity, index) => (
                                   <span 
@@ -434,10 +434,10 @@ const HotelDetailPage: React.FC = () => {
                               <span className="text-2xl font-bold text-blue-600">
                                 {formatPrice(roomType.pricePerNight)}
                               </span>
-                              <span className="text-gray-500 text-sm ml-1">/đêm</span>
+                              <span className="text-gray-500 text-sm ml-1">/night</span>
                             </div>
                             <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                              Đặt phòng
+                              Book Now
                             </button>
                           </div>
                         </div>
@@ -456,14 +456,14 @@ const HotelDetailPage: React.FC = () => {
                     {checkingUserReview ? (
                       <div className="text-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                        <p className="text-gray-600">Đang kiểm tra đánh giá của bạn...</p>
-                    </div>
+                        <p className="text-gray-600">Checking your review...</p>
+                      </div>
                     ) : userExistingReview ? (
                       // User has existing review - show edit option
                       !showReviewForm ? (
                         <div className="text-center">
                           <h4 className="text-lg font-medium text-gray-900 mb-2">
-                            Bạn đã đánh giá khách sạn này
+                            You have already reviewed this hotel
                           </h4>
                           <div className="mb-4 p-4 bg-gray-50 rounded-lg">
                             <div className="flex items-center justify-center mb-2">
@@ -474,23 +474,23 @@ const HotelDetailPage: React.FC = () => {
                                 />
                               ))}
                               <span className="ml-2 text-sm text-gray-600">
-                                {userExistingReview.rating}/5 sao
+                                {userExistingReview.rating}/5 stars
                               </span>
                             </div>
                             {userExistingReview.comment && (
                               <p className="text-gray-700 text-sm">"{userExistingReview.comment}"</p>
                             )}
                             <p className="text-xs text-gray-500 mt-2">
-                              Đánh giá vào {new Date(userExistingReview.createdAt).toLocaleDateString('vi-VN')}
+                              Reviewed on {new Date(userExistingReview.createdAt).toLocaleDateString('en-US')}
                             </p>
                           </div>
                           <button
                             onClick={() => setShowReviewForm(true)}
                             className="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors"
                           >
-                            Chỉnh sửa đánh giá
+                            Edit review
                           </button>
-                    </div>
+                        </div>
                       ) : (
                         <ReviewEditForm
                           review={{
@@ -510,16 +510,16 @@ const HotelDetailPage: React.FC = () => {
                       !showReviewForm ? (
                         <div className="text-center">
                           <h4 className="text-lg font-medium text-gray-900 mb-2">
-                            Chia sẻ trải nghiệm của bạn
+                            Share your experience
                           </h4>
                           <p className="text-gray-600 mb-4">
-                            Đánh giá của bạn sẽ giúp những người khác có lựa chọn tốt hơn
+                            Your review will help others make better choices
                           </p>
-                    <button
+                          <button
                             onClick={() => setShowReviewForm(true)}
                             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                           >
-                            Viết đánh giá
+                            Write a review
                           </button>
                         </div>
                       ) : (
@@ -535,16 +535,16 @@ const HotelDetailPage: React.FC = () => {
                 ) : (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
                     <h4 className="text-lg font-medium text-gray-900 mb-2">
-                      Đăng nhập để viết đánh giá
+                      Login to write a review
                     </h4>
                     <p className="text-gray-600 mb-4">
-                      Bạn cần đăng nhập để có thể chia sẻ trải nghiệm và đánh giá khách sạn
+                      You need to login to share your experience and review this hotel
                     </p>
                     <Link
                       to="/login"
                       className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-block"
                     >
-                      Đăng nhập
+                      Login
                     </Link>
                   </div>
                 )}
@@ -564,7 +564,7 @@ const HotelDetailPage: React.FC = () => {
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
-              <h3 className="text-lg font-semibold mb-4">Thông tin đặt phòng</h3>
+              <h3 className="text-lg font-semibold mb-4">Booking Information</h3>
               
               {/* Price */}
               <div className="mb-6">
@@ -572,7 +572,7 @@ const HotelDetailPage: React.FC = () => {
                   {formatPrice(hotel.pricePerNight)}
                 </div>
                 {hotel.pricePerNight && (
-                  <div className="text-gray-500">mỗi đêm</div>
+                  <div className="text-gray-500">per night</div>
                 )}
               </div>
 
@@ -583,7 +583,7 @@ const HotelDetailPage: React.FC = () => {
                     <div className="flex items-center">
                       <Clock className="h-4 w-4 text-gray-500 mr-2" />
                       <span className="text-sm text-gray-700">
-                        Nhận phòng: {hotel.checkInTime}
+                        Check-in: {hotel.checkInTime}
                       </span>
                     </div>
                   )}
@@ -591,7 +591,7 @@ const HotelDetailPage: React.FC = () => {
                     <div className="flex items-center">
                       <Clock className="h-4 w-4 text-gray-500 mr-2" />
                       <span className="text-sm text-gray-700">
-                        Trả phòng: {hotel.checkOutTime}
+                        Check-out: {hotel.checkOutTime}
                       </span>
                     </div>
                   )}
@@ -604,26 +604,26 @@ const HotelDetailPage: React.FC = () => {
                   <div className="text-lg font-semibold text-gray-900">
                     {hotel.totalRoomTypes || 0}
                   </div>
-                  <div className="text-sm text-gray-600">Loại phòng</div>
-                  </div>
+                  <div className="text-sm text-gray-600">Room types</div>
+                </div>
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <div className="text-lg font-semibold text-gray-900">
                     {hotel.totalRooms || 0}
                   </div>
-                  <div className="text-sm text-gray-600">Tổng phòng</div>
+                  <div className="text-sm text-gray-600">Total rooms</div>
                 </div>
               </div>
 
               {/* Booking Button */}
               <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold mb-4">
-                Đặt phòng ngay
+                Book Now
               </button>
               
               <Link 
                 to="/hotels"
                 className="w-full block text-center border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Xem khách sạn khác
+                View other hotels
               </Link>
             </div>
           </div>

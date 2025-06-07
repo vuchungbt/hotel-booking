@@ -44,14 +44,14 @@ const AdminRoomTypeAdd: React.FC = () => {
   const fetchHotels = async () => {
     try {
       setLoading(true);
-      const response = await hotelAPI.getAllHotels(0, 100, 'name');
+      const response = await hotelAPI.getAllHotels(0, 100);
       const data = response.data;
       if (data.success) {
         setHotels(data.result.content);
       }
     } catch (error) {
       console.error('Error fetching hotels:', error);
-      showToast('error', 'Lỗi', 'Không thể tải danh sách khách sạn');
+      showToast('error', 'Error', 'Unable to load hotel list');
     } finally {
       setLoading(false);
     }
@@ -87,14 +87,14 @@ const AdminRoomTypeAdd: React.FC = () => {
       const data = response.data;
       
       if (data.success) {
-        showToast('success', 'Thành công', 'Đã thêm loại phòng mới');
+        showToast('success', 'Success', 'New room type has been added');
         navigate(`/admin/room-types/${data.result.id}`);
       } else {
-        showToast('error', 'Lỗi', data.message || 'Không thể thêm loại phòng');
+        showToast('error', 'Error', data.message || 'Unable to add room type');
       }
     } catch (error: any) {
       console.error('Error creating room type:', error);
-      showToast('error', 'Lỗi', 'Không thể thêm loại phòng');
+      showToast('error', 'Error', 'Unable to add room type');
     } finally {
       setLoading(false);
     }
@@ -112,9 +112,9 @@ const AdminRoomTypeAdd: React.FC = () => {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="text-2xl font-bold">Thêm loại phòng mới</h1>
+            <h1 className="text-2xl font-bold">Add New Room Type</h1>
             {selectedHotel && (
-              <p className="text-gray-600">Cho khách sạn: {selectedHotel.name}</p>
+              <p className="text-gray-600">For hotel: {selectedHotel.name}</p>
             )}
           </div>
         </div>
@@ -123,7 +123,7 @@ const AdminRoomTypeAdd: React.FC = () => {
             onClick={() => preselectedHotelId ? navigate(`/admin/hotels/${preselectedHotelId}`) : navigate('/admin/room-types')}
             className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
           >
-            Hủy
+            Cancel
           </button>
           <button
             onClick={handleSubmit}
@@ -131,7 +131,7 @@ const AdminRoomTypeAdd: React.FC = () => {
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center disabled:opacity-50"
           >
             <Save size={20} className="mr-2" />
-            {loading ? 'Đang lưu...' : 'Tạo loại phòng'}
+            {loading ? 'Saving...' : 'Create Room Type'}
           </button>
         </div>
       </div>
@@ -142,11 +142,11 @@ const AdminRoomTypeAdd: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center">
             <Hotel size={20} className="mr-2 text-blue-500" />
-            Chọn khách sạn
+            Select Hotel
           </h2>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Khách sạn <span className="text-red-500">*</span>
+              Hotel <span className="text-red-500">*</span>
             </label>
             <select
               name="hotelId"
@@ -156,7 +156,7 @@ const AdminRoomTypeAdd: React.FC = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
               required
             >
-              <option value="">Chọn khách sạn</option>
+              <option value="">Select hotel</option>
               {hotels.map(hotel => (
                 <option key={hotel.id} value={hotel.id}>
                   {hotel.name} - {hotel.city}
@@ -165,7 +165,7 @@ const AdminRoomTypeAdd: React.FC = () => {
             </select>
             {preselectedHotelId && (
               <p className="text-sm text-gray-500 mt-1">
-                Loại phòng sẽ được thêm vào khách sạn này.
+                Room type will be added to this hotel.
               </p>
             )}
           </div>
@@ -175,12 +175,12 @@ const AdminRoomTypeAdd: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center">
             <FileText size={20} className="mr-2 text-blue-500" />
-            Thông tin cơ bản
+            Basic Information
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tên loại phòng <span className="text-red-500">*</span>
+                Room Type Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -193,7 +193,7 @@ const AdminRoomTypeAdd: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Loại giường
+                Bed Type
               </label>
               <select
                 name="bedType"
@@ -201,18 +201,18 @@ const AdminRoomTypeAdd: React.FC = () => {
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Chọn loại giường</option>
-                <option value="Single">Giường đơn</option>
-                <option value="Double">Giường đôi</option>
-                <option value="Queen">Giường Queen</option>
-                <option value="King">Giường King</option>
-                <option value="Twin">Giường đôi riêng biệt</option>
-                <option value="Sofa Bed">Giường sofa</option>
+                <option value="">Select bed type</option>
+                <option value="Single">Single Bed</option>
+                <option value="Double">Double Bed</option>
+                <option value="Queen">Queen Bed</option>
+                <option value="King">King Bed</option>
+                <option value="Twin">Twin Beds</option>
+                <option value="Sofa Bed">Sofa Bed</option>
               </select>
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mô tả
+                Description
               </label>
               <textarea
                 name="description"
@@ -229,12 +229,12 @@ const AdminRoomTypeAdd: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center">
             <BedDouble size={20} className="mr-2 text-green-500" />
-            Chi tiết phòng
+            Room Details
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Sức chứa tối đa <span className="text-red-500">*</span>
+                Maximum Occupancy <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -249,7 +249,7 @@ const AdminRoomTypeAdd: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Diện tích (m²)
+                Room Size (m²)
               </label>
               <input
                 type="number"
@@ -263,7 +263,7 @@ const AdminRoomTypeAdd: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tổng số phòng <span className="text-red-500">*</span>
+                Total Rooms <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -282,11 +282,11 @@ const AdminRoomTypeAdd: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center">
             <DollarSign size={20} className="mr-2 text-yellow-500" />
-            Thông tin giá
+            Pricing Information
           </h2>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Giá mỗi đêm (VND) <span className="text-red-500">*</span>
+              Price per Night (VND) <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -304,12 +304,12 @@ const AdminRoomTypeAdd: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center">
             <Image size={20} className="mr-2 text-indigo-500" />
-            Thông tin bổ sung
+            Additional Information
           </h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                URL hình ảnh
+                Image URL
               </label>
               <input
                 type="url"
@@ -321,14 +321,14 @@ const AdminRoomTypeAdd: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tiện nghi phòng (phân cách bằng dấu phẩy)
+                Room Amenities (separated by commas)
               </label>
               <textarea
                 name="amenities"
                 value={formData.amenities}
                 onChange={handleInputChange}
                 rows={2}
-                placeholder="WiFi, TV, Điều hòa, Tủ lạnh, Ban công..."
+                placeholder="Wi-Fi, TV, Air Conditioning, Mini Fridge, Balcony..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -336,19 +336,19 @@ const AdminRoomTypeAdd: React.FC = () => {
             {/* Predefined Room Amenity Tags */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Chọn tiện nghi phòng có sẵn (click để thêm/bỏ)
+                Select Available Room Amenities (click to add/remove)
               </label>
               <div className="flex flex-wrap gap-2">
                 {[
-                  'WiFi miễn phí', 'TV màn hình phẳng', 'Điều hòa', 'Tủ lạnh mini', 
-                  'Két an toàn', 'Máy sấy tóc', 'Bồn tắm', 'Vòi sen', 'Dép đi trong phòng',
-                  'Áo choàng tắm', 'Bàn làm việc', 'Ghế sofa', 'Ban công', 'Cửa sổ',
-                  'Tầm nhìn ra biển', 'Tầm nhìn ra thành phố', 'Tầm nhìn ra núi', 'Tầm nhìn ra vườn',
-                  'Máy pha cà phê', 'Ấm đun nước', 'Ly cốc', 'Khăn tắm', 'Khăn mặt',
-                  'Giấy vệ sinh', 'Dầu gội', 'Sữa tắm', 'Xà phòng', 'Kem đánh răng',
-                  'Bàn chải đánh răng', 'Lược', 'Gương trang điểm', 'Đèn đọc sách',
-                  'Rèm cửa', 'Rèm che tối', 'Tủ quần áo', 'Móc treo đồ', 'Máy điều hòa riêng',
-                  'Quạt trần', 'Sàn gỗ', 'Thảm trải sàn', 'Điện thoại', 'Máy fax'
+                  'Free Wi-Fi', 'Flat-screen TV', 'Air Conditioning', 'Mini Fridge', 
+                  'Safe', 'Hair Dryer', 'Bathtub', 'Shower', 'Slippers',
+                  'Bathrobe', 'Work Desk', 'Sofa', 'Balcony', 'Window',
+                  'Ocean View', 'City View', 'Mountain View', 'Garden View',
+                  'Coffee Maker', 'Electric Kettle', 'Glassware', 'Bath Towels', 'Face Towels',
+                  'Toilet Paper', 'Shampoo', 'Body Wash', 'Soap', 'Toothpaste',
+                  'Toothbrush', 'Comb', 'Vanity Mirror', 'Reading Light',
+                  'Curtains', 'Blackout Curtains', 'Wardrobe', 'Coat Hangers', 'Individual AC',
+                  'Ceiling Fan', 'Wooden Floor', 'Carpet', 'Telephone', 'Fax Machine'
                 ].map((amenity) => {
                   const isSelected = (formData.amenities || '').split(',').map(a => a.trim()).includes(amenity);
                   return (
@@ -386,7 +386,7 @@ const AdminRoomTypeAdd: React.FC = () => {
                 })}
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                💡 Tip: Click vào các thẻ để thêm/bỏ tiện nghi phòng. Bạn cũng có thể nhập trực tiếp vào ô text phía trên.
+                💡 Tip: Click on the tags to add/remove room amenities. You can also type directly in the text box above.
               </p>
             </div>
           </div>

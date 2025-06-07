@@ -43,7 +43,7 @@ const AdminHotelDetail: React.FC = () => {
       if (data.success) {
         setHotel(data.result);
       } else {
-        showToast('error', 'Lỗi', data.message || 'Không thể tải thông tin khách sạn');
+        showToast('error', 'Error', data.message || 'Unable to load hotel information');
         navigate('/admin/hotels');
       }
     } catch (error: any) {
@@ -93,11 +93,11 @@ const AdminHotelDetail: React.FC = () => {
     try {
       setActionLoading('status');
       await hotelAPI.toggleHotelStatus(id);
-      showToast('success', 'Thành công', 'Đã cập nhật trạng thái khách sạn');
+              showToast('success', 'Success', 'Hotel status updated successfully');
       fetchHotelDetails();
     } catch (error: any) {
       console.error('Error toggling hotel status:', error);
-      showToast('error', 'Lỗi', 'Không thể cập nhật trạng thái khách sạn');
+              showToast('error', 'Error', 'Unable to update hotel status');
     } finally {
       setActionLoading(null);
     }
@@ -122,15 +122,15 @@ const AdminHotelDetail: React.FC = () => {
   const handleDeleteHotel = async () => {
     if (!hotel || !id) return;
     
-    if (window.confirm('Bạn có chắc chắn muốn xóa khách sạn này? Hành động này không thể hoàn tác.')) {
+          if (window.confirm('Are you sure you want to delete this hotel? This action cannot be undone.')) {
       try {
         setActionLoading('delete');
         await hotelAPI.deleteHotelByAdmin(id);
-        showToast('success', 'Thành công', 'Đã xóa khách sạn');
+                  showToast('success', 'Success', 'Hotel deleted successfully');
         navigate('/admin/hotels');
       } catch (error: any) {
         console.error('Error deleting hotel:', error);
-        showToast('error', 'Lỗi', 'Không thể xóa khách sạn');
+                  showToast('error', 'Error', 'Unable to delete hotel');
       } finally {
         setActionLoading(null);
       }
@@ -598,7 +598,7 @@ const AdminHotelDetail: React.FC = () => {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Chi tiết khách sạn</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">Hotel Details</h1>
             <p className="text-gray-600 mt-1">{hotel.name}</p>
           </div>
         </div>
@@ -635,7 +635,7 @@ const AdminHotelDetail: React.FC = () => {
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
           >
             <Edit size={20} className="mr-2" />
-            Chỉnh sửa
+                          Edit
           </button>
           
           <button
@@ -644,7 +644,7 @@ const AdminHotelDetail: React.FC = () => {
             className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center disabled:opacity-50"
           >
             <Trash size={20} className="mr-2" />
-            {actionLoading === 'delete' ? 'Đang xóa...' : 'Xóa'}
+                          {actionLoading === 'delete' ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>

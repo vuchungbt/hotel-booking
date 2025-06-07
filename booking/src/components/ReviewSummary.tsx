@@ -75,7 +75,7 @@ const ReviewSummary: React.FC<ReviewSummaryProps> = ({
     return (
       <div className={`flex items-center ${classes.gap} text-gray-500 ${className}`}>
         <MessageSquare className={`${classes.stars} text-gray-400`} />
-        <span className={`${classes.count} text-gray-400`}>Chưa có đánh giá</span>
+        <span className={`${classes.count} text-gray-400`}>No reviews yet</span>
       </div>
     );
   }
@@ -102,7 +102,7 @@ const ReviewSummary: React.FC<ReviewSummaryProps> = ({
           <div className={`flex items-center ${classes.gap} text-gray-600`}>
             <MessageSquare className={classes.stars} />
             <span className={classes.count}>
-              {totalReviews} đánh giá
+              {totalReviews} reviews
             </span>
             
             {verifiedCount > 0 && (

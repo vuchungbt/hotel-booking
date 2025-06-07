@@ -261,7 +261,7 @@ const AdminBookings: React.FC = () => {
 
   return (<div className="w-full">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
-          <h1 className="text-xl sm:text-2xl font-bold">Quản lý đặt phòng</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Booking Management</h1>
           <button
             onClick={handleExportBookings}
             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
@@ -277,7 +277,7 @@ const AdminBookings: React.FC = () => {
             <div className="flex-1 relative">
               <input
                 type="text"
-                placeholder="Tìm kiếm theo mã đặt phòng, tên khách, khách sạn..."
+                placeholder="Search by booking code, guest name, hotel..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -292,7 +292,7 @@ const AdminBookings: React.FC = () => {
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="all">Tất cả trạng thái</option>
+                  <option value="all">All statuses</option>
                   <option value="confirmed">Đã xác nhận</option>
                   <option value="pending">Chờ xác nhận</option>
                   <option value="cancelled">Đã hủy</option>
@@ -419,7 +419,7 @@ const AdminBookings: React.FC = () => {
                     </p>
                     <div className="flex items-center">
                       <Clock size={14} className="mr-2 text-gray-600" />
-                      <span className="mr-2">Trạng thái:</span>
+                      <span className="mr-2">Status:</span>
                       {getPaymentStatusBadge(booking.paymentStatus)}
                     </div>
                   </div>
@@ -517,7 +517,7 @@ const AdminBookings: React.FC = () => {
           {paginatedBookings.length === 0 && (
             <div className="bg-white rounded-lg shadow-md p-8 text-center">
               <h3 className="text-xl font-medium text-gray-900 mb-2">Không tìm thấy đặt phòng nào</h3>
-              <p className="text-gray-600">Không có đặt phòng nào phù hợp với tiêu chí tìm kiếm của bạn.</p>
+              <p className="text-gray-600">No bookings match your search criteria.</p>
             </div>
           )}
         </div>

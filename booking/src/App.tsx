@@ -29,8 +29,7 @@ import AdminCommissions from './pages/admin/AdminCommissions';
 import AdminInvoices from './pages/admin/AdminInvoices';
 import AdminInvoiceDetail from './pages/admin/AdminInvoiceDetail';
 import AdminPromotions from './pages/admin/AdminPromotions';
-import AdminAnalytics from './pages/admin/AdminAnalytics';
-import AdminAdvancedAnalytics from './pages/admin/AdminAdvancedAnalytics';
+import AdminAnalytics from './pages/admin/AdminAnalytics'; 
 import AdminCommissionPayments from './pages/admin/AdminCommissionPayments';
 import AdminCommissionPaymentDetail from './pages/admin/AdminCommissionPaymentDetail';
 import AdminCommissionPaymentCreate from './pages/admin/AdminCommissionPaymentCreate';
@@ -183,11 +182,6 @@ function App() {
             <Route path="/admin/analytics" element={
               <ProtectedRoute requiredRole="ADMIN">
                 <DashboardLayout type="admin"><AdminAnalytics /></DashboardLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/advanced-analytics" element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <DashboardLayout type="admin"><AdminAdvancedAnalytics /></DashboardLayout>
               </ProtectedRoute>
             } />
             <Route path="/admin/commission-payments" element={
