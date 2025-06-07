@@ -107,27 +107,6 @@ public interface HotelRepository extends JpaRepository<Hotel, UUID> {
                                     @Param("ownerId") UUID ownerId,
                                     Pageable pageable);
     
-    // Find hotels near location
-    @Query("SELECT h FROM Hotel h WHERE " +
-           "h.latitude IS NOT NULL AND h.longitude IS NOT NULL AND " +
-           "(6371 * acos(cos(radians(:lat)) * cos(radians(h.latitude)) * " +
-           "cos(radians(h.longitude) - radians(:lng)) + " +
-           "sin(radians(:lat)) * sin(radians(h.latitude)))) <= :radius")
-    Page<Hotel> findNearLocation(@Param("lat") Double latitude,
-                                @Param("lng") Double longitude,
-                                @Param("radius") Double radiusKm,
-                                Pageable pageable);
-    
-    @Query("SELECT h FROM Hotel h WHERE " +
-           "h.latitude IS NOT NULL AND h.longitude IS NOT NULL AND " +
-           "(6371 * acos(cos(radians(:lat)) * cos(radians(h.latitude)) * " +
-           "cos(radians(h.longitude) - radians(:lng)) + " +
-           "sin(radians(:lat)) * sin(radians(h.latitude)))) <= :radius")
-    Page<Hotel> findByLocationWithinRadius(@Param("lat") Double latitude,
-                                          @Param("lng") Double longitude,
-                                          @Param("radius") Double radiusKm,
-                                          Pageable pageable);
-    
     // Count hotels by owner
     long countByOwner(User owner);
     long countByOwnerId(UUID ownerId);
@@ -151,9 +130,36 @@ public interface HotelRepository extends JpaRepository<Hotel, UUID> {
     @Query("SELECT COUNT(h) FROM Hotel h WHERE h.isFeatured = true")
     long countFeaturedHotels();
     
-    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.hotel.id = :hotelId AND r.isApproved = true")
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.hotel.id = :hotelId")
     Optional<Double> getAverageRating(@Param("hotelId") UUID hotelId);
     
-    @Query("SELECT COUNT(r) FROM Review r WHERE r.hotel.id = :hotelId AND r.isApproved = true")
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.hotel.id = :hotelId")
     long getReviewCount(@Param("hotelId") UUID hotelId);
+
+    // Find hotels with filters including amenities
+    @Query("SELECT h FROM Hotel h WHERE " +
+           "(:city IS NULL OR LOWER(h.city) = LOWER(:city)) AND " +
+           "(:country IS NULL OR LOWER(h.country) = LOWER(:country)) AND " +
+           "(:starRating IS NULL OR h.starRating = :starRating) AND " +
+           "(:isActive IS NULL OR h.isActive = :isActive) AND " +
+           "(:isFeatured IS NULL OR h.isFeatured = :isFeatured) AND " +
+           "(:minPrice IS NULL OR h.pricePerNight >= :minPrice) AND " +
+           "(:maxPrice IS NULL OR h.pricePerNight <= :maxPrice) AND " +
+           "(:amenities IS NULL OR :amenities = '' OR " +
+           " h.amenities IS NULL OR " +
+           " LOWER(h.amenities) LIKE LOWER(CONCAT('%', :amenities, '%')))")
+    Page<Hotel> findWithFiltersAndAmenities(@Param("city") String city,
+                                           @Param("country") String country,
+                                           @Param("starRating") Integer starRating,
+                                           @Param("isActive") Boolean isActive,
+                                           @Param("isFeatured") Boolean isFeatured,
+                                           @Param("minPrice") BigDecimal minPrice,
+                                           @Param("maxPrice") BigDecimal maxPrice,
+                                           @Param("amenities") String amenities,
+                                           Pageable pageable);
+
+    // Get all unique amenities from hotels - simplified approach
+    @Query("SELECT DISTINCT h.amenities FROM Hotel h " +
+           "WHERE h.amenities IS NOT NULL AND h.amenities != '' AND h.isActive = true")
+    List<String> findAllAmenitiesRaw();
 } 

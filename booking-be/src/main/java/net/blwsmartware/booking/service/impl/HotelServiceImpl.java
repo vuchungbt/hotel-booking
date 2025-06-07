@@ -14,6 +14,7 @@ import net.blwsmartware.booking.exception.AppException;
 import net.blwsmartware.booking.exception.ErrorCode;
 import net.blwsmartware.booking.mapper.HotelMapper;
 import net.blwsmartware.booking.repository.HotelRepository;
+import net.blwsmartware.booking.repository.ReviewRepository;
 import net.blwsmartware.booking.repository.UserRepository;
 import net.blwsmartware.booking.service.HotelService;
 import net.blwsmartware.booking.util.DataResponseUtils;
@@ -40,6 +41,7 @@ public class HotelServiceImpl implements HotelService {
     
     HotelRepository hotelRepository;
     UserRepository userRepository;
+    ReviewRepository reviewRepository;
     HotelMapper hotelMapper;
     
     @Override
@@ -64,6 +66,9 @@ public class HotelServiceImpl implements HotelService {
                 .map(hotelMapper::toResponse)
                 .toList();
         
+        // Populate review data
+        populateReviewData(hotelResponses);
+        
         // Debug: Log mapped responses
         log.info("=== MAPPED RESPONSES DEBUG ===");
         log.info("Total hotel responses: {}", hotelResponses.size());
@@ -72,6 +77,8 @@ public class HotelServiceImpl implements HotelService {
             log.info("  - ID: {}", response.getId());
             log.info("  - isActive: {} (type: {})", response.isActive(), response.isActive() ? "true" : "false");
             log.info("  - isFeatured: {} (type: {})", response.isFeatured(), response.isFeatured() ? "true" : "false");
+            log.info("  - averageRating: {}", response.getAverageRating());
+            log.info("  - totalReviews: {}", response.getTotalReviews());
         });
         
         return DataResponseUtils.convertPageInfo(hotelPage, hotelResponses);
@@ -93,6 +100,9 @@ public class HotelServiceImpl implements HotelService {
                 .map(hotelMapper::toResponse)
                 .toList();
         
+        // Populate review data
+        populateReviewData(hotelResponses);
+        
         return DataResponseUtils.convertPageInfo(hotelPage, hotelResponses);
     }
     
@@ -103,7 +113,10 @@ public class HotelServiceImpl implements HotelService {
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
         
-        return hotelMapper.toResponse(hotel);
+        HotelResponse response = hotelMapper.toResponse(hotel);
+        populateReviewData(response);
+        
+        return response;
     }
     
     @Override
@@ -259,6 +272,9 @@ public class HotelServiceImpl implements HotelService {
                 .map(hotelMapper::toResponse)
                 .toList();
         
+        // Populate review data
+        populateReviewData(hotelResponses);
+        
         return DataResponseUtils.convertPageInfo(hotelPage, hotelResponses);
     }
     
@@ -272,6 +288,9 @@ public class HotelServiceImpl implements HotelService {
         List<HotelResponse> hotelResponses = hotelPage.getContent().stream()
                 .map(hotelMapper::toResponse)
                 .toList();
+        
+        // Populate review data
+        populateReviewData(hotelResponses);
         
         return DataResponseUtils.convertPageInfo(hotelPage, hotelResponses);
     }
@@ -315,6 +334,9 @@ public class HotelServiceImpl implements HotelService {
                 .map(hotelMapper::toResponse)
                 .toList();
         
+        // Populate review data
+        populateReviewData(hotelResponses);
+        
         return DataResponseUtils.convertPageInfo(hotelPage, hotelResponses);
     }
     
@@ -328,6 +350,9 @@ public class HotelServiceImpl implements HotelService {
         List<HotelResponse> hotelResponses = hotelPage.getContent().stream()
                 .map(hotelMapper::toResponse)
                 .toList();
+        
+        // Populate review data
+        populateReviewData(hotelResponses);
         
         return DataResponseUtils.convertPageInfo(hotelPage, hotelResponses);
     }
@@ -387,21 +412,6 @@ public class HotelServiceImpl implements HotelService {
     }
     
     @Override
-    public DataResponse<HotelResponse> getHotelsNearLocation(
-            Double latitude, Double longitude, Double radiusKm, Integer pageNumber, Integer pageSize, String sortBy) {
-        log.info("Getting hotels near location: lat={}, lng={}, radius={}km", latitude, longitude, radiusKm);
-        
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
-        Page<Hotel> hotelPage = hotelRepository.findNearLocation(latitude, longitude, radiusKm, pageable);
-        
-        List<HotelResponse> hotelResponses = hotelPage.getContent().stream()
-                .map(hotelMapper::toResponse)
-                .toList();
-        
-        return DataResponseUtils.convertPageInfo(hotelPage, hotelResponses);
-    }
-    
-    @Override
     @IsAdmin
     public Long getTotalHotelsCount() {
         return hotelRepository.count();
@@ -445,6 +455,29 @@ public class HotelServiceImpl implements HotelService {
     private UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return UUID.fromString(authentication.getName());
+    }
+
+    private void populateReviewData(HotelResponse response) {
+        try {
+            UUID hotelId = UUID.fromString(String.valueOf(response.getId()));
+            
+            // Get average rating
+            Double averageRating = hotelRepository.getAverageRating(hotelId).orElse(0.0);
+            response.setAverageRating(averageRating);
+            
+            // Get total reviews count
+            Long totalReviews = reviewRepository.countByHotelId(hotelId);
+            response.setTotalReviews(totalReviews.intValue());
+            
+        } catch (Exception e) {
+            log.warn("Error populating review data for hotel {}: {}", response.getId(), e.getMessage());
+            response.setAverageRating(0.0);
+            response.setTotalReviews(0);
+        }
+    }
+
+    private void populateReviewData(List<HotelResponse> responses) {
+        responses.forEach(this::populateReviewData);
     }
     
     /**
@@ -589,5 +622,48 @@ public class HotelServiceImpl implements HotelService {
     public Long getMyActiveHotelsCount() {
         UUID currentUserId = getCurrentUserId();
         return hotelRepository.countByOwnerIdAndIsActiveTrue(currentUserId);
+    }
+
+    @Override
+    public DataResponse<HotelResponse> searchHotelsWithFilters(
+            String city, String country, Integer starRating, 
+            BigDecimal minPrice, BigDecimal maxPrice, String amenities,
+            Integer pageNumber, Integer pageSize, String sortBy) {
+        log.info("Searching hotels with filters - city: {}, country: {}, stars: {}, minPrice: {}, maxPrice: {}, amenities: {}", 
+                city, country, starRating, minPrice, maxPrice, amenities);
+        
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
+        Page<Hotel> hotelPage = hotelRepository.findWithFiltersAndAmenities(
+                city, country, starRating, true, null, minPrice, maxPrice, amenities, pageable);
+        
+        List<HotelResponse> hotelResponses = hotelPage.getContent().stream()
+                .map(hotelMapper::toResponseWithoutRelations)
+                .toList();
+        
+        // Populate review data
+        populateReviewData(hotelResponses);
+        
+        return DataResponseUtils.convertPageInfo(hotelPage, hotelResponses);
+    }
+
+    @Override
+    public List<String> getAvailableAmenities() {
+        log.info("Getting all available amenities from hotels");
+        
+        List<String> rawAmenities = hotelRepository.findAllAmenitiesRaw();
+        
+        // Parse comma-separated amenities and create unique list
+        List<String> allAmenities = rawAmenities.stream()
+                .filter(amenitiesString -> amenitiesString != null && !amenitiesString.trim().isEmpty())
+                .flatMap(amenitiesString -> java.util.Arrays.stream(amenitiesString.split(",")))
+                .map(String::trim)
+                .filter(amenity -> !amenity.isEmpty())
+                .distinct()
+                .sorted()
+                .toList();
+        
+        log.info("Found {} unique amenities from {} hotel records", allAmenities.size(), rawAmenities.size());
+        
+        return allAmenities;
     }
 } 

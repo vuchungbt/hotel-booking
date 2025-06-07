@@ -1,9 +1,61 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import HeroSection from '../components/HeroSection';
 import FeaturedHotels from '../components/FeaturedHotels';
+import { hotelAPI } from '../services/api';
+
+interface CityStats {
+  name: string;
+  image: string;
+  count: number;
+}
 
 const HomePage: React.FC = () => {
+  const [cityStats, setCityStats] = useState<CityStats[]>([
+    { name: 'Đà Nẵng', image: 'https://images.pexels.com/photos/2132180/pexels-photo-2132180.jpeg', count: 0 },
+    { name: 'Hà Nội', image: 'https://images.pexels.com/photos/1486577/pexels-photo-1486577.jpeg', count: 0 },
+    { name: 'Hồ Chí Minh', image: 'https://images.pexels.com/photos/2115367/pexels-photo-2115367.jpeg', count: 0 },
+    { name: 'Phú Quốc', image: 'https://images.pexels.com/photos/1450353/pexels-photo-1450353.jpeg', count: 0 }
+  ]);
+  const [totalHotels, setTotalHotels] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchCityStats = async () => {
+      try {
+        // Fetch hotels count for each city
+        const promises = cityStats.map(async (city) => {
+          try {
+            const response = await hotelAPI.getHotelsByCity(city.name, 0, 1, 'name');
+            return {
+              ...city,
+              count: response.data.result?.totalElements || 0
+            };
+          } catch (error) {
+            console.error(`Error fetching hotels for ${city.name}:`, error);
+            return city; // Return original city data if API fails
+          }
+        });
+
+        const updatedCityStats = await Promise.all(promises);
+        setCityStats(updatedCityStats);
+
+        // Fetch total hotels count
+        try {
+          const totalResponse = await hotelAPI.getActiveHotelsCount();
+          if (totalResponse.data.result) {
+            setTotalHotels(totalResponse.data.result);
+          }
+        } catch (error) {
+          console.error('Error fetching total hotels count:', error);
+        }
+      } catch (error) {
+        console.error('Error fetching city statistics:', error);
+      }
+    };
+
+    fetchCityStats();
+  }, []);
+
   return (
     <div>
       {/* Hero Section */}
@@ -20,20 +72,15 @@ const HomePage: React.FC = () => {
               Điểm đến phổ biến
             </h2>
             <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
-              Khám phá những địa điểm du lịch hàng đầu Việt Nam
+              Khám phá những địa điểm du lịch hàng đầu Việt Nam với {totalHotels.toLocaleString()} khách sạn
             </p>
           </div>
 
           <div className="mt-12 grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { name: 'Đà Nẵng', image: 'https://images.pexels.com/photos/2132180/pexels-photo-2132180.jpeg', count: 245 },
-              { name: 'Hà Nội', image: 'https://images.pexels.com/photos/1486577/pexels-photo-1486577.jpeg', count: 312 },
-              { name: 'Hồ Chí Minh', image: 'https://images.pexels.com/photos/2115367/pexels-photo-2115367.jpeg', count: 428 },
-              { name: 'Phú Quốc', image: 'https://images.pexels.com/photos/1450353/pexels-photo-1450353.jpeg', count: 186 }
-            ].map((destination, index) => (
+            {cityStats.map((destination, index) => (
               <Link 
                 key={index} 
-                to={`/search-rooms?location=${encodeURIComponent(destination.name)}`}
+                to={`/hotels?city=${encodeURIComponent(destination.name)}`}
                 className="group"
               >
                 <div className="relative rounded-lg overflow-hidden h-64 shadow-md group-hover:shadow-xl transition-shadow">
@@ -45,7 +92,12 @@ const HomePage: React.FC = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                   <div className="absolute bottom-0 left-0 p-6 text-white">
                     <h3 className="text-xl font-bold">{destination.name}</h3>
-                    <p>{destination.count} khách sạn</p>
+                    <p>
+                      {destination.count > 0 
+                        ? `${destination.count.toLocaleString()} khách sạn`
+                        : 'Đang cập nhật...'
+                      }
+                    </p>
                   </div>
                 </div>
               </Link>
@@ -54,8 +106,43 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Why Choose Us */}
+      {/* Statistics Section */}
       <section className="py-12 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+              VietBooking trong số liệu
+            </h2>
+            <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
+              Được tin tưởng bởi hàng ngàn khách hàng trên toàn quốc
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <div className="text-3xl font-bold text-blue-600 mb-2">
+                {totalHotels.toLocaleString()}+
+              </div>
+              <div className="text-gray-600">Khách sạn</div>
+            </div>
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <div className="text-3xl font-bold text-green-600 mb-2">50+</div>
+              <div className="text-gray-600">Tỉnh thành</div>
+            </div>
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <div className="text-3xl font-bold text-purple-600 mb-2">10K+</div>
+              <div className="text-gray-600">Đặt phòng thành công</div>
+            </div>
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <div className="text-3xl font-bold text-orange-600 mb-2">4.8/5</div>
+              <div className="text-gray-600">Đánh giá trung bình</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose Us */}
+      <section className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
@@ -97,7 +184,7 @@ const HomePage: React.FC = () => {
                 )
               }
             ].map((feature, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+              <div key={index} className="bg-gray-50 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
                 <div className="flex justify-center mb-4">
                   {feature.icon}
                 </div>
@@ -121,15 +208,15 @@ const HomePage: React.FC = () => {
           <div className="mt-8 flex justify-center">
             <Link
               to="/register"
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50"
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 transition-colors"
             >
               Đăng ký ngay
             </Link>
             <Link
-              to="/search-rooms"
-              className="ml-4 inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-800 hover:bg-blue-700"
+              to="/hotels"
+              className="ml-4 inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-800 hover:bg-blue-700 transition-colors"
             >
-              Tìm phòng
+              Tìm khách sạn
             </Link>
           </div>
         </div>

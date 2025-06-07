@@ -114,7 +114,6 @@ export interface Review {
   comment: string;
   images?: string[];
   date: string;
-  isVerified: boolean;
   hotelResponse?: {
     message: string;
     date: string;

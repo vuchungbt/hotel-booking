@@ -61,7 +61,7 @@ hotelAPI.getHotelsByCountry()             → GET /hotels/country/{country} [M�
 hotelAPI.getHotelsByStarRating()          → GET /hotels/rating/{starRating} [MỚI]
 hotelAPI.getActiveHotels()                → GET /hotels/active [MỚI]
 hotelAPI.getFeaturedHotels()              → GET /hotels/featured [MỚI]
-hotelAPI.getHotelsNearLocation()          → GET /hotels/near [MỚI]
+
 ```
 
 #### **5. Types cập nhật**

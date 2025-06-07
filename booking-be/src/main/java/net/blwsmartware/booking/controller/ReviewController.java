@@ -7,6 +7,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import net.blwsmartware.booking.constant.PagePrepare;
 import net.blwsmartware.booking.dto.request.ReviewCreateRequest;
+import net.blwsmartware.booking.dto.request.ReviewUpdateRequest;
 import net.blwsmartware.booking.dto.response.DataResponse;
 import net.blwsmartware.booking.dto.response.MessageResponse;
 import net.blwsmartware.booking.dto.response.ReviewResponse;
@@ -50,8 +51,6 @@ public class ReviewController {
             @RequestParam(required = false) UUID hotelId,
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) Integer rating,
-            @RequestParam(required = false) Boolean isApproved,
-            @RequestParam(required = false) Boolean isVerified,
             @RequestParam(value = "pageNumber", defaultValue = PagePrepare.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(value = "pageSize", defaultValue = PagePrepare.PAGE_SIZE, required = false) Integer pageSize,
             @RequestParam(value = "sortBy", defaultValue = "createdAt", required = false) String sortBy) {
@@ -60,7 +59,7 @@ public class ReviewController {
                 .status(HttpStatus.OK)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(MessageResponse.<DataResponse<ReviewResponse>>builder()
-                        .result(reviewService.getAllReviewsWithFilters(hotelId, userId, rating, isApproved, isVerified, pageNumber, pageSize, sortBy))
+                        .result(reviewService.getAllReviewsWithFilters(hotelId, userId, rating, pageNumber, pageSize, sortBy))
                         .build());
     }
     
@@ -69,36 +68,6 @@ public class ReviewController {
     public ResponseEntity<?> deleteReview(@PathVariable UUID id) {
         reviewService.deleteReview(id);
         return ResponseEntity.noContent().build();
-    }
-    
-    @PutMapping("/admin/{id}/approve")
-    @IsAdmin
-    public ResponseEntity<MessageResponse<ReviewResponse>> approveReview(@PathVariable UUID id) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(MessageResponse.<ReviewResponse>builder()
-                        .result(reviewService.approveReview(id))
-                        .build());
-    }
-    
-    @PutMapping("/admin/{id}/disapprove")
-    @IsAdmin
-    public ResponseEntity<MessageResponse<ReviewResponse>> disapproveReview(@PathVariable UUID id) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(MessageResponse.<ReviewResponse>builder()
-                        .result(reviewService.disapproveReview(id))
-                        .build());
-    }
-    
-    @PutMapping("/admin/{id}/verify")
-    @IsAdmin
-    public ResponseEntity<MessageResponse<ReviewResponse>> verifyReview(@PathVariable UUID id) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(MessageResponse.<ReviewResponse>builder()
-                        .result(reviewService.verifyReview(id))
-                        .build());
     }
     
     @GetMapping("/admin/user/{userId}")
@@ -128,25 +97,7 @@ public class ReviewController {
                         .build());
     }
     
-    @GetMapping("/admin/stats/approved")
-    @IsAdmin
-    public ResponseEntity<MessageResponse<Long>> getApprovedReviewsCount() {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(MessageResponse.<Long>builder()
-                        .result(reviewService.getApprovedReviewsCount())
-                        .build());
-    }
-    
-    @GetMapping("/admin/stats/verified")
-    @IsAdmin
-    public ResponseEntity<MessageResponse<Long>> getVerifiedReviewsCount() {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(MessageResponse.<Long>builder()
-                        .result(reviewService.getVerifiedReviewsCount())
-                        .build());
-    }
+
     
     @GetMapping("/admin/stats/hotel/{hotelId}")
     @IsAdmin
@@ -193,35 +144,7 @@ public class ReviewController {
                         .build());
     }
     
-    @GetMapping("/hotel/{hotelId}/approved")
-    public ResponseEntity<MessageResponse<DataResponse<ReviewResponse>>> getApprovedReviewsByHotel(
-            @PathVariable UUID hotelId,
-            @RequestParam(value = "pageNumber", defaultValue = PagePrepare.PAGE_NUMBER, required = false) Integer pageNumber,
-            @RequestParam(value = "pageSize", defaultValue = PagePrepare.PAGE_SIZE, required = false) Integer pageSize,
-            @RequestParam(value = "sortBy", defaultValue = "createdAt", required = false) String sortBy) {
-        
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(MessageResponse.<DataResponse<ReviewResponse>>builder()
-                        .result(reviewService.getApprovedReviewsByHotel(hotelId, pageNumber, pageSize, sortBy))
-                        .build());
-    }
-    
-    @GetMapping("/hotel/{hotelId}/verified")
-    public ResponseEntity<MessageResponse<DataResponse<ReviewResponse>>> getVerifiedReviewsByHotel(
-            @PathVariable UUID hotelId,
-            @RequestParam(value = "pageNumber", defaultValue = PagePrepare.PAGE_NUMBER, required = false) Integer pageNumber,
-            @RequestParam(value = "pageSize", defaultValue = PagePrepare.PAGE_SIZE, required = false) Integer pageSize,
-            @RequestParam(value = "sortBy", defaultValue = "createdAt", required = false) String sortBy) {
-        
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(MessageResponse.<DataResponse<ReviewResponse>>builder()
-                        .result(reviewService.getVerifiedReviewsByHotel(hotelId, pageNumber, pageSize, sortBy))
-                        .build());
-    }
+
     
     @GetMapping("/hotel/{hotelId}/average-rating")
     public ResponseEntity<MessageResponse<Double>> getAverageRatingByHotel(@PathVariable UUID hotelId) {
@@ -275,7 +198,7 @@ public class ReviewController {
     @PutMapping("/{id}")
     public ResponseEntity<MessageResponse<ReviewResponse>> updateReview(
             @PathVariable UUID id,
-            @Valid @RequestBody ReviewCreateRequest request) {
+            @Valid @RequestBody ReviewUpdateRequest request) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(MessageResponse.<ReviewResponse>builder()
@@ -295,5 +218,13 @@ public class ReviewController {
                 .body(MessageResponse.<DataResponse<ReviewResponse>>builder()
                         .result(reviewService.getMyReviews(pageNumber, pageSize, sortBy))
                         .build());
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteMyReview(@PathVariable UUID id) {
+        reviewService.deleteMyReview(id);
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .build();
     }
 } 

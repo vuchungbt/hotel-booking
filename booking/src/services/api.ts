@@ -86,8 +86,6 @@ export interface HotelCreateRequest {
   checkOutTime?: string;
   imageUrl?: string;
   pricePerNight?: number;
-  latitude?: number;
-  longitude?: number;
   amenities?: string;
   cancellationPolicy?: string;
   petPolicy?: string;
@@ -110,8 +108,6 @@ export interface HotelUpdateRequest {
   checkOutTime?: string;
   imageUrl?: string;
   pricePerNight?: number;
-  latitude?: number;
-  longitude?: number;
   amenities?: string;
   cancellationPolicy?: string;
   petPolicy?: string;
@@ -130,6 +126,7 @@ export interface HotelFilterParams {
   isFeatured?: boolean;
   minPrice?: number;
   maxPrice?: number;
+  amenities?: string; // Comma-separated amenities string for backend
   pageNumber?: number;
   pageSize?: number;
   sortBy?: string;
@@ -162,8 +159,6 @@ export interface HotelResponse {
   active: boolean;
   featured: boolean;
   pricePerNight?: number;
-  latitude?: number;
-  longitude?: number;
   amenities?: string;
   cancellationPolicy?: string;
   petPolicy?: string;
@@ -355,14 +350,15 @@ export const hotelAPI = {
   getFeaturedHotels: (pageNumber = 0, pageSize = 10, sortBy = 'name') =>
     api.get('/hotels/featured', { params: { pageNumber, pageSize, sortBy } }),
 
-  getHotelsNearLocation: (params: {
-    latitude: number;
-    longitude: number;
-    radiusKm?: number;
-    pageNumber?: number;
-    pageSize?: number;
-    sortBy?: string;
-  }) => api.get('/hotels/near', { params }),
+  // New public search with filters API
+  searchHotelsWithFilters: (params: HotelFilterParams) =>
+    api.get('/hotels/search/filters', { params }),
+
+  // Get all available amenities from hotels
+  getAvailableAmenities: () =>
+    api.get('/hotels/amenities'),
+
+
 
   // ===== ADMIN APIs =====
   getAdminHotels: (pageNumber = 0, pageSize = 10, sortBy = 'id') =>
@@ -602,8 +598,6 @@ export interface ReviewResponse {
   id: string;
   rating: number;
   comment?: string;
-  isVerified: boolean;
-  isApproved: boolean;
   helpfulCount: number;
   hotelId: string;
   hotelName?: string;
@@ -678,8 +672,9 @@ export interface BookingUpdateRequest {
   checkOutDate?: string;
   guests?: number;
   totalAmount?: number;
-  status?: 'confirmed' | 'pending' | 'cancelled' | 'completed';
-  paymentStatus?: 'paid' | 'pending' | 'refunded';
+  status?: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
+  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
+  paymentMethod?: string;
   specialRequests?: string;
 }
 
@@ -690,18 +685,27 @@ export interface BookingResponse {
   guestPhone: string;
   hotelId: string;
   hotelName: string;
+  hotelAddress: string;
+  hotelPhone: string;
+  hotelEmail: string;
   roomTypeId: string;
   roomTypeName: string;
-  roomName?: string;
+  roomDescription: string;
+  maxOccupancy: number;
+  bedType: string;
+  userId?: string;
+  userName?: string;
   checkInDate: string;
   checkOutDate: string;
   guests: number;
   totalAmount: number;
-  status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
-  paymentStatus: 'paid' | 'pending' | 'refunded';
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
   paymentMethod?: string;
+  bookingReference: string;
   specialRequests?: string;
-  bookingReference?: string;
+  numberOfNights: number;
+  pricePerNight: number;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
@@ -709,8 +713,8 @@ export interface BookingResponse {
 }
 
 export interface BookingFilterParams {
-  status?: 'confirmed' | 'pending' | 'cancelled' | 'completed';
-  paymentStatus?: 'paid' | 'pending' | 'refunded';
+  status?: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
+  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
   hotelId?: string;
   guestName?: string;
   checkInDate?: string;
@@ -741,20 +745,12 @@ export const reviewAPI = {
     hotelId?: string;
     userId?: string;
     rating?: number;
-    isApproved?: boolean;
-    isVerified?: boolean;
     pageNumber?: number;
     pageSize?: number;
     sortBy?: string;
   }) => api.get('/reviews/admin/filter', { params }),
   
   deleteReview: (id: string) => api.delete(`/reviews/admin/${id}`),
-  
-  approveReview: (id: string) => api.put(`/reviews/admin/${id}/approve`),
-  
-  disapproveReview: (id: string) => api.put(`/reviews/admin/${id}/disapprove`),
-  
-  verifyReview: (id: string) => api.put(`/reviews/admin/${id}/verify`),
   
   getReviewsByUser: (userId: string, pageNumber = 0, pageSize = 10, sortBy = 'createdAt') =>
     api.get(`/reviews/admin/user/${userId}`, { params: { pageNumber, pageSize, sortBy } }),
@@ -765,11 +761,7 @@ export const reviewAPI = {
   getReviewsByHotel: (hotelId: string, pageNumber = 0, pageSize = 10, sortBy = 'createdAt') =>
     api.get(`/reviews/hotel/${hotelId}`, { params: { pageNumber, pageSize, sortBy } }),
   
-  getApprovedReviewsByHotel: (hotelId: string, pageNumber = 0, pageSize = 10, sortBy = 'createdAt') =>
-    api.get(`/reviews/hotel/${hotelId}/approved`, { params: { pageNumber, pageSize, sortBy } }),
-  
-  getVerifiedReviewsByHotel: (hotelId: string, pageNumber = 0, pageSize = 10, sortBy = 'createdAt') =>
-    api.get(`/reviews/hotel/${hotelId}/verified`, { params: { pageNumber, pageSize, sortBy } }),
+
   
   getHotelAverageRating: (hotelId: string) =>
     api.get(`/reviews/hotel/${hotelId}/average-rating`),
@@ -786,6 +778,9 @@ export const reviewAPI = {
   
   updateMyReview: (id: string, data: ReviewUpdateRequest) =>
     api.put(`/reviews/${id}`, data),
+  
+  deleteMyReview: (id: string) =>
+    api.delete(`/reviews/${id}`),
   
   getMyReviews: (pageNumber = 0, pageSize = 10, sortBy = 'createdAt') =>
     api.get('/reviews/my', { params: { pageNumber, pageSize, sortBy } }),
@@ -890,7 +885,17 @@ export const bookingAPI = {
     api.get('/bookings/date-range', { params: { ...params, startDate, endDate } }),
   
   getBookingsByHotel: (hotelId: string, params?: BookingFilterParams) =>
-    api.get(`/bookings/hotel/${hotelId}`, { params })
+    api.get(`/bookings/hotel/${hotelId}`, { params }),
+  
+  // Utility endpoints
+  checkRoomAvailability: (roomTypeId: string, checkInDate: string, checkOutDate: string) =>
+    api.get('/bookings/check-availability', { 
+      params: { roomTypeId, checkInDate, checkOutDate } 
+    }),
+  
+  // Statistics endpoints
+  getTotalBookingsCount: () => api.get('/bookings/admin/stats/total'),
+  getHostBookingsCount: () => api.get('/bookings/host/stats/total')
 };
 
 export default api;

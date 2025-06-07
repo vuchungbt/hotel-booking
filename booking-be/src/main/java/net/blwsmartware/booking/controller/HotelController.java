@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -481,24 +482,39 @@ public class HotelController {
                         .result(response)
                         .build());
     }
-    
-    @GetMapping("/near")
-    public ResponseEntity<MessageResponse<DataResponse<HotelResponse>>> getHotelsNearLocation(
-            @RequestParam Double latitude,
-            @RequestParam Double longitude,
-            @RequestParam(defaultValue = "10.0") Double radiusKm,
+
+    @GetMapping("/search/filters")
+    public ResponseEntity<MessageResponse<DataResponse<HotelResponse>>> searchHotelsWithFilters(
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String country,
+            @RequestParam(required = false) Integer starRating,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) String amenities,
             @RequestParam(defaultValue = PagePrepare.PAGE_NUMBER) Integer pageNumber,
             @RequestParam(defaultValue = PagePrepare.PAGE_SIZE) Integer pageSize,
             @RequestParam(defaultValue = "name") String sortBy) {
         
-        DataResponse<HotelResponse> response = hotelService.getHotelsNearLocation(
-                latitude, longitude, radiusKm, pageNumber, pageSize, sortBy);
+        DataResponse<HotelResponse> response = hotelService.searchHotelsWithFilters(
+                city, country, starRating, minPrice, maxPrice, amenities, pageNumber, pageSize, sortBy);
         
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(MessageResponse.<DataResponse<HotelResponse>>builder()
-                        .message("Hotels near location retrieved successfully")
+                        .message("Hotels search with filters completed successfully")
                         .result(response)
+                        .build());
+    }
+
+    @GetMapping("/amenities")
+    public ResponseEntity<MessageResponse<List<String>>> getAvailableAmenities() {
+        List<String> amenities = hotelService.getAvailableAmenities();
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<List<String>>builder()
+                        .message("Available amenities retrieved successfully")
+                        .result(amenities)
                         .build());
     }
 } 

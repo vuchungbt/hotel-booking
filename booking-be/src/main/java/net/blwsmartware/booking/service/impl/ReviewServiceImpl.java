@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import net.blwsmartware.booking.dto.request.ReviewCreateRequest;
+import net.blwsmartware.booking.dto.request.ReviewUpdateRequest;
 import net.blwsmartware.booking.dto.response.DataResponse;
 import net.blwsmartware.booking.dto.response.ReviewResponse;
 import net.blwsmartware.booking.entity.Hotel;
@@ -60,14 +61,14 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     @IsAdmin
     public DataResponse<ReviewResponse> getAllReviewsWithFilters(
-            UUID hotelId, UUID userId, Integer rating, Boolean isApproved, Boolean isVerified,
+            UUID hotelId, UUID userId, Integer rating,
             Integer pageNumber, Integer pageSize, String sortBy) {
-        log.info("Getting reviews with filters - hotel: {}, user: {}, rating: {}, approved: {}, verified: {}", 
-                hotelId, userId, rating, isApproved, isVerified);
+        log.info("Getting reviews with filters - hotel: {}, user: {}, rating: {}", 
+                hotelId, userId, rating);
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
         Page<Review> reviewPage = reviewRepository.findWithFilters(
-                hotelId, userId, rating, isApproved, isVerified, pageable);
+                hotelId, userId, rating, pageable);
         
         List<ReviewResponse> reviewResponses = reviewPage.getContent().stream()
                 .map(reviewMapper::toResponse)
@@ -98,50 +99,7 @@ public class ReviewServiceImpl implements ReviewService {
         reviewRepository.delete(review);
     }
     
-    @Override
-    @IsAdmin
-    @Transactional
-    public ReviewResponse approveReview(UUID id) {
-        log.info("Approving review: {}", id);
-        
-        Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
-        
-        review.setApproved(true);
-        Review updatedReview = reviewRepository.save(review);
-        
-        return reviewMapper.toResponse(updatedReview);
-    }
-    
-    @Override
-    @IsAdmin
-    @Transactional
-    public ReviewResponse disapproveReview(UUID id) {
-        log.info("Disapproving review: {}", id);
-        
-        Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
-        
-        review.setApproved(false);
-        Review updatedReview = reviewRepository.save(review);
-        
-        return reviewMapper.toResponse(updatedReview);
-    }
-    
-    @Override
-    @IsAdmin
-    @Transactional
-    public ReviewResponse verifyReview(UUID id) {
-        log.info("Verifying review: {}", id);
-        
-        Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
-        
-        review.setVerified(true);
-        Review updatedReview = reviewRepository.save(review);
-        
-        return reviewMapper.toResponse(updatedReview);
-    }
+
     
     @Override
     public DataResponse<ReviewResponse> getReviewsByHotel(UUID hotelId, Integer pageNumber, Integer pageSize, String sortBy) {
@@ -161,41 +119,7 @@ public class ReviewServiceImpl implements ReviewService {
         return DataResponseUtils.convertPageInfo(reviewPage, reviewResponses);
     }
     
-    @Override
-    public DataResponse<ReviewResponse> getApprovedReviewsByHotel(UUID hotelId, Integer pageNumber, Integer pageSize, String sortBy) {
-        log.info("Getting approved reviews by hotel: {}", hotelId);
-        
-        // Validate hotel exists
-        hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
-        
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
-        Page<Review> reviewPage = reviewRepository.findByHotelIdAndIsApprovedTrue(hotelId, pageable);
-        
-        List<ReviewResponse> reviewResponses = reviewPage.getContent().stream()
-                .map(reviewMapper::toPublicResponse)
-                .toList();
-        
-        return DataResponseUtils.convertPageInfo(reviewPage, reviewResponses);
-    }
-    
-    @Override
-    public DataResponse<ReviewResponse> getVerifiedReviewsByHotel(UUID hotelId, Integer pageNumber, Integer pageSize, String sortBy) {
-        log.info("Getting verified reviews by hotel: {}", hotelId);
-        
-        // Validate hotel exists
-        hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
-        
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
-        Page<Review> reviewPage = reviewRepository.findByHotelIdAndIsVerifiedTrue(hotelId, pageable);
-        
-        List<ReviewResponse> reviewResponses = reviewPage.getContent().stream()
-                .map(reviewMapper::toPublicResponse)
-                .toList();
-        
-        return DataResponseUtils.convertPageInfo(reviewPage, reviewResponses);
-    }
+
     
     @Override
     @Transactional
@@ -226,8 +150,6 @@ public class ReviewServiceImpl implements ReviewService {
                 .comment(request.getComment())
                 .hotel(hotel)
                 .user(user)
-                .isVerified(false)
-                .isApproved(true) // Auto-approve for now
                 .helpfulCount(0)
                 .build();
         
@@ -238,7 +160,7 @@ public class ReviewServiceImpl implements ReviewService {
     
     @Override
     @Transactional
-    public ReviewResponse updateReview(UUID id, ReviewCreateRequest request) {
+    public ReviewResponse updateReview(UUID id, ReviewUpdateRequest request) {
         log.info("Updating review: {}", id);
         
         Review review = reviewRepository.findById(id)
@@ -257,6 +179,24 @@ public class ReviewServiceImpl implements ReviewService {
         Review updatedReview = reviewRepository.save(review);
         
         return reviewMapper.toResponse(updatedReview);
+    }
+    
+    @Override
+    @Transactional
+    public void deleteMyReview(UUID id) {
+        log.info("Deleting my review: {}", id);
+        
+        Review review = reviewRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
+        
+        // Check if current user owns this review
+        UUID currentUserId = getCurrentUserId();
+        if (!review.getUser().getId().equals(currentUserId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        
+        reviewRepository.delete(review);
+        log.info("Successfully deleted review: {}", id);
     }
     
     @Override
@@ -327,17 +267,7 @@ public class ReviewServiceImpl implements ReviewService {
         return reviewRepository.count();
     }
     
-    @Override
-    @IsAdmin
-    public Long getApprovedReviewsCount() {
-        return reviewRepository.countByIsApprovedTrue();
-    }
-    
-    @Override
-    @IsAdmin
-    public Long getVerifiedReviewsCount() {
-        return reviewRepository.countByIsVerifiedTrue();
-    }
+
     
     @Override
     public Long getReviewsCountByHotel(UUID hotelId) {
@@ -382,12 +312,13 @@ public class ReviewServiceImpl implements ReviewService {
     // Helper methods
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        return userRepository.findByUsername(username)
+        String userId = authentication.getName(); // This is actually the User ID from JWT subject
+        return userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
     
     private UUID getCurrentUserId() {
-        return getCurrentUser().getId();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return UUID.fromString(authentication.getName()); // Direct conversion to UUID
     }
 } 

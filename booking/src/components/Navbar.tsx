@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, User, LogOut, Settings, Hotel, BookOpen, ChevronDown } from 'lucide-react';
+import { Menu, X, User, LogOut, Settings, Hotel, BookOpen, ChevronDown, Star } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 
@@ -145,6 +145,17 @@ const Navbar: React.FC = () => {
                         <div className="flex items-center">
                           <BookOpen className="h-4 w-4 mr-3 text-gray-400" />
                           Lịch sử đặt phòng
+                        </div>
+                      </Link>
+                      
+                      <Link
+                        to="/my-reviews"
+                        onClick={handleProfileClick}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center">
+                          <Star className="h-4 w-4 mr-3 text-gray-400" />
+                          Đánh giá của tôi
                         </div>
                       </Link>
                       
@@ -304,6 +315,16 @@ const Navbar: React.FC = () => {
                   <div className="flex items-center">
                     <BookOpen className="h-4 w-4 mr-2" />
                     Lịch sử đặt phòng
+                  </div>
+                </Link>
+                <Link
+                  to="/my-reviews"
+                  onClick={() => setIsOpen(false)}
+                  className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                >
+                  <div className="flex items-center">
+                    <Star className="h-4 w-4 mr-2" />
+                    Đánh giá của tôi
                   </div>
                 </Link>
                 <Link

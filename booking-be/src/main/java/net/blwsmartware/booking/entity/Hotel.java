@@ -63,13 +63,6 @@ public class Hotel {
     @Column(name = "price_per_night", precision = 10, scale = 2)
     BigDecimal pricePerNight;
 
-
-    @Column(name = "latitude")
-    Double latitude;
-
-    @Column(name = "longitude")
-    Double longitude;
-
     @Column(columnDefinition = "TEXT")
     String amenities;
 

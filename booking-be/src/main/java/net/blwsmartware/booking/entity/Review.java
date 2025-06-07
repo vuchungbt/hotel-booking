@@ -27,12 +27,6 @@ public class Review {
     @Column(columnDefinition = "TEXT")
     String comment;
 
-    @Column(name = "is_verified")
-    boolean isVerified = false;
-
-    @Column(name = "is_approved")
-    boolean isApproved = true;
-
     @Column(name = "helpful_count")
     Integer helpfulCount = 0;
 

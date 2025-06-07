@@ -6,6 +6,7 @@ import net.blwsmartware.booking.dto.response.DataResponse;
 import net.blwsmartware.booking.dto.response.HotelResponse;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 public interface HotelService {
@@ -51,8 +52,15 @@ public interface HotelService {
     DataResponse<HotelResponse> getHotelsByStarRating(Integer starRating, Integer pageNumber, Integer pageSize, String sortBy);
     DataResponse<HotelResponse> getActiveHotels(Integer pageNumber, Integer pageSize, String sortBy);
     DataResponse<HotelResponse> getFeaturedHotels(Integer pageNumber, Integer pageSize, String sortBy);
-    DataResponse<HotelResponse> getHotelsNearLocation(
-            Double latitude, Double longitude, Double radiusKm, Integer pageNumber, Integer pageSize, String sortBy);
+    
+    // New search with filters method
+    DataResponse<HotelResponse> searchHotelsWithFilters(
+            String city, String country, Integer starRating, 
+            BigDecimal minPrice, BigDecimal maxPrice, String amenities,
+            Integer pageNumber, Integer pageSize, String sortBy);
+    
+    // Get available amenities
+    List<String> getAvailableAmenities();
     
     // ===== UTILITY METHODS =====
     boolean isHotelNameExistsInCity(String name, String city);

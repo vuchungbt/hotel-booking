@@ -43,6 +43,13 @@ public enum ErrorCode {
     BOOKING_ALREADY_CANCELLED(5002, "Booking is already cancelled", HttpStatus.BAD_REQUEST),
     BOOKING_CANNOT_BE_CANCELLED(5003, "Booking cannot be cancelled", HttpStatus.BAD_REQUEST),
     INVALID_BOOKING_DATES(5004, "Invalid booking dates", HttpStatus.BAD_REQUEST),
+    NO_ROOMS_AVAILABLE(5005, "No rooms available for selected dates", HttpStatus.BAD_REQUEST),
+    BOOKING_ACCESS_DENIED(5006, "You do not have permission to access this booking", HttpStatus.FORBIDDEN),
+    BOOKING_ALREADY_CONFIRMED(5007, "Booking is already confirmed", HttpStatus.BAD_REQUEST),
+    BOOKING_CANNOT_BE_CONFIRMED(5008, "Booking cannot be confirmed", HttpStatus.BAD_REQUEST),
+    INVALID_GUEST_COUNT(5009, "Guest count exceeds room capacity", HttpStatus.BAD_REQUEST),
+    CHECK_IN_DATE_PAST(5010, "Check-in date cannot be in the past", HttpStatus.BAD_REQUEST),
+    CHECK_OUT_BEFORE_CHECK_IN(5011, "Check-out date must be after check-in date", HttpStatus.BAD_REQUEST),
     
     // Role-related errors
     ROLE_NOT_FOUND(6001, "Role not found", HttpStatus.NOT_FOUND),
