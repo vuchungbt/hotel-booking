@@ -40,8 +40,6 @@ public class AdminController {
         Long totalRoomTypes = roomTypeService.getTotalRoomTypesCount();
         
         Long totalReviews = reviewService.getTotalReviewsCount();
-        Long approvedReviews = reviewService.getApprovedReviewsCount();
-        Long verifiedReviews = reviewService.getVerifiedReviewsCount();
         
         Long totalUsers = userService.getTotalUsersCount();
         
@@ -52,9 +50,6 @@ public class AdminController {
                 .inactiveHotels(totalHotels - activeHotels)
                 .totalRoomTypes(totalRoomTypes)
                 .totalReviews(totalReviews)
-                .approvedReviews(approvedReviews)
-                .verifiedReviews(verifiedReviews)
-                .pendingReviews(totalReviews - approvedReviews)
                 .totalUsers(totalUsers)
                 .build();
         
@@ -112,14 +107,9 @@ public class AdminController {
         log.info("Getting review statistics");
         
         Long totalReviews = reviewService.getTotalReviewsCount();
-        Long approvedReviews = reviewService.getApprovedReviewsCount();
-        Long verifiedReviews = reviewService.getVerifiedReviewsCount();
         
         AdminDashboardResponse.ReviewStats stats = AdminDashboardResponse.ReviewStats.builder()
                 .totalReviews(totalReviews)
-                .approvedReviews(approvedReviews)
-                .verifiedReviews(verifiedReviews)
-                .pendingReviews(totalReviews - approvedReviews)
                 .build();
         
         return ResponseEntity
