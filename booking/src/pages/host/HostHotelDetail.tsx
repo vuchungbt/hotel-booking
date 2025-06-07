@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Hotel, MapPin, Phone, Mail, Globe, Star, Clock, DollarSign, Users, Edit, ArrowLeft, Plus } from 'lucide-react';
-import { hotelAPI, HotelResponse } from '../../services/api';
+import { Hotel, MapPin, Phone, Mail, Globe, Star, Clock, DollarSign, Users, Edit, ArrowLeft, Plus, Bed, Eye, Trash2 } from 'lucide-react';
+import { hotelAPI, hostRoomTypeAPI, HotelResponse, RoomTypeResponse } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import { formatCurrency } from '../../utils/format';
 
@@ -10,10 +10,16 @@ const HostHotelDetail: React.FC = () => {
   const { id } = useParams();
   const { showToast } = useToast();
   const [hotel, setHotel] = useState<HotelResponse | null>(null);
+  const [roomTypes, setRoomTypes] = useState<RoomTypeResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [roomTypesLoading, setRoomTypesLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchHotel();
+    if (id) {
+      fetchHotel();
+      fetchRoomTypes();
+    }
   }, [id]);
 
   const fetchHotel = async () => {
@@ -30,12 +36,63 @@ const HostHotelDetail: React.FC = () => {
     }
   };
 
+  const fetchRoomTypes = async () => {
+    try {
+      setRoomTypesLoading(true);
+      const response = await hostRoomTypeAPI.getMyHotelRoomTypes(id!);
+      setRoomTypes(response.data.result.content || []);
+    } catch (error: any) {
+      console.error('Error fetching room types:', error);
+      // Don't show error toast for room types as it's not critical
+    } finally {
+      setRoomTypesLoading(false);
+    }
+  };
+
   const handleEditHotel = () => {
     navigate(`/host/hotels/edit/${id}`);
   };
 
   const handleAddRoomType = () => {
     navigate(`/host/room-types/add?hotelId=${id}`);
+  };
+
+  const handleViewRoomType = (roomTypeId: string) => {
+    navigate(`/host/room-types/${roomTypeId}`);
+  };
+
+  const handleEditRoomType = (roomTypeId: string) => {
+    navigate(`/host/room-types/edit/${roomTypeId}`);
+  };
+
+  const handleDeleteRoomType = async (roomTypeId: string, roomTypeName: string) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa loại phòng "${roomTypeName}"?`)) {
+      return;
+    }
+
+    try {
+      setDeleteLoading(roomTypeId);
+      await hostRoomTypeAPI.deleteMyRoomType(roomTypeId);
+      showToast('success', 'Thành công', 'Xóa loại phòng thành công');
+      fetchRoomTypes(); // Refresh room types list
+    } catch (error) {
+      console.error('Error deleting room type:', error);
+      showToast('error', 'Lỗi', 'Lỗi khi xóa loại phòng');
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
+  const getBedTypeText = (bedType: string) => {
+    const bedTypes: Record<string, string> = {
+      'Single': 'Giường đơn',
+      'Double': 'Giường đôi',
+      'Queen': 'Giường Queen',
+      'King': 'Giường King',
+      'Twin': 'Giường đôi riêng biệt',
+      'Sofa Bed': 'Giường sofa'
+    };
+    return bedTypes[bedType] || bedType;
   };
 
   if (loading) {
@@ -178,6 +235,118 @@ const HostHotelDetail: React.FC = () => {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Room Types */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center">
+                <Bed className="mr-2" />
+                Loại phòng ({roomTypes.length})
+              </h2>
+              <button
+                onClick={handleAddRoomType}
+                className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm"
+              >
+                <Plus size={16} className="mr-1" />
+                Thêm loại phòng
+              </button>
+            </div>
+            
+            {roomTypesLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="mt-2 text-gray-600">Đang tải loại phòng...</p>
+              </div>
+            ) : roomTypes.length === 0 ? (
+              <div className="text-center py-8">
+                <Bed className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">Chưa có loại phòng nào</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Bắt đầu bằng cách tạo loại phòng đầu tiên cho khách sạn này.
+                </p>
+                <div className="mt-4">
+                  <button
+                    onClick={handleAddRoomType}
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Thêm loại phòng
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {roomTypes.map((roomType) => (
+                  <div key={roomType.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-start space-x-4">
+                        {roomType.imageUrl ? (
+                          <img
+                            src={roomType.imageUrl}
+                            alt={roomType.name}
+                            className="w-16 h-16 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center">
+                            <Bed className="h-6 w-6 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-900">{roomType.name}</h3>
+                          <div className="mt-1 space-y-1">
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Users className="h-4 w-4 mr-1" />
+                              <span>{roomType.maxOccupancy} người</span>
+                              {roomType.bedType && (
+                                <>
+                                  <span className="mx-2">•</span>
+                                  <span>{getBedTypeText(roomType.bedType)}</span>
+                                </>
+                              )}
+                            </div>
+                            <div className="flex items-center text-sm text-gray-600">
+                              <DollarSign className="h-4 w-4 mr-1" />
+                              <span className="font-medium">{formatCurrency(roomType.pricePerNight)}/đêm</span>
+                              <span className="mx-2">•</span>
+                              <span>{roomType.totalRooms} phòng</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleViewRoomType(roomType.id)}
+                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Xem chi tiết"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEditRoomType(roomType.id)}
+                          className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Chỉnh sửa"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRoomType(roomType.id, roomType.name)}
+                          disabled={deleteLoading === roomType.id}
+                          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Xóa"
+                        >
+                          {deleteLoading === roomType.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
