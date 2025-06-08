@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import BookingForm from '../components/BookingForm';
+import EnhancedBookingForm from '../components/EnhancedBookingForm';
 import { hotelAPI, roomTypeAPI, HotelResponse, RoomTypeResponse } from '../services/api';
 
 const BookingFormPage: React.FC = () => {
-  const { hotelId, roomTypeId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -14,8 +13,10 @@ const BookingFormPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Get search params from URL or location state
+  // Get search params from URL
   const searchParams = new URLSearchParams(location.search);
+  const hotelId = searchParams.get('hotelId');
+  const roomTypeId = searchParams.get('roomTypeId');
   const checkInDate = searchParams.get('checkIn') || '';
   const checkOutDate = searchParams.get('checkOut') || '';
   const guests = parseInt(searchParams.get('guests') || '1');
@@ -90,6 +91,36 @@ const BookingFormPage: React.FC = () => {
     );
   }
 
+  if (!hotelId || !roomTypeId) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-20">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-6"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Go Back
+          </button>
+          <div className="text-center py-12">
+            <div className="text-orange-500 text-lg font-semibold mb-2">
+              Missing Booking Information
+            </div>
+            <p className="text-gray-600 mb-4">
+              Hotel and room information are required to proceed with booking.
+            </p>
+            <button
+              onClick={() => navigate('/hotels')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Browse Hotels
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!checkInDate || !checkOutDate) {
     return (
       <div className="min-h-screen bg-gray-50 pt-20">
@@ -131,7 +162,7 @@ const BookingFormPage: React.FC = () => {
           Back to Hotel
         </button>
 
-        <BookingForm
+        <EnhancedBookingForm
           hotel={hotel}
           roomType={roomType}
           checkInDate={checkInDate}

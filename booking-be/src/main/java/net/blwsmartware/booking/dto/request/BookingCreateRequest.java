@@ -30,7 +30,7 @@ public class BookingCreateRequest {
     @Size(max = 255, message = "Email cannot exceed 255 characters")
     String guestEmail;
     
-    @Pattern(regexp = "^[+]?[0-9\\s\\-\\(\\)]{10,15}$", message = "Invalid phone number format")
+
     String guestPhone;
     
     @NotNull(message = "Check-in date is required")

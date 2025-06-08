@@ -451,7 +451,7 @@ const HostHotelEdit: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-8">
             <h2 className="text-xl font-semibold mb-6 flex items-center text-gray-900">
               <Clock className="mr-3 text-orange-600" size={24} />
-              Trạng thái khách sạn
+              Hotel Status
             </h2>
             <div className="space-y-4">
               <div className="flex items-center">
@@ -473,8 +473,8 @@ const HostHotelEdit: React.FC = () => {
                 <div className="flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <div className="h-4 w-4 bg-yellow-500 rounded mr-3"></div>
                   <div>
-                    <p className="text-sm font-medium text-yellow-800">Khách sạn nổi bật</p>
-                    <p className="text-xs text-yellow-600">Trạng thái này chỉ có thể được thay đổi bởi quản trị viên</p>
+                    <p className="text-sm font-medium text-yellow-800">Featured Hotels</p>
+                    <p className="text-xs text-yellow-600">This status can only be changed by the administrator</p>
                   </div>
                 </div>
               )}

@@ -22,6 +22,7 @@ import BookingDetailPage from './pages/BookingDetailPage';
 import BookingConfirmationPage from './pages/BookingConfirmationPage';
 import BookingFormPage from './pages/BookingFormPage';
 import MyReviews from './pages/MyReviews';
+import MyBookingsPage from './pages/MyBookingsPage';
 
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -132,17 +133,22 @@ function App() {
                 <PublicLayout><BookingHistoryPage /></PublicLayout>
               </ProtectedRoute>
             } />
+            <Route path="/bookings/my" element={
+              <ProtectedRoute requireAuth={true}>
+                <PublicLayout><MyBookingsPage /></PublicLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/bookings/:id" element={
               <ProtectedRoute requireAuth={true}>
                 <PublicLayout><BookingDetailPage /></PublicLayout>
               </ProtectedRoute>
             } />
-            <Route path="/bookings/confirmation/:id" element={
+            <Route path="/bookings/confirmation/:bookingId" element={
               <ProtectedRoute requireAuth={true}>
                 <PublicLayout><BookingConfirmationPage /></PublicLayout>
               </ProtectedRoute>
             } />
-            <Route path="/book/:hotelId/:roomTypeId" element={
+            <Route path="/booking" element={
               <ProtectedRoute requireAuth={true}>
                 <PublicLayout><BookingFormPage /></PublicLayout>
               </ProtectedRoute>

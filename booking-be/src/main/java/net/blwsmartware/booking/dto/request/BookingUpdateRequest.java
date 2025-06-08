@@ -22,8 +22,7 @@ public class BookingUpdateRequest {
     @Email(message = "Invalid email format")
     @Size(max = 255, message = "Email cannot exceed 255 characters")
     String guestEmail;
-    
-    @Pattern(regexp = "^[+]?[0-9\\s\\-\\(\\)]{10,15}$", message = "Invalid phone number format")
+
     String guestPhone;
     
     @FutureOrPresent(message = "Check-in date cannot be in the past")

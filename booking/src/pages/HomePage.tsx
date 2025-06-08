@@ -39,11 +39,11 @@ const HomePage: React.FC = () => {
         const updatedCityStats = await Promise.all(promises);
         setCityStats(updatedCityStats);
 
-        // Fetch total hotels count
+        // Fetch total hotels count using public API
         try {
-          const totalResponse = await hotelAPI.getActiveHotelsCount();
-          if (totalResponse.data.result) {
-            setTotalHotels(totalResponse.data.result);
+          const totalResponse = await hotelAPI.getActiveHotels(0, 1, 'name');
+          if (totalResponse.data.success && totalResponse.data.result) {
+            setTotalHotels(totalResponse.data.result.totalElements || 0);
           }
         } catch (error) {
           console.error('Error fetching total hotels count:', error);

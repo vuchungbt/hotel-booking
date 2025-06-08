@@ -34,10 +34,10 @@ const ReviewFilters: React.FC<ReviewFiltersProps> = ({
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         {/* Rating Filters */}
         <div className="flex-1">
-          <div className="flex items-center mb-3">
+          {/* <div className="flex items-center mb-3">
             <Filter className="h-5 w-5 text-gray-600 mr-2" />
             <h3 className="font-medium text-gray-900">Filter</h3>
-          </div>
+          </div> */}
           
           <div className="flex flex-wrap gap-2">
             <button
@@ -75,7 +75,7 @@ const ReviewFilters: React.FC<ReviewFiltersProps> = ({
         </div>
 
         {/* Sort Options */}
-        <div className="lg:w-64">
+        {/* <div className="lg:w-64">
           <div className="flex items-center mb-3">
             <SortAsc className="h-5 w-5 text-gray-600 mr-2" />
             <h3 className="font-medium text-gray-900">Sort</h3>
@@ -91,7 +91,7 @@ const ReviewFilters: React.FC<ReviewFiltersProps> = ({
             <option value="highest">Highest Rating</option>
             <option value="lowest">Lowest Rating</option>
           </select>
-        </div>
+        </div> */}
       </div>
     </div>
   );

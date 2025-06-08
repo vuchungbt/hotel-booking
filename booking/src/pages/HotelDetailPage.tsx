@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   MapPin, Star, Phone, Mail, Globe, Clock, Users, 
   Wifi, Car, Utensils, Dumbbell, Waves, Coffee,
@@ -13,7 +13,17 @@ import { useAuth } from '../contexts/AuthContext';
 
 const HotelDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+  
+  // Extract search context from URL parameters
+  const searchParams = new URLSearchParams(location.search);
+  const checkInDate = searchParams.get('checkIn') || new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  const checkOutDate = searchParams.get('checkOut') || new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
+  const guestCount = parseInt(searchParams.get('guests') || '2');
+  const returnUrl = searchParams.get('returnUrl');
+  
   const [hotel, setHotel] = useState<HotelResponse | null>(null);
   const [roomTypes, setRoomTypes] = useState<RoomTypeResponse[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -23,6 +33,11 @@ const HotelDetailPage: React.FC = () => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [userExistingReview, setUserExistingReview] = useState<any | null>(null);
   const [checkingUserReview, setCheckingUserReview] = useState(false);
+
+  // Calculate number of nights
+  const numberOfNights = Math.max(1, Math.ceil(
+    (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24)
+  ));
 
   // Fetch hotel details
   const fetchHotelDetails = async () => {
@@ -199,15 +214,37 @@ const HotelDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Breadcrumb */}
+      {/* Breadcrumb with Search Context */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Link to="/" className="hover:text-blue-600">Home</Link>
-            <ChevronLeft className="h-4 w-4 rotate-180" />
-            <Link to="/hotels" className="hover:text-blue-600">Hotels</Link>
-            <ChevronLeft className="h-4 w-4 rotate-180" />
-            <span className="text-gray-900 font-medium">{hotel.name}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <Link to="/" className="hover:text-blue-600">Home</Link>
+              <ChevronLeft className="h-4 w-4 rotate-180" />
+              <Link 
+                to={returnUrl || "/hotels"} 
+                className="hover:text-blue-600"
+              >
+                Hotels
+              </Link>
+              <ChevronLeft className="h-4 w-4 rotate-180" />
+              <span className="text-gray-900 font-medium">{hotel.name}</span>
+            </div>
+            
+            {/* Search Context Summary */}
+            <div className="hidden md:flex items-center space-x-4 text-sm">
+              <div className="flex items-center text-gray-600">
+                <Calendar className="h-4 w-4 mr-1" />
+                {new Date(checkInDate).toLocaleDateString('vi-VN')} - {new Date(checkOutDate).toLocaleDateString('vi-VN')}
+              </div>
+              <div className="flex items-center text-gray-600">
+                <Users className="h-4 w-4 mr-1" />
+                {guestCount} guests
+              </div>
+              <div className="text-blue-600 font-medium">
+                {numberOfNights} nights
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -431,14 +468,67 @@ const HotelDetailPage: React.FC = () => {
 
                           <div className="flex justify-between items-center">
                             <div>
-                              <span className="text-2xl font-bold text-blue-600">
+                              <div className="text-2xl font-bold text-blue-600">
                                 {formatPrice(roomType.pricePerNight)}
-                              </span>
-                              <span className="text-gray-500 text-sm ml-1">/night</span>
+                              </div>
+                              <div className="text-sm text-gray-600">per night</div>
+                              {numberOfNights > 1 && (
+                                <div className="text-lg font-semibold text-green-600 mt-1">
+                                  {formatPrice(roomType.pricePerNight * numberOfNights)} total
+                                </div>
+                              )}
                             </div>
-                            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                              Book Now
-                            </button>
+                            
+                            <div className="text-right">
+                              {/* Availability Check */}
+                              {roomType.maxOccupancy < guestCount ? (
+                                <div className="text-red-600 text-sm mb-2">
+                                  Room capacity exceeded
+                                </div>
+                              ) : roomType.availableRooms === 0 ? (
+                                <div className="text-red-600 text-sm mb-2">
+                                  Sold out
+                                </div>
+                              ) : (
+                                <div className="text-green-600 text-sm mb-2">
+                                  {roomType.availableRooms} rooms available
+                                </div>
+                              )}
+                              
+                              <button 
+                                onClick={() => {
+                                  if (roomType.maxOccupancy < guestCount) {
+                                    alert(`This room can accommodate maximum ${roomType.maxOccupancy} guests. Please select a different room type or reduce guest count.`);
+                                    return;
+                                  }
+                                  if (roomType.availableRooms === 0) {
+                                    alert('This room type is currently sold out for the selected dates.');
+                                    return;
+                                  }
+                                  
+                                  const bookingParams = new URLSearchParams({
+                                    hotelId: hotel.id,
+                                    roomTypeId: roomType.id,
+                                    checkIn: checkInDate,
+                                    checkOut: checkOutDate,
+                                    guests: guestCount.toString()
+                                  });
+                                  navigate(`/booking?${bookingParams.toString()}`);
+                                }}
+                                disabled={roomType.maxOccupancy < guestCount || roomType.availableRooms === 0}
+                                className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+                                  roomType.maxOccupancy < guestCount || roomType.availableRooms === 0
+                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                                }`}
+                              >
+                                {roomType.maxOccupancy < guestCount 
+                                  ? 'Capacity Exceeded' 
+                                  : roomType.availableRooms === 0 
+                                  ? 'Sold Out' 
+                                  : 'Book Now'}
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -614,8 +704,49 @@ const HotelDetailPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Search Context Display */}
+              <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-semibold text-blue-800 mb-2">Your Search</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center text-blue-700">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    {new Date(checkInDate).toLocaleDateString('vi-VN')} - {new Date(checkOutDate).toLocaleDateString('vi-VN')}
+                  </div>
+                  <div className="flex items-center text-blue-700">
+                    <Users className="h-4 w-4 mr-2" />
+                    {guestCount} guests • {numberOfNights} nights
+                  </div>
+                </div>
+              </div>
+
               {/* Booking Button */}
-              <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold mb-4">
+              <button 
+                onClick={() => {
+                  // Find best available room type
+                  const availableRoomTypes = roomTypes.filter(rt => 
+                    rt.availableRooms > 0 && rt.maxOccupancy >= guestCount
+                  );
+                  
+                  if (availableRoomTypes.length > 0) {
+                    // Use the cheapest available room type
+                    const cheapestRoom = availableRoomTypes.reduce((prev, current) => 
+                      prev.pricePerNight < current.pricePerNight ? prev : current
+                    );
+                    
+                    const bookingParams = new URLSearchParams({
+                      hotelId: hotel.id,
+                      roomTypeId: cheapestRoom.id,
+                      checkIn: checkInDate,
+                      checkOut: checkOutDate,
+                      guests: guestCount.toString()
+                    });
+                    navigate(`/booking?${bookingParams.toString()}`);
+                  } else {
+                    alert(`No rooms available for ${guestCount} guests on the selected dates. Please try different dates or guest count.`);
+                  }
+                }}
+                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold mb-4"
+              >
                 Book Now
               </button>
               

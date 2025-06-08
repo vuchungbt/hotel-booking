@@ -37,6 +37,19 @@ public class SecurityConfig {
             "/users",
             "/auth/**"
     };
+
+    private static final String[] PUBLIC_GET_ENDPOINTS = {
+            "/hotels/{id}",
+            "/hotels/search",
+            "/hotels/city/**",
+            "/hotels/country/**", 
+            "/hotels/rating/**",
+            "/hotels/active",
+            "/hotels/featured",
+            "/hotels/search/filters",
+            "/hotels/amenities",
+            "/room-types/hotel/**"
+    };
     private final JwtCustomDecoder customJwtDecoder;
 
     public SecurityConfig(JwtCustomDecoder customJwtDecoder) {
@@ -50,6 +63,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> {
                     authorize.requestMatchers(
                                     HttpMethod.POST,PUBLIC_ENDPOINTS).permitAll()
+                            .requestMatchers(
+                                    HttpMethod.GET,PUBLIC_GET_ENDPOINTS).permitAll()
                             .requestMatchers("/swagger-ui/**").permitAll()
                             .requestMatchers("/v3/**").permitAll()
                             .requestMatchers("/actuator/**").permitAll()

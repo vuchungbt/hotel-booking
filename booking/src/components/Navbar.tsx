@@ -138,13 +138,13 @@ const Navbar: React.FC = () => {
                       </Link>
                       
                       <Link
-                        to="/bookings"
+                        to="/bookings/my"
                         onClick={handleProfileClick}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                       >
                         <div className="flex items-center">
                           <BookOpen className="h-4 w-4 mr-3 text-gray-400" />
-                          Booking History
+                          My Bookings
                         </div>
                       </Link>
                       
