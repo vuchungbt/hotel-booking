@@ -76,18 +76,24 @@ public class BookingServiceImpl implements BookingService {
         Hotel hotel = getHotelById(request.getHotelId());
         RoomType roomType = getRoomTypeById(request.getRoomTypeId());
         
-        // 4. Validate room type belongs to hotel
+        // 4. Validate hotel is active - CRITICAL: Prevent booking inactive hotels
+        if (!hotel.isActive()) {
+            log.warn("Attempt to book inactive hotel: {} (ID: {})", hotel.getName(), hotel.getId());
+            throw new AppRuntimeException(ErrorResponse.HOTEL_NOT_AVAILABLE);
+        }
+        
+        // 5. Validate room type belongs to hotel
         if (!roomType.getHotel().getId().equals(hotel.getId())) {
             throw new AppRuntimeException(ErrorResponse.ROOM_TYPE_NOT_FOUND);
         }
         
-        // 5. Enhanced guest count validation against room type
+        // 6. Enhanced guest count validation against room type
         validateGuestCount(request.getGuests(), roomType.getMaxOccupancy());
         
-        // 6. Enhanced room availability check with conflict detection
+        // 7. Enhanced room availability check with conflict detection
         validateRoomAvailability(request.getRoomTypeId(), request.getCheckInDate(), request.getCheckOutDate());
         
-        // 7. Create booking entity with authenticated user info
+        // 8. Create booking entity with authenticated user info
         Booking booking = bookingMapper.toEntity(request);
         booking.setHotel(hotel);
         booking.setRoomType(roomType);
@@ -106,7 +112,7 @@ public class BookingServiceImpl implements BookingService {
             booking.setCreatedBy(currentUser.getId());
         }
         
-        // 8. Save booking
+        // 9. Save booking
         booking = bookingRepository.save(booking);
         
         log.info("Booking created successfully with ID: {} and reference: {}", 

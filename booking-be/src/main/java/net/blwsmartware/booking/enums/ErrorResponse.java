@@ -57,6 +57,7 @@ public enum ErrorResponse {
     HOTEL_HAS_ROOM_TYPES(2003, "Cannot delete hotel that has room types!", HttpStatus.BAD_REQUEST),
     HOTEL_HAS_BOOKINGS(2004, "Cannot delete hotel that has bookings!", HttpStatus.BAD_REQUEST),
     HOTEL_ACCESS_DENIED(2005, "You do not have permission to access this hotel!", HttpStatus.FORBIDDEN),
+    HOTEL_NOT_AVAILABLE(2006, "Hotel is not available for booking!", HttpStatus.BAD_REQUEST),
     
     // Room type-related errors
     ROOM_TYPE_NOT_FOUND(3001, "Room type not found!", HttpStatus.NOT_FOUND),

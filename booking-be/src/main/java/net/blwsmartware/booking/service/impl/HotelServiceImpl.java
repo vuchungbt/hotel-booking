@@ -108,10 +108,16 @@ public class HotelServiceImpl implements HotelService {
     
     @Override
     public HotelResponse getHotelById(UUID id) {
-        log.info("Getting hotel by ID: {}", id);
+        log.info("Getting hotel by ID: {} (public API)", id);
         
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
+        
+        // Public API should only return active hotels
+        if (!hotel.isActive()) {
+            log.warn("Attempt to access inactive hotel: {} (ID: {})", hotel.getName(), hotel.getId());
+            throw new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND);
+        }
         
         HotelResponse response = hotelMapper.toResponse(hotel);
         populateReviewData(response);
@@ -266,7 +272,7 @@ public class HotelServiceImpl implements HotelService {
         log.info("Searching hotels with keyword: {}", keyword);
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
-        Page<Hotel> hotelPage = hotelRepository.searchByNameOrCityOrCountry(keyword, pageable);
+        Page<Hotel> hotelPage = hotelRepository.searchActiveByNameOrCityOrCountry(keyword, pageable);
         
         List<HotelResponse> hotelResponses = hotelPage.getContent().stream()
                 .map(hotelMapper::toResponse)
@@ -283,7 +289,7 @@ public class HotelServiceImpl implements HotelService {
         log.info("Getting hotels by city: {}", city);
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
-        Page<Hotel> hotelPage = hotelRepository.findByCity(city, pageable);
+        Page<Hotel> hotelPage = hotelRepository.findByCityIgnoreCaseAndIsActiveTrue(city, pageable);
         
         List<HotelResponse> hotelResponses = hotelPage.getContent().stream()
                 .map(hotelMapper::toResponse)
@@ -300,7 +306,7 @@ public class HotelServiceImpl implements HotelService {
         log.info("Getting hotels by country: {}", country);
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
-        Page<Hotel> hotelPage = hotelRepository.findByCountry(country, pageable);
+        Page<Hotel> hotelPage = hotelRepository.findByCountryIgnoreCaseAndIsActiveTrue(country, pageable);
         
         List<HotelResponse> hotelResponses = hotelPage.getContent().stream()
                 .map(hotelMapper::toResponse)
@@ -314,7 +320,7 @@ public class HotelServiceImpl implements HotelService {
         log.info("Getting hotels by star rating: {}", starRating);
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
-        Page<Hotel> hotelPage = hotelRepository.findByStarRating(starRating, pageable);
+        Page<Hotel> hotelPage = hotelRepository.findByStarRatingAndIsActiveTrue(starRating, pageable);
         
         List<HotelResponse> hotelResponses = hotelPage.getContent().stream()
                 .map(hotelMapper::toResponse)
@@ -342,10 +348,10 @@ public class HotelServiceImpl implements HotelService {
     
     @Override
     public DataResponse<HotelResponse> getFeaturedHotels(Integer pageNumber, Integer pageSize, String sortBy) {
-        log.info("Getting featured hotels");
+        log.info("Getting featured hotels (only active ones for public API)");
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
-        Page<Hotel> hotelPage = hotelRepository.findByIsFeaturedTrue(pageable);
+        Page<Hotel> hotelPage = hotelRepository.findByIsFeaturedTrueAndIsActiveTrue(pageable);
         
         List<HotelResponse> hotelResponses = hotelPage.getContent().stream()
                 .map(hotelMapper::toResponse)
@@ -633,8 +639,8 @@ public class HotelServiceImpl implements HotelService {
                 city, country, starRating, minPrice, maxPrice, amenities);
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
-        Page<Hotel> hotelPage = hotelRepository.findWithFiltersAndAmenities(
-                city, country, starRating, true, null, minPrice, maxPrice, amenities, pageable);
+        Page<Hotel> hotelPage = hotelRepository.findActiveWithFiltersAndAmenities(
+                city, country, starRating, null, minPrice, maxPrice, amenities, pageable);
         
         List<HotelResponse> hotelResponses = hotelPage.getContent().stream()
                 .map(hotelMapper::toResponseWithoutRelations)
