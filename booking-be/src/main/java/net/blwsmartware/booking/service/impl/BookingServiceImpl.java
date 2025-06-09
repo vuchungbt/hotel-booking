@@ -15,8 +15,8 @@ import net.blwsmartware.booking.entity.RoomType;
 import net.blwsmartware.booking.entity.User;
 import net.blwsmartware.booking.enums.BookingStatus;
 import net.blwsmartware.booking.enums.PaymentStatus;
-import net.blwsmartware.booking.exception.AppException;
-import net.blwsmartware.booking.exception.ErrorCode;
+import net.blwsmartware.booking.exception.IdentityRuntimeException;
+import net.blwsmartware.booking.enums.ErrorResponse;
 import net.blwsmartware.booking.mapper.BookingMapper;
 import net.blwsmartware.booking.repository.BookingRepository;
 import net.blwsmartware.booking.repository.HotelRepository;
@@ -78,7 +78,7 @@ public class BookingServiceImpl implements BookingService {
         
         // 4. Validate room type belongs to hotel
         if (!roomType.getHotel().getId().equals(hotel.getId())) {
-            throw new AppException(ErrorCode.ROOM_TYPE_NOT_FOUND);
+            throw new IdentityRuntimeException(ErrorResponse.ROOM_TYPE_NOT_FOUND);
         }
         
         // 5. Enhanced guest count validation against room type
@@ -138,7 +138,7 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = getCurrentUserRequired();
         
         Booking booking = bookingRepository.findByIdAndUserId(bookingId, currentUser.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
         return bookingMapper.toResponse(booking);
     }
@@ -151,11 +151,11 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = getCurrentUserRequired();
         
         Booking booking = bookingRepository.findByIdAndUserId(bookingId, currentUser.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
         // Only allow updates for pending bookings
         if (booking.getStatus() != BookingStatus.PENDING) {
-            throw new AppException(ErrorCode.BOOKING_CANNOT_BE_CANCELLED);
+            throw new IdentityRuntimeException(ErrorResponse.BOOKING_CANNOT_BE_CANCELLED);
         }
         
         // Validate dates if provided
@@ -165,13 +165,13 @@ public class BookingServiceImpl implements BookingService {
             // Check availability for new dates (excluding current booking)
             if (!isRoomAvailable(booking.getRoomType().getId(), 
                                request.getCheckInDate(), request.getCheckOutDate(), bookingId)) {
-                throw new AppException(ErrorCode.NO_ROOMS_AVAILABLE);
+                throw new IdentityRuntimeException(ErrorResponse.NO_ROOMS_AVAILABLE);
             }
         }
         
         // Validate guest count if provided
         if (request.getGuests() != null && request.getGuests() > booking.getRoomType().getMaxOccupancy()) {
-            throw new AppException(ErrorCode.INVALID_GUEST_COUNT);
+            throw new IdentityRuntimeException(ErrorResponse.INVALID_GUEST_COUNT);
         }
         
         // Update booking (limited fields for users)
@@ -197,15 +197,15 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = getCurrentUserRequired();
         
         Booking booking = bookingRepository.findByIdAndUserId(bookingId, currentUser.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
         // Check if booking can be cancelled
         if (booking.getStatus() == BookingStatus.CANCELLED) {
-            throw new AppException(ErrorCode.BOOKING_ALREADY_CANCELLED);
+            throw new IdentityRuntimeException(ErrorResponse.BOOKING_ALREADY_CANCELLED);
         }
         
         if (booking.getStatus() == BookingStatus.COMPLETED) {
-            throw new AppException(ErrorCode.BOOKING_CANNOT_BE_CANCELLED);
+            throw new IdentityRuntimeException(ErrorResponse.BOOKING_CANNOT_BE_CANCELLED);
         }
         
         // Update booking status to cancelled by guest
@@ -235,23 +235,23 @@ public class BookingServiceImpl implements BookingService {
         LocalDate today = LocalDate.now();
         
         if (checkInDate.isBefore(today)) {
-            throw new AppException(ErrorCode.CHECK_IN_DATE_PAST);
+            throw new IdentityRuntimeException(ErrorResponse.CHECK_IN_DATE_PAST);
         }
         
         if (checkOutDate.isBefore(checkInDate) || checkOutDate.equals(checkInDate)) {
-            throw new AppException(ErrorCode.CHECK_OUT_BEFORE_CHECK_IN);
+            throw new IdentityRuntimeException(ErrorResponse.CHECK_OUT_BEFORE_CHECK_IN);
         }
         
         // Additional validation: Check-in date should not be too far in future (e.g., 2 years)
         LocalDate maxAdvanceDate = today.plusYears(2);
         if (checkInDate.isAfter(maxAdvanceDate)) {
-            throw new AppException(ErrorCode.CHECK_IN_DATE_TOO_ADVANCE);
+            throw new IdentityRuntimeException(ErrorResponse.CHECK_IN_DATE_TOO_ADVANCE);
         }
         
         // Additional validation: Maximum stay duration (e.g., 30 days)
         long daysBetween = ChronoUnit.DAYS.between(checkInDate, checkOutDate);
         if (daysBetween > 30) {
-            throw new AppException(ErrorCode.STAY_DURATION_TOO_LONG);
+            throw new IdentityRuntimeException(ErrorResponse.STAY_DURATION_TOO_LONG);
         }
     }
     
@@ -260,16 +260,16 @@ public class BookingServiceImpl implements BookingService {
      */
     private void validateGuestCount(Integer guests, Integer maxOccupancy) {
         if (guests == null || guests <= 0) {
-            throw new AppException(ErrorCode.INVALID_GUEST_COUNT);
+            throw new IdentityRuntimeException(ErrorResponse.INVALID_GUEST_COUNT);
         }
         
         if (guests > maxOccupancy) {
-            throw new AppException(ErrorCode.GUESTS_EXCEED_ROOM_CAPACITY);
+            throw new IdentityRuntimeException(ErrorResponse.GUESTS_EXCEED_ROOM_CAPACITY);
         }
         
         // Additional business rule: minimum stay requirement
         if (guests > 8) { // Large groups need special approval
-            throw new AppException(ErrorCode.LARGE_GROUP_NEEDS_APPROVAL);
+            throw new IdentityRuntimeException(ErrorResponse.LARGE_GROUP_NEEDS_APPROVAL);
         }
     }
     
@@ -279,7 +279,7 @@ public class BookingServiceImpl implements BookingService {
     private void validateRoomAvailability(UUID roomTypeId, LocalDate checkInDate, LocalDate checkOutDate) {
         // Check basic availability
         if (!isRoomAvailable(roomTypeId, checkInDate, checkOutDate)) {
-            throw new AppException(ErrorCode.NO_ROOMS_AVAILABLE);
+            throw new IdentityRuntimeException(ErrorResponse.NO_ROOMS_AVAILABLE);
         }
         
         // Check for overlapping bookings (conflict detection)
@@ -289,12 +289,12 @@ public class BookingServiceImpl implements BookingService {
         if (!overlappingBookings.isEmpty()) {
             log.warn("Found {} overlapping bookings for room type {} between {} and {}", 
                     overlappingBookings.size(), roomTypeId, checkInDate, checkOutDate);
-            throw new AppException(ErrorCode.BOOKING_CONFLICT_DETECTED);
+            throw new IdentityRuntimeException(ErrorResponse.BOOKING_CONFLICT_DETECTED);
         }
         
         // Check for maintenance periods (if implemented)
         if (isRoomUnderMaintenance(roomTypeId, checkInDate, checkOutDate)) {
-            throw new AppException(ErrorCode.ROOM_UNDER_MAINTENANCE);
+            throw new IdentityRuntimeException(ErrorResponse.ROOM_UNDER_MAINTENANCE);
         }
     }
     
@@ -309,12 +309,12 @@ public class BookingServiceImpl implements BookingService {
     
     private Hotel getHotelById(UUID hotelId) {
         return hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
     }
     
     private RoomType getRoomTypeById(UUID roomTypeId) {
         return roomTypeRepository.findById(roomTypeId)
-                .orElseThrow(() -> new AppException(ErrorCode.ROOM_TYPE_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.ROOM_TYPE_NOT_FOUND));
     }
     
     private User getCurrentUser() {
@@ -412,7 +412,7 @@ public class BookingServiceImpl implements BookingService {
         User user = getCurrentUser();
         if (user == null) {
             log.error("User authentication required but no authenticated user found");
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+            throw new IdentityRuntimeException(ErrorResponse.UNAUTHENTICATED);
         }
         return user;
     }
@@ -501,7 +501,7 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = getCurrentUserRequired();
         
         Booking booking = bookingRepository.findByIdAndHotelOwnerId(bookingId, currentUser.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
         return bookingMapper.toResponse(booking);
     }
@@ -515,7 +515,7 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = getCurrentUserRequired();
         
         Booking booking = bookingRepository.findByIdAndHotelOwnerId(bookingId, currentUser.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
         // Host can update more fields than regular users
         bookingMapper.updateEntity(booking, request);
@@ -534,14 +534,14 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = getCurrentUserRequired();
         
         Booking booking = bookingRepository.findByIdAndHotelOwnerId(bookingId, currentUser.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
         if (booking.getStatus() == BookingStatus.CONFIRMED) {
-            throw new AppException(ErrorCode.BOOKING_ALREADY_CONFIRMED);
+            throw new IdentityRuntimeException(ErrorResponse.BOOKING_ALREADY_CONFIRMED);
         }
         
         if (booking.getStatus() != BookingStatus.PENDING) {
-            throw new AppException(ErrorCode.BOOKING_CANNOT_BE_CONFIRMED);
+            throw new IdentityRuntimeException(ErrorResponse.BOOKING_CANNOT_BE_CONFIRMED);
         }
         
         booking.setStatus(BookingStatus.CONFIRMED);
@@ -562,14 +562,14 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = getCurrentUserRequired();
         
         Booking booking = bookingRepository.findByIdAndHotelOwnerId(bookingId, currentUser.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
         if (booking.getStatus() == BookingStatus.CANCELLED) {
-            throw new AppException(ErrorCode.BOOKING_ALREADY_CANCELLED);
+            throw new IdentityRuntimeException(ErrorResponse.BOOKING_ALREADY_CANCELLED);
         }
         
         if (booking.getStatus() == BookingStatus.COMPLETED) {
-            throw new AppException(ErrorCode.BOOKING_CANNOT_BE_CANCELLED);
+            throw new IdentityRuntimeException(ErrorResponse.BOOKING_CANNOT_BE_CANCELLED);
         }
         
         booking.setStatus(BookingStatus.CANCELLED);
@@ -588,11 +588,11 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = getCurrentUserRequired();
         
         Booking booking = bookingRepository.findByIdAndHotelOwnerId(bookingId, currentUser.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
         // Validate business rules
         if (booking.getStatus() == BookingStatus.CANCELLED) {
-            throw new AppException(ErrorCode.BOOKING_ALREADY_CANCELLED);
+            throw new IdentityRuntimeException(ErrorResponse.BOOKING_ALREADY_CANCELLED);
         }
         
         if (booking.getStatus() == BookingStatus.COMPLETED) {
@@ -623,16 +623,16 @@ public class BookingServiceImpl implements BookingService {
         if (isAdmin) {
             // Admin can confirm payment for any booking
             booking = bookingRepository.findById(bookingId)
-                    .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                    .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         } else {
             // Host can only confirm payment for their own hotels' bookings
             booking = bookingRepository.findByIdAndHotelOwnerId(bookingId, currentUser.getId())
-                    .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                    .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         }
         
         // Validate business rules
         if (booking.getStatus() == BookingStatus.CANCELLED) {
-            throw new AppException(ErrorCode.BOOKING_ALREADY_CANCELLED);
+            throw new IdentityRuntimeException(ErrorResponse.BOOKING_ALREADY_CANCELLED);
         }
         
         if (booking.getPaymentStatus() == PaymentStatus.PAID) {
@@ -641,7 +641,7 @@ public class BookingServiceImpl implements BookingService {
         }
         
         if (booking.getPaymentStatus() == PaymentStatus.FAILED) {
-            throw new AppException(ErrorCode.PAYMENT_FAILED);
+            throw new IdentityRuntimeException(ErrorResponse.PAYMENT_FAILED);
         }
         
         // Update payment status to PAID
@@ -663,11 +663,11 @@ public class BookingServiceImpl implements BookingService {
         
         // Find booking with ownership validation
         Booking booking = bookingRepository.findByIdAndHotelOwnerId(bookingId, currentUser.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
         // Validate business rules
         if (booking.getStatus() != BookingStatus.CONFIRMED) {
-            throw new AppException(ErrorCode.INVALID_BOOKING_STATUS);
+            throw new IdentityRuntimeException(ErrorResponse.INVALID_BOOKING_STATUS);
         }
         
         // Update booking status based on refund decision
@@ -711,7 +711,7 @@ public class BookingServiceImpl implements BookingService {
         // Validate hotel ownership
         Hotel hotel = getHotelById(hotelId);
         if (!hotel.getOwner().getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.HOTEL_ACCESS_DENIED);
+            throw new IdentityRuntimeException(ErrorResponse.HOTEL_ACCESS_DENIED);
         }
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
@@ -770,7 +770,7 @@ public class BookingServiceImpl implements BookingService {
         log.info("Admin getting booking by ID: {}", bookingId);
         
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
         return bookingMapper.toResponse(booking);
     }
@@ -784,7 +784,7 @@ public class BookingServiceImpl implements BookingService {
         User currentUser = getCurrentUserRequired();
         
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
         bookingMapper.updateEntity(booking, request);
         booking.setUpdatedBy(currentUser.getId());
@@ -800,7 +800,7 @@ public class BookingServiceImpl implements BookingService {
         log.info("Admin deleting booking: {}", bookingId);
         
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
         bookingRepository.delete(booking);
     }

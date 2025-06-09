@@ -11,8 +11,8 @@ import net.blwsmartware.booking.dto.response.ReviewResponse;
 import net.blwsmartware.booking.entity.Hotel;
 import net.blwsmartware.booking.entity.Review;
 import net.blwsmartware.booking.entity.User;
-import net.blwsmartware.booking.exception.AppException;
-import net.blwsmartware.booking.exception.ErrorCode;
+import net.blwsmartware.booking.exception.IdentityRuntimeException;
+import net.blwsmartware.booking.enums.ErrorResponse;
 import net.blwsmartware.booking.mapper.ReviewMapper;
 import net.blwsmartware.booking.repository.HotelRepository;
 import net.blwsmartware.booking.repository.ReviewRepository;
@@ -82,7 +82,7 @@ public class ReviewServiceImpl implements ReviewService {
         log.info("Getting review by ID: {}", id);
         
         Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.REVIEW_NOT_FOUND));
         
         return reviewMapper.toResponse(review);
     }
@@ -94,7 +94,7 @@ public class ReviewServiceImpl implements ReviewService {
         log.info("Deleting review: {}", id);
         
         Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.REVIEW_NOT_FOUND));
         
         reviewRepository.delete(review);
     }
@@ -107,7 +107,7 @@ public class ReviewServiceImpl implements ReviewService {
         
         // Validate hotel exists
         hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
         Page<Review> reviewPage = reviewRepository.findByHotelId(hotelId, pageable);
@@ -130,18 +130,18 @@ public class ReviewServiceImpl implements ReviewService {
         User user;
         if (request.getUserId() != null) {
             user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                    .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
         } else {
             user = getCurrentUser();
         }
         
         // Validate hotel exists
         Hotel hotel = hotelRepository.findById(request.getHotelId())
-                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
         
         // Check if user has already reviewed this hotel
         if (reviewRepository.existsByUserAndHotel(user, hotel)) {
-            throw new AppException(ErrorCode.REVIEW_ALREADY_EXISTS);
+            throw new IdentityRuntimeException(ErrorResponse.REVIEW_ALREADY_EXISTS);
         }
         
         // Create review
@@ -164,12 +164,12 @@ public class ReviewServiceImpl implements ReviewService {
         log.info("Updating review: {}", id);
         
         Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.REVIEW_NOT_FOUND));
         
         // Check if current user owns this review
         UUID currentUserId = getCurrentUserId();
         if (!review.getUser().getId().equals(currentUserId)) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new IdentityRuntimeException(ErrorResponse.UNAUTHORIZED);
         }
         
         // Update review
@@ -187,12 +187,12 @@ public class ReviewServiceImpl implements ReviewService {
         log.info("Deleting my review: {}", id);
         
         Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.REVIEW_NOT_FOUND));
         
         // Check if current user owns this review
         UUID currentUserId = getCurrentUserId();
         if (!review.getUser().getId().equals(currentUserId)) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new IdentityRuntimeException(ErrorResponse.UNAUTHORIZED);
         }
         
         reviewRepository.delete(review);
@@ -221,7 +221,7 @@ public class ReviewServiceImpl implements ReviewService {
         
         // Validate user exists
         userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
         Page<Review> reviewPage = reviewRepository.findByUserId(userId, pageable);
@@ -273,7 +273,7 @@ public class ReviewServiceImpl implements ReviewService {
     public Long getReviewsCountByHotel(UUID hotelId) {
         // Validate hotel exists
         hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
         
         return reviewRepository.countByHotelId(hotelId);
     }
@@ -283,7 +283,7 @@ public class ReviewServiceImpl implements ReviewService {
     public Long getReviewsCountByUser(UUID userId) {
         // Validate user exists
         userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
         
         return reviewRepository.countByUserId(userId);
     }
@@ -292,7 +292,7 @@ public class ReviewServiceImpl implements ReviewService {
     public Double getAverageRatingByHotel(UUID hotelId) {
         // Validate hotel exists
         hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new AppException(ErrorCode.HOTEL_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
         
         return reviewRepository.getAverageRatingByHotel(hotelId).orElse(0.0);
     }
@@ -314,7 +314,7 @@ public class ReviewServiceImpl implements ReviewService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = authentication.getName(); // This is actually the User ID from JWT subject
         return userRepository.findById(UUID.fromString(userId))
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
     }
     
     private UUID getCurrentUserId() {

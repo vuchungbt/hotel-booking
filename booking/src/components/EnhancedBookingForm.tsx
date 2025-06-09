@@ -201,8 +201,23 @@ const EnhancedBookingForm: React.FC<EnhancedBookingFormProps> = ({
       }
     } catch (error: any) {
       console.error('Error creating booking:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to create booking';
-      alert(errorMessage);
+      console.log('Full error response:', error.response?.data);
+      
+      // Check for booking conflict by error code, HTTP status, or message
+      const errorCode = error.response?.data?.code;
+      const httpStatus = error.response?.status;
+      const errorMessage = error.response?.data?.message || '';
+      
+      if (errorCode === 5016 || // BOOKING_CONFLICT_DETECTED code
+          httpStatus === 409 || // HTTP CONFLICT status
+          errorMessage.includes('Booking conflict detected') || 
+          errorMessage.includes('overlapping bookings') ||
+          errorMessage.includes('conflict detected with existing reservations')) {
+        alert('Booking existed');
+      } else {
+        const fallbackMessage = errorMessage || 'Booking failed';
+        alert(fallbackMessage);
+      }
     } finally {
       setLoading(false);
     }
