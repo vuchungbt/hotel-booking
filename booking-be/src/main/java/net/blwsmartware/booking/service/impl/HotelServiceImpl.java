@@ -10,7 +10,7 @@ import net.blwsmartware.booking.dto.response.DataResponse;
 import net.blwsmartware.booking.dto.response.HotelResponse;
 import net.blwsmartware.booking.entity.Hotel;
 import net.blwsmartware.booking.entity.User;
-import net.blwsmartware.booking.exception.IdentityRuntimeException;
+import net.blwsmartware.booking.exception.AppRuntimeException;
 import net.blwsmartware.booking.enums.ErrorResponse;
 import net.blwsmartware.booking.mapper.HotelMapper;
 import net.blwsmartware.booking.repository.HotelRepository;
@@ -111,7 +111,7 @@ public class HotelServiceImpl implements HotelService {
         log.info("Getting hotel by ID: {}", id);
         
         Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
         
         HotelResponse response = hotelMapper.toResponse(hotel);
         populateReviewData(response);
@@ -129,7 +129,7 @@ public class HotelServiceImpl implements HotelService {
         User owner;
         if (request.getOwnerId() != null) {
             owner = userRepository.findById(request.getOwnerId())
-                    .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
+                    .orElseThrow(() -> new AppRuntimeException(ErrorResponse.USER_NOT_FOUND));
         } else {
             // Use current user as owner if ownerId is not provided
             owner = getCurrentUser();
@@ -137,7 +137,7 @@ public class HotelServiceImpl implements HotelService {
         
         // Check if hotel name already exists in the same city
         if (hotelRepository.existsByNameAndCity(request.getName(), request.getCity())) {
-            throw new IdentityRuntimeException(ErrorResponse.HOTEL_NAME_ALREADY_EXISTS);
+            throw new AppRuntimeException(ErrorResponse.HOTEL_NAME_ALREADY_EXISTS);
         }
         
         // Convert request to entity
@@ -159,13 +159,13 @@ public class HotelServiceImpl implements HotelService {
         log.info("Admin updating hotel: {}", id);
 
         Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
 
         // Check if new name conflicts with existing hotels in the same city
         if (request.getName() != null && !request.getName().equals(hotel.getName())) {
             String city = request.getCity() != null ? request.getCity() : hotel.getCity();
             if (hotelRepository.existsByNameAndCity(request.getName(), city)) {
-                throw new IdentityRuntimeException(ErrorResponse.HOTEL_NAME_ALREADY_EXISTS);
+                throw new AppRuntimeException(ErrorResponse.HOTEL_NAME_ALREADY_EXISTS);
             }
         }
 
@@ -175,7 +175,7 @@ public class HotelServiceImpl implements HotelService {
             
             // Validate new owner exists
             User newOwner = userRepository.findById(request.getOwnerId())
-                    .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
+                    .orElseThrow(() -> new AppRuntimeException(ErrorResponse.USER_NOT_FOUND));
             
             hotel.setOwner(newOwner);
         }
@@ -196,7 +196,7 @@ public class HotelServiceImpl implements HotelService {
         log.info("Admin deleting hotel: {}", id);
         
         Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
         
         // TODO: Check if hotel has any bookings when booking entity is implemented
         // For now, we'll allow deletion
@@ -211,7 +211,7 @@ public class HotelServiceImpl implements HotelService {
         log.info("Toggling hotel status: {}", id);
         
         Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
         
         // Debug: Before toggle
         log.info("=== TOGGLE STATUS DEBUG ===");
@@ -251,7 +251,7 @@ public class HotelServiceImpl implements HotelService {
         log.info("Toggling hotel featured status: {}", id);
         
         Hotel hotel = hotelRepository.findById(id)
-                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
         
         hotel.setFeatured(!hotel.isFeatured());
         hotel.setUpdatedBy(getCurrentUserId());
@@ -363,7 +363,7 @@ public class HotelServiceImpl implements HotelService {
         
         // Validate owner exists
         userRepository.findById(ownerId)
-                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.USER_NOT_FOUND));
         
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
         Page<Hotel> hotelPage = hotelRepository.findByOwnerId(ownerId, pageable);
@@ -434,7 +434,7 @@ public class HotelServiceImpl implements HotelService {
     public Long getHotelsCountByOwner(UUID ownerId) {
         // Validate owner exists
         userRepository.findById(ownerId)
-                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.USER_NOT_FOUND));
         
         return hotelRepository.countByOwnerId(ownerId);
     }
@@ -449,7 +449,7 @@ public class HotelServiceImpl implements HotelService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = authentication.getName();
         return userRepository.findById(UUID.fromString(userId))
-                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.USER_NOT_FOUND));
     }
     
     private UUID getCurrentUserId() {
@@ -486,10 +486,10 @@ public class HotelServiceImpl implements HotelService {
     private void validateHotelOwnership(UUID hotelId) {
         UUID currentUserId = getCurrentUserId();
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
         
         if (!hotel.getOwner().getId().equals(currentUserId)) {
-            throw new IdentityRuntimeException(ErrorResponse.HOTEL_ACCESS_DENIED);
+            throw new AppRuntimeException(ErrorResponse.HOTEL_ACCESS_DENIED);
         }
     }
     
@@ -498,11 +498,11 @@ public class HotelServiceImpl implements HotelService {
      */
     private Hotel getMyHotelEntity(UUID hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new IdentityRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
         
         UUID currentUserId = getCurrentUserId();
         if (!hotel.getOwner().getId().equals(currentUserId)) {
-            throw new IdentityRuntimeException(ErrorResponse.HOTEL_ACCESS_DENIED);
+            throw new AppRuntimeException(ErrorResponse.HOTEL_ACCESS_DENIED);
         }
         
         return hotel;
@@ -530,7 +530,7 @@ public class HotelServiceImpl implements HotelService {
         
         // Check if hotel name already exists in the same city
         if (hotelRepository.existsByNameAndCity(request.getName(), request.getCity())) {
-            throw new IdentityRuntimeException(ErrorResponse.HOTEL_NAME_ALREADY_EXISTS);
+            throw new AppRuntimeException(ErrorResponse.HOTEL_NAME_ALREADY_EXISTS);
         }
         
         // Convert request to entity
@@ -560,7 +560,7 @@ public class HotelServiceImpl implements HotelService {
         if (request.getName() != null && !request.getName().equals(hotel.getName())) {
             String city = request.getCity() != null ? request.getCity() : hotel.getCity();
             if (hotelRepository.existsByNameAndCity(request.getName(), city)) {
-                throw new IdentityRuntimeException(ErrorResponse.HOTEL_NAME_ALREADY_EXISTS);
+                throw new AppRuntimeException(ErrorResponse.HOTEL_NAME_ALREADY_EXISTS);
             }
         }
 
