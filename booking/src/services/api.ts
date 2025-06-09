@@ -699,9 +699,6 @@ export interface HostDashboardResponse {
 export interface BookingCreateRequest {
   hotelId: string;
   roomTypeId: string;
-  guestName: string;
-  guestEmail: string;
-  guestPhone: string;
   checkInDate: string;
   checkOutDate: string;
   guests: number;
@@ -718,8 +715,8 @@ export interface BookingUpdateRequest {
   checkOutDate?: string;
   guests?: number;
   totalAmount?: number;
-  status?: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
-  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
+  status?: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED_BY_GUEST' | 'CANCELLED_BY_HOST';
+  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED' | 'REFUND_PENDING' | 'NO_PAYMENT' | 'CANCELLED';
   paymentMethod?: string;
   specialRequests?: string;
 }
@@ -745,8 +742,8 @@ export interface BookingResponse {
   checkOutDate: string;
   guests: number;
   totalAmount: number;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
-  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED_BY_GUEST' | 'CANCELLED_BY_HOST';
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED' | 'REFUND_PENDING' | 'NO_PAYMENT' | 'CANCELLED';
   paymentMethod?: string;
   bookingReference: string;
   specialRequests?: string;
@@ -759,8 +756,8 @@ export interface BookingResponse {
 }
 
 export interface BookingFilterParams {
-  status?: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
-  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
+  status?: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED_BY_GUEST' | 'CANCELLED_BY_HOST';
+  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED' | 'REFUND_PENDING' | 'NO_PAYMENT' | 'CANCELLED';
   hotelId?: string;
   guestName?: string;
   checkInDate?: string;
@@ -893,15 +890,25 @@ export const bookingAPI = {
   completeBooking: (id: string) =>
     api.patch(`/bookings/host/${id}/complete`),
   
+  confirmPayment: (id: string) =>
+    api.patch(`/bookings/host/${id}/confirm-payment`),
+  
+  processCancellation: (id: string, data: { refundAmount: number; reason: string; refundPercentage?: number }) =>
+    api.patch(`/bookings/host/${id}/process-cancellation`, data),
+  
   // Guest operations - create and manage own bookings
   createBooking: (data: BookingCreateRequest) =>
     api.post('/bookings', data),
   
   getMyBookings: (params?: BookingFilterParams) =>
-    api.get('/bookings/my', { params }),
+    api.get('/bookings/my', { 
+      params: { ...params, _t: Date.now() } // Cache busting
+    }),
   
   getMyBookingById: (id: string) =>
-    api.get(`/bookings/my/${id}`),
+    api.get(`/bookings/my/${id}`, { 
+      params: { _t: Date.now() } // Cache busting
+    }),
   
   updateMyBooking: (id: string, data: BookingUpdateRequest) =>
     api.put(`/bookings/my/${id}`, data),
@@ -916,8 +923,14 @@ export const bookingAPI = {
   getBookingById: (id: string) =>
     api.get(`/bookings/admin/${id}`),
   
+  updateBooking: (id: string, data: BookingUpdateRequest) =>
+    api.put(`/bookings/admin/${id}`, data),
+  
   deleteBooking: (id: string) =>
     api.delete(`/bookings/admin/${id}`),
+  
+  adminConfirmPayment: (id: string) =>
+    api.patch(`/bookings/admin/${id}/confirm-payment`),
   
   // Statistics
   getBookingStats: () => api.get('/bookings/stats'),

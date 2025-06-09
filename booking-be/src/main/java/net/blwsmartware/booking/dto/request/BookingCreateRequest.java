@@ -21,18 +21,6 @@ public class BookingCreateRequest {
     @NotNull(message = "Room type ID is required")
     UUID roomTypeId;
     
-    @NotBlank(message = "Guest name is required")
-    @Size(min = 2, max = 100, message = "Guest name must be between 2 and 100 characters")
-    String guestName;
-    
-    @NotBlank(message = "Guest email is required")
-    @Email(message = "Invalid email format")
-    @Size(max = 255, message = "Email cannot exceed 255 characters")
-    String guestEmail;
-    
-
-    String guestPhone;
-    
     @NotNull(message = "Check-in date is required")
     @FutureOrPresent(message = "Check-in date cannot be in the past")
     LocalDate checkInDate;
@@ -56,4 +44,12 @@ public class BookingCreateRequest {
     
     @Size(max = 1000, message = "Special requests cannot exceed 1000 characters")
     String specialRequests;
+    
+    @AssertTrue(message = "Check-out date must be after check-in date")
+    public boolean isCheckOutAfterCheckIn() {
+        if (checkInDate == null || checkOutDate == null) {
+            return true; // Let @NotNull handle null validation
+        }
+        return checkOutDate.isAfter(checkInDate);
+    }
 } 

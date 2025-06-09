@@ -2,6 +2,7 @@ package net.blwsmartware.booking.service;
 
 import net.blwsmartware.booking.dto.request.BookingCreateRequest;
 import net.blwsmartware.booking.dto.request.BookingUpdateRequest;
+import net.blwsmartware.booking.dto.request.CancellationRequest;
 import net.blwsmartware.booking.dto.response.BookingResponse;
 import net.blwsmartware.booking.dto.response.DataResponse;
 import net.blwsmartware.booking.enums.BookingStatus;
@@ -69,6 +70,16 @@ public interface BookingService {
      * Complete booking (mark as checked out)
      */
     BookingResponse completeBooking(UUID bookingId);
+    
+    /**
+     * Confirm payment status (for cash payments or manual confirmation)
+     */
+    BookingResponse confirmPayment(UUID bookingId);
+    
+    /**
+     * Process cancellation request with refund decision
+     */
+    BookingResponse processCancellation(UUID bookingId, CancellationRequest request);
     
     /**
      * Get bookings for specific hotel

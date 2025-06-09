@@ -12,7 +12,10 @@ public enum ErrorCode {
     UNAUTHENTICATED(1006, "Unauthenticated", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1007, "You do not have permission", HttpStatus.FORBIDDEN),
     INVALID_DOB(1008, "Your age must be at least {min}", HttpStatus.BAD_REQUEST),
-    
+
+    PAYMENT_FAILED(1508, "Payment failed", HttpStatus.BAD_REQUEST),
+    INVALID_BOOKING_STATUS(1509, "INVALID BOOKING STATUS", HttpStatus.BAD_REQUEST),
+
     // User-related errors
     USER_EXISTED(1002, "User existed", HttpStatus.BAD_REQUEST),
     USERNAME_INVALID(1003, "Username must be at least {min} characters", HttpStatus.BAD_REQUEST),
@@ -50,6 +53,14 @@ public enum ErrorCode {
     INVALID_GUEST_COUNT(5009, "Guest count exceeds room capacity", HttpStatus.BAD_REQUEST),
     CHECK_IN_DATE_PAST(5010, "Check-in date cannot be in the past", HttpStatus.BAD_REQUEST),
     CHECK_OUT_BEFORE_CHECK_IN(5011, "Check-out date must be after check-in date", HttpStatus.BAD_REQUEST),
+    
+    // Enhanced booking validation errors
+    CHECK_IN_DATE_TOO_ADVANCE(5012, "Check-in date cannot be more than 2 years in advance", HttpStatus.BAD_REQUEST),
+    STAY_DURATION_TOO_LONG(5013, "Stay duration cannot exceed 30 days", HttpStatus.BAD_REQUEST),
+    GUESTS_EXCEED_ROOM_CAPACITY(5014, "Number of guests exceeds room maximum occupancy", HttpStatus.BAD_REQUEST),
+    LARGE_GROUP_NEEDS_APPROVAL(5015, "Large groups (8+ guests) require special approval", HttpStatus.BAD_REQUEST),
+    BOOKING_CONFLICT_DETECTED(5016, "Booking conflict detected with existing reservations", HttpStatus.CONFLICT),
+    ROOM_UNDER_MAINTENANCE(5017, "Room is under maintenance during selected dates", HttpStatus.BAD_REQUEST),
     
     // Role-related errors
     ROLE_NOT_FOUND(6001, "Role not found", HttpStatus.NOT_FOUND),

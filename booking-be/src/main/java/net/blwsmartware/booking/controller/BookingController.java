@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.blwsmartware.booking.constant.PagePrepare;
 import net.blwsmartware.booking.dto.request.BookingCreateRequest;
 import net.blwsmartware.booking.dto.request.BookingUpdateRequest;
+import net.blwsmartware.booking.dto.request.CancellationRequest;
 import net.blwsmartware.booking.dto.response.BookingResponse;
 import net.blwsmartware.booking.dto.response.DataResponse;
 import net.blwsmartware.booking.dto.response.MessageResponse;
@@ -18,6 +19,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -32,10 +34,25 @@ public class BookingController {
     
     BookingService bookingService;
     
+    // ===== TEST ENDPOINT =====
+    
+    @GetMapping("/auth-test")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<MessageResponse<String>> testAuthentication() {
+        log.info("Testing authentication endpoint called");
+        return ResponseEntity.ok()
+                .body(MessageResponse.<String>builder()
+                        .message("Authentication successful")
+                        .result("User is authenticated")
+                        .build());
+    }
+    
     // ===== GUEST OPERATIONS =====
     
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MessageResponse<BookingResponse>> createBooking(@Valid @RequestBody BookingCreateRequest request) {
+        log.info("Creating booking for authenticated user");
         BookingResponse response = bookingService.createBooking(request);
         
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -47,6 +64,7 @@ public class BookingController {
     }
     
     @GetMapping("/my")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MessageResponse<DataResponse<BookingResponse>>> getMyBookings(
             @RequestParam(defaultValue = PagePrepare.PAGE_NUMBER) Integer pageNumber,
             @RequestParam(defaultValue = PagePrepare.PAGE_SIZE) Integer pageSize,
@@ -63,6 +81,7 @@ public class BookingController {
     }
     
     @GetMapping("/my/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MessageResponse<BookingResponse>> getMyBookingById(@PathVariable UUID id) {
         BookingResponse response = bookingService.getMyBookingById(id);
         
@@ -75,6 +94,7 @@ public class BookingController {
     }
     
     @PutMapping("/my/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MessageResponse<BookingResponse>> updateMyBooking(
             @PathVariable UUID id,
             @Valid @RequestBody BookingUpdateRequest request) {
@@ -89,6 +109,7 @@ public class BookingController {
     }
     
     @PatchMapping("/my/{id}/cancel")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MessageResponse<BookingResponse>> cancelMyBooking(
             @PathVariable UUID id,
             @RequestParam(required = false) String reason) {
@@ -193,6 +214,34 @@ public class BookingController {
                         .build());
     }
     
+    @PatchMapping("/host/{id}/confirm-payment")
+    @IsHost
+    public ResponseEntity<MessageResponse<BookingResponse>> confirmPaymentByHost(@PathVariable UUID id) {
+        BookingResponse response = bookingService.confirmPayment(id);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<BookingResponse>builder()
+                        .message("Payment confirmed successfully")
+                        .result(response)
+                        .build());
+    }
+    
+    @PatchMapping("/host/{id}/process-cancellation")
+    @IsHost
+    public ResponseEntity<MessageResponse<BookingResponse>> processCancellation(
+            @PathVariable UUID id,
+            @Valid @RequestBody CancellationRequest request) {
+        BookingResponse response = bookingService.processCancellation(id, request);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<BookingResponse>builder()
+                        .message("Cancellation processed successfully")
+                        .result(response)
+                        .build());
+    }
+    
     @GetMapping("/hotel/{hotelId}")
     @IsHost
     public ResponseEntity<MessageResponse<DataResponse<BookingResponse>>> getBookingsByHotel(
@@ -275,9 +324,23 @@ public class BookingController {
                         .build());
     }
     
+    @PatchMapping("/admin/{id}/confirm-payment")
+    @IsAdmin
+    public ResponseEntity<MessageResponse<BookingResponse>> confirmPaymentByAdmin(@PathVariable UUID id) {
+        BookingResponse response = bookingService.confirmPayment(id);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<BookingResponse>builder()
+                        .message("Payment confirmed successfully")
+                        .result(response)
+                        .build());
+    }
+    
     // ===== SEARCH & FILTER OPERATIONS =====
     
     @GetMapping("/search")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('HOST')")
     public ResponseEntity<MessageResponse<DataResponse<BookingResponse>>> searchBookings(
             @RequestParam String keyword,
             @RequestParam(defaultValue = PagePrepare.PAGE_NUMBER) Integer pageNumber,
@@ -295,6 +358,7 @@ public class BookingController {
     }
     
     @GetMapping("/date-range")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('HOST')")
     public ResponseEntity<MessageResponse<DataResponse<BookingResponse>>> getBookingsByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
@@ -308,7 +372,7 @@ public class BookingController {
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(MessageResponse.<DataResponse<BookingResponse>>builder()
-                        .message("Bookings by date range retrieved successfully")
+                        .message("Bookings retrieved successfully")
                         .result(response)
                         .build());
     }
@@ -344,12 +408,14 @@ public class BookingController {
     // ===== UTILITY ENDPOINTS =====
     
     @GetMapping("/check-availability")
+    // Keep public for guest users to check availability before booking
+    // But should implement rate limiting in production
     public ResponseEntity<MessageResponse<Boolean>> checkRoomAvailability(
             @RequestParam UUID roomTypeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkInDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOutDate) {
         
-        boolean isAvailable = bookingService.isRoomAvailable(roomTypeId, checkInDate, checkOutDate);
+        Boolean isAvailable = bookingService.isRoomAvailable(roomTypeId, checkInDate, checkOutDate);
         
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)

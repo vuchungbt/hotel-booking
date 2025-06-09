@@ -6,15 +6,26 @@ import {
 } from 'lucide-react';
 import { bookingAPI, BookingResponse } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import BookingCancelModal from '../components/booking/BookingCancelModal';
+import { useToast } from '../hooks/useToast';
+import { ToastContainer } from '../components/ui/Toast';
 
 const MyBookingsPage: React.FC = () => {
   const { user } = useAuth();
+  const { toasts, removeToast, showSuccess, showError } = useToast();
   const [bookings, setBookings] = useState<BookingResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [paymentFilter, setPaymentFilter] = useState<string>('ALL');
+  const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
+  
+  // Modal state
+  const [cancelModal, setCancelModal] = useState<{
+    isOpen: boolean;
+    booking?: BookingResponse;
+  }>({ isOpen: false });
 
   useEffect(() => {
     fetchBookings();
@@ -77,6 +88,8 @@ const MyBookingsPage: React.FC = () => {
       PENDING: { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'Pending' },
       CONFIRMED: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Confirmed' },
       CANCELLED: { color: 'bg-red-100 text-red-800', icon: AlertCircle, label: 'Cancelled' },
+      CANCELLED_BY_GUEST: { color: 'bg-red-100 text-red-800', icon: AlertCircle, label: 'Cancelled by Guest' },
+      CANCELLED_BY_HOST: { color: 'bg-red-100 text-red-800', icon: AlertCircle, label: 'Cancelled by Host' },
       COMPLETED: { color: 'bg-blue-100 text-blue-800', icon: CheckCircle, label: 'Completed' },
       NO_SHOW: { color: 'bg-gray-100 text-gray-800', icon: AlertCircle, label: 'No Show' }
     };
@@ -98,7 +111,10 @@ const MyBookingsPage: React.FC = () => {
       PAID: { color: 'bg-green-100 text-green-800', label: 'Paid' },
       FAILED: { color: 'bg-red-100 text-red-800', label: 'Failed' },
       REFUNDED: { color: 'bg-blue-100 text-blue-800', label: 'Refunded' },
-      PARTIALLY_REFUNDED: { color: 'bg-orange-100 text-orange-800', label: 'Partial Refund' }
+      PARTIALLY_REFUNDED: { color: 'bg-orange-100 text-orange-800', label: 'Partial Refund' },
+      REFUND_PENDING: { color: 'bg-orange-100 text-orange-800', label: 'Refund Pending' },
+      NO_PAYMENT: { color: 'bg-gray-100 text-gray-800', label: 'No Payment' },
+      CANCELLED: { color: 'bg-gray-100 text-gray-800', label: 'Payment Cancelled' }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.PENDING;
@@ -115,6 +131,33 @@ const MyBookingsPage: React.FC = () => {
       case 'VNPAY': return 'VNPay';
       case 'CASH_ON_CHECKIN': return 'Cash on Check-in';
       default: return 'Cash on Check-in';
+    }
+  };
+
+  const handleCancelBooking = (booking: BookingResponse) => {
+    setCancelModal({ isOpen: true, booking });
+  };
+
+  const handleCancelBookingAction = async (reason?: string) => {
+    if (!cancelModal.booking) return;
+    
+    setCancellingBookingId(cancelModal.booking.id);
+    try {
+      const response = await bookingAPI.cancelMyBooking(cancelModal.booking.id, reason);
+      
+      if (response.data.success) {
+        // Refresh bookings list
+        await fetchBookings();
+        setCancelModal({ isOpen: false });
+        showSuccess('Booking Cancelled', 'Your booking has been cancelled successfully');
+      } else {
+        throw new Error(response.data.message || 'Failed to cancel booking');
+      }
+    } catch (error: any) {
+      console.error('Error cancelling booking:', error);
+      showError('Cancellation Failed', error.response?.data?.message || error.message || 'Failed to cancel booking');
+    } finally {
+      setCancellingBookingId(null);
     }
   };
 
@@ -185,6 +228,8 @@ const MyBookingsPage: React.FC = () => {
                 <option value="PENDING">Pending</option>
                 <option value="CONFIRMED">Confirmed</option>
                 <option value="CANCELLED">Cancelled</option>
+                <option value="CANCELLED_BY_GUEST">Cancelled by Guest</option>
+                <option value="CANCELLED_BY_HOST">Cancelled by Host</option>
                 <option value="COMPLETED">Completed</option>
                 <option value="NO_SHOW">No Show</option>
               </select>
@@ -202,6 +247,10 @@ const MyBookingsPage: React.FC = () => {
                 <option value="PAID">Payment Completed</option>
                 <option value="FAILED">Payment Failed</option>
                 <option value="REFUNDED">Refunded</option>
+                <option value="PARTIALLY_REFUNDED">Partial Refund</option>
+                <option value="REFUND_PENDING">Refund Pending</option>
+                <option value="NO_PAYMENT">No Payment</option>
+                <option value="CANCELLED">Payment Cancelled</option>
               </select>
             </div>
 
@@ -296,15 +345,18 @@ const MyBookingsPage: React.FC = () => {
                       </Link>
                       {booking.status === 'PENDING' && (
                         <button
-                          onClick={() => {
-                            if (window.confirm('Are you sure you want to cancel this booking?')) {
-                              // TODO: Implement cancel booking
-                              console.log('Cancel booking:', booking.id);
-                            }
-                          }}
-                          className="inline-flex items-center px-3 py-1 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+                          onClick={() => handleCancelBooking(booking)}
+                          disabled={cancellingBookingId === booking.id}
+                          className="inline-flex items-center px-3 py-1 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Cancel
+                          {cancellingBookingId === booking.id ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                              Cancelling...
+                            </>
+                          ) : (
+                            'Cancel'
+                          )}
                         </button>
                       )}
                     </div>
@@ -326,6 +378,18 @@ const MyBookingsPage: React.FC = () => {
             ))}
           </div>
         )}
+
+        {/* Toast Container */}
+        <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
+
+        {/* Cancel Modal */}
+        <BookingCancelModal
+          isOpen={cancelModal.isOpen}
+          onClose={() => setCancelModal({ isOpen: false })}
+          onConfirm={handleCancelBookingAction}
+          bookingReference={cancelModal.booking?.bookingReference}
+          loading={cancellingBookingId === cancelModal.booking?.id}
+        />
       </div>
     </div>
   );

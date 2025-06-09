@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, User, MapPin, DollarSign, Check, X, Clock, Eye, Phone, Mail, RefreshCw, BookOpen, Search } from 'lucide-react';
+import { Calendar, User, MapPin, DollarSign, Check, X, Clock, Eye, Phone, Mail, RefreshCw, BookOpen, Search, Filter, AlertTriangle } from 'lucide-react';
+import BookingStatusBadge, { PaymentStatusBadge } from '../../components/booking/BookingStatusBadge';
 import { bookingAPI, BookingResponse, BookingFilterParams } from '../../services/api';
-import { useToast } from '../../contexts/ToastContext';
+import { useToast } from '../../hooks/useToast';
+import { ToastContainer } from '../../components/ui/Toast';
+import BookingConfirmModal from '../../components/booking/BookingConfirmModal';
+import BookingCancelModal from '../../components/booking/BookingCancelModal';
 
 const HostBookings: React.FC = () => {
   const navigate = useNavigate();
-  const { showToast } = useToast();
+  const { toasts, removeToast, showSuccess, showError } = useToast();
   
   const [activeTab, setActiveTab] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -21,6 +25,17 @@ const HostBookings: React.FC = () => {
   const [totalElements, setTotalElements] = useState(0);
   const pageSize = 10;
 
+  // Modal states
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    booking?: BookingResponse;
+  }>({ isOpen: false });
+  
+  const [cancelModal, setCancelModal] = useState<{
+    isOpen: boolean;
+    booking?: BookingResponse;
+  }>({ isOpen: false });
+
   // Fetch bookings from API
   const fetchBookings = async (pageNumber = 0) => {
     try {
@@ -34,7 +49,13 @@ const HostBookings: React.FC = () => {
 
       // Add status filter if not 'all'
       if (activeTab !== 'all') {
-        filterParams.status = activeTab as 'confirmed' | 'pending' | 'cancelled' | 'completed';
+        const statusMapping: { [key: string]: string } = {
+          'pending': 'PENDING',
+          'confirmed': 'CONFIRMED',
+          'cancelled': 'CANCELLED', // Will include all cancelled types in frontend filtering
+          'completed': 'COMPLETED'
+        };
+        filterParams.status = statusMapping[activeTab] as 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
       }
 
       const response = await bookingAPI.getHostBookings(filterParams);
@@ -46,7 +67,7 @@ const HostBookings: React.FC = () => {
         setTotalPages(pages || 0);
         setCurrentPage(number || 0);
       } else {
-        throw new Error(response.data.message || 'Không thể tải danh sách đặt phòng');
+        throw new Error(response.data.message || 'Cannot load booking list');
       }
       
     } catch (error: any) {
@@ -58,7 +79,7 @@ const HostBookings: React.FC = () => {
       setTotalElements(0);
       setCurrentPage(0);
       
-      showToast('warning', 'Thông báo', 'Chưa có đặt phòng nào hoặc dịch vụ tạm thời không khả dụng');
+      showError('Notice', 'No bookings available or service temporarily unavailable');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -86,39 +107,33 @@ const HostBookings: React.FC = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Đã xác nhận</span>;
-      case 'pending':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Chờ xác nhận</span>;
-      case 'cancelled':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Đã hủy</span>;
-      case 'completed':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Đã hoàn thành</span>;
-      default:
-        return null;
-    }
+    return <BookingStatusBadge status={status as any} size="sm" />;
   };
 
   const getPaymentStatusBadge = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Đã thanh toán</span>;
-      case 'pending':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Chờ thanh toán</span>;
-      case 'refunded':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Đã hoàn tiền</span>;
-      default:
-        return null;
-    }
+    return <PaymentStatusBadge status={status as any} size="sm" />;
   };
 
-  // Client-side filtering for search
+  // Client-side filtering for search and status
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = booking.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           booking.hotelName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           booking.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (booking.bookingReference && booking.bookingReference.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    // Additional filtering for cancelled tab to include all cancelled types
+    if (activeTab === 'cancelled') {
+      const matchesStatus = booking.status === 'CANCELLED' || 
+                           booking.status === 'CANCELLED_BY_GUEST' || 
+                           booking.status === 'CANCELLED_BY_HOST';
+      return matchesSearch && matchesStatus;
+    }
+    
+    // Additional filtering for refund pending tab
+    if (activeTab === 'refund_pending') {
+      return matchesSearch && booking.paymentStatus === 'REFUND_PENDING';
+    }
+    
     return matchesSearch;
   });
 
@@ -126,43 +141,55 @@ const HostBookings: React.FC = () => {
     navigate(`/host/bookings/${id}`);
   };
 
-  const handleConfirmBooking = async (id: string) => {
+  const handleConfirmBooking = (booking: BookingResponse) => {
+    setConfirmModal({ isOpen: true, booking });
+  };
+
+  const handleConfirmBookingAction = async () => {
+    if (!confirmModal.booking) return;
+    
     try {
-      setActionLoading(id);
-      const response = await bookingAPI.confirmBooking(id);
+      setActionLoading(confirmModal.booking.id);
+      const response = await bookingAPI.confirmBooking(confirmModal.booking.id);
       
       if (response.data.success) {
-        showToast('success', 'Thành công', 'Đặt phòng đã được xác nhận');
+        showSuccess('Booking Confirmed', 'The booking has been confirmed successfully');
         await fetchBookings(currentPage);
+        setConfirmModal({ isOpen: false });
       } else {
-        throw new Error(response.data.message || 'Không thể xác nhận đặt phòng');
+        throw new Error(response.data.message || 'Cannot confirm booking');
       }
     } catch (error: any) {
       console.error('Error confirming booking:', error);
-      showToast('error', 'Lỗi', error.message || 'Không thể xác nhận đặt phòng');
+      showError('Confirmation Failed', error.message || 'Cannot confirm booking');
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleCancelBooking = async (id: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn hủy đặt phòng này không?')) {
-      try {
-        setActionLoading(id);
-        const response = await bookingAPI.cancelBooking(id, 'Hủy bởi chủ khách sạn');
-        
-        if (response.data.success) {
-          showToast('success', 'Thành công', 'Đặt phòng đã được hủy');
-          await fetchBookings(currentPage);
-        } else {
-          throw new Error(response.data.message || 'Không thể hủy đặt phòng');
-        }
-      } catch (error: any) {
-        console.error('Error cancelling booking:', error);
-        showToast('error', 'Lỗi', error.message || 'Không thể hủy đặt phòng');
-      } finally {
-        setActionLoading(null);
+  const handleCancelBooking = (booking: BookingResponse) => {
+    setCancelModal({ isOpen: true, booking });
+  };
+
+  const handleCancelBookingAction = async (reason?: string) => {
+    if (!cancelModal.booking) return;
+    
+    try {
+      setActionLoading(cancelModal.booking.id);
+      const response = await bookingAPI.cancelBooking(cancelModal.booking.id, reason || 'Cancelled by hotel owner');
+      
+      if (response.data.success) {
+        showSuccess('Booking Cancelled', 'The booking has been cancelled successfully');
+        await fetchBookings(currentPage);
+        setCancelModal({ isOpen: false });
+      } else {
+        throw new Error(response.data.message || 'Cannot cancel booking');
       }
+    } catch (error: any) {
+      console.error('Error cancelling booking:', error);
+      showError('Cancellation Failed', error.message || 'Cannot cancel booking');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -172,17 +199,45 @@ const HostBookings: React.FC = () => {
       const response = await bookingAPI.completeBooking(id);
       
       if (response.data.success) {
-        showToast('success', 'Thành công', 'Đặt phòng đã được đánh dấu hoàn thành');
+        showSuccess('Booking Completed', 'The booking has been marked as completed');
         await fetchBookings(currentPage);
       } else {
-        throw new Error(response.data.message || 'Không thể hoàn thành đặt phòng');
+        throw new Error(response.data.message || 'Cannot complete booking');
       }
     } catch (error: any) {
       console.error('Error completing booking:', error);
-      showToast('error', 'Lỗi', error.message || 'Không thể hoàn thành đặt phòng');
+      showError('Completion Failed', error.message || 'Cannot complete booking');
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const handleConfirmPayment = async (id: string) => {
+    if (!window.confirm('Are you sure you want to confirm this payment? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      setActionLoading(id);
+      const response = await bookingAPI.confirmPayment(id);
+      
+      if (response.data.success) {
+        showSuccess('Payment Confirmed', 'The payment has been confirmed successfully');
+        await fetchBookings(currentPage);
+      } else {
+        throw new Error(response.data.message || 'Cannot confirm payment');
+      }
+    } catch (error: any) {
+      console.error('Error confirming payment:', error);
+      showError('Payment Confirmation Failed', error.message || 'Cannot confirm payment');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleProcessCancellation = (bookingId: string) => {
+    // Navigate to booking detail page where the cancellation modal is available
+    navigate(`/host/bookings/${bookingId}`);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -207,8 +262,8 @@ const HostBookings: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý đặt phòng</h1>
-            <p className="text-gray-600 mt-1">Tổng {totalElements} đặt phòng</p>
+            <h1 className="text-2xl font-bold text-gray-900">Booking Management</h1>
+            <p className="text-gray-600 mt-1">Total {totalElements} bookings</p>
           </div>
           <button
             onClick={handleRefresh}
@@ -216,7 +271,7 @@ const HostBookings: React.FC = () => {
             className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            Làm mới
+            Refresh
           </button>
         </div>
 
@@ -232,7 +287,7 @@ const HostBookings: React.FC = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Tất cả
+                All
               </button>
               <button
                 onClick={() => setActiveTab('pending')}
@@ -242,7 +297,7 @@ const HostBookings: React.FC = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Chờ xác nhận
+                Pending
               </button>
               <button
                 onClick={() => setActiveTab('confirmed')}
@@ -252,7 +307,7 @@ const HostBookings: React.FC = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Đã xác nhận
+                Confirmed
               </button>
               <button
                 onClick={() => setActiveTab('completed')}
@@ -262,7 +317,7 @@ const HostBookings: React.FC = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Đã hoàn thành
+                Completed
               </button>
               <button
                 onClick={() => setActiveTab('cancelled')}
@@ -272,7 +327,17 @@ const HostBookings: React.FC = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Đã hủy
+                Cancelled
+              </button>
+              <button
+                onClick={() => setActiveTab('refund_pending')}
+                className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
+                  activeTab === 'refund_pending'
+                    ? 'border-purple-500 text-purple-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Refund Pending
               </button>
             </nav>
           </div>
@@ -284,7 +349,7 @@ const HostBookings: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <input
               type="text"
-              placeholder="Tìm kiếm theo tên khách, mã đặt phòng, khách sạn..."
+              placeholder="Search by guest name, booking code, hotel..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -297,12 +362,12 @@ const HostBookings: React.FC = () => {
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
             <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {bookings.length === 0 ? 'Chưa có đặt phòng nào' : 'Không tìm thấy đặt phòng nào'}
+              {bookings.length === 0 ? 'No bookings yet' : 'No bookings found'}
             </h3>
             <p className="text-gray-600 mb-6">
               {bookings.length === 0 
-                ? 'Các đặt phòng từ khách hàng sẽ hiển thị ở đây' 
-                : 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'}
+                ? 'Customer bookings will appear here' 
+                : 'Try changing filters or search keywords'}
             </p>
           </div>
         ) : (
@@ -313,22 +378,22 @@ const HostBookings: React.FC = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Thông tin đặt phòng
+                        Booking Info
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Khách hàng
+                        Customer
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Ngày lưu trú
+                        Stay Dates
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Số tiền
+                        Amount
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Trạng thái
+                        Status
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Thao tác
+                        Actions
                       </th>
                     </tr>
                   </thead>
@@ -344,7 +409,7 @@ const HostBookings: React.FC = () => {
                             <div className="text-sm text-gray-500">{booking.roomTypeName}</div>
                             <div className="text-sm text-gray-500 flex items-center">
                               <User className="h-3 w-3 mr-1" />
-                              {booking.guests} khách
+                              {booking.guests} guests
                             </div>
                           </div>
                         </td>
@@ -363,8 +428,8 @@ const HostBookings: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
-                            <div className="text-sm text-gray-900">Nhận: {formatDate(booking.checkInDate)}</div>
-                            <div className="text-sm text-gray-900">Trả: {formatDate(booking.checkOutDate)}</div>
+                            <div className="text-sm text-gray-900">Check-in: {formatDate(booking.checkInDate)}</div>
+                            <div className="text-sm text-gray-900">Check-out: {formatDate(booking.checkOutDate)}</div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -381,17 +446,17 @@ const HostBookings: React.FC = () => {
                             <button
                               onClick={() => handleViewBooking(booking.id)}
                               className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded-full"
-                              title="Xem chi tiết"
+                              title="View Details"
                             >
                               <Eye className="h-4 w-4" />
                             </button>
-                            {booking.status === 'pending' && (
+                            {booking.status === 'PENDING' && (
                               <>
                                 <button
-                                  onClick={() => handleConfirmBooking(booking.id)}
+                                  onClick={() => handleConfirmBooking(booking)}
                                   disabled={actionLoading === booking.id}
                                   className="text-green-600 hover:text-green-900 p-2 hover:bg-green-50 rounded-full disabled:opacity-50"
-                                  title="Xác nhận"
+                                  title="Confirm"
                                 >
                                   {actionLoading === booking.id ? (
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
@@ -400,26 +465,58 @@ const HostBookings: React.FC = () => {
                                   )}
                                 </button>
                                 <button
-                                  onClick={() => handleCancelBooking(booking.id)}
+                                  onClick={() => handleCancelBooking(booking)}
                                   disabled={actionLoading === booking.id}
                                   className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-full disabled:opacity-50"
-                                  title="Hủy"
+                                  title="Cancel"
                                 >
                                   <X className="h-4 w-4" />
                                 </button>
                               </>
                             )}
-                            {booking.status === 'confirmed' && (
+                            {booking.status === 'CONFIRMED' && (
                               <button
                                 onClick={() => handleCompleteBooking(booking.id)}
                                 disabled={actionLoading === booking.id}
                                 className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded-full disabled:opacity-50"
-                                title="Hoàn thành"
+                                title="Complete"
                               >
                                 {actionLoading === booking.id ? (
                                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                                 ) : (
                                   <Clock className="h-4 w-4" />
+                                )}
+                              </button>
+                            )}
+                            {booking.status === 'CONFIRMED' && (
+                              <button
+                                onClick={() => handleProcessCancellation(booking.id)}
+                                className="text-orange-600 hover:text-orange-900 p-2 hover:bg-orange-50 rounded-full"
+                                title="Process Cancellation Request"
+                              >
+                                <AlertTriangle className="h-4 w-4" />
+                              </button>
+                            )}
+                            {booking.paymentStatus === 'REFUND_PENDING' && (
+                              <button
+                                onClick={() => handleProcessCancellation(booking.id)}
+                                className="text-purple-600 hover:text-purple-900 p-2 hover:bg-purple-50 rounded-full"
+                                title="Process Refund"
+                              >
+                                <AlertTriangle className="h-4 w-4" />
+                              </button>
+                            )}
+                            {booking.paymentStatus === 'PENDING' && (
+                              <button
+                                onClick={() => handleConfirmPayment(booking.id)}
+                                disabled={actionLoading === booking.id}
+                                className="text-green-600 hover:text-green-900 p-2 hover:bg-green-50 rounded-full disabled:opacity-50"
+                                title="Confirm Payment"
+                              >
+                                {actionLoading === booking.id ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                ) : (
+                                  <DollarSign className="h-4 w-4" />
                                 )}
                               </button>
                             )}
@@ -440,7 +537,7 @@ const HostBookings: React.FC = () => {
                   disabled={currentPage === 0}
                   className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Trước
+                  Previous
                 </button>
                 
                 {Array.from({ length: totalPages }, (_, i) => (
@@ -462,13 +559,33 @@ const HostBookings: React.FC = () => {
                   disabled={currentPage === totalPages - 1}
                   className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Sau
+                  Next
                 </button>
               </div>
             )}
           </>
         )}
       </div>
+
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
+
+      {/* Modals */}
+      <BookingConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false })}
+        onConfirm={handleConfirmBookingAction}
+        booking={confirmModal.booking}
+        loading={actionLoading === confirmModal.booking?.id}
+      />
+
+      <BookingCancelModal
+        isOpen={cancelModal.isOpen}
+        onClose={() => setCancelModal({ isOpen: false })}
+        onConfirm={handleCancelBookingAction}
+        bookingReference={cancelModal.booking?.bookingReference}
+        loading={actionLoading === cancelModal.booking?.id}
+      />
     </div>
   );
 };

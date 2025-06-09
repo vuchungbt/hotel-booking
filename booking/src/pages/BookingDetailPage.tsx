@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Users, DollarSign, Clock, ArrowLeft, Phone, Mail, Download, Edit, X } from 'lucide-react';
 import { bookingAPI, BookingResponse } from '../services/api';
+import BookingStatusBadge, { PaymentStatusBadge } from '../components/booking/BookingStatusBadge';
 
 const BookingDetailPage: React.FC = () => {
   const { id } = useParams();
@@ -137,17 +138,9 @@ const BookingDetailPage: React.FC = () => {
                 <p className="text-gray-600">Booking #{booking.bookingReference}</p>
               </div>
               <div className="text-right">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${getStatusColor(booking.status)}`}>
-                  {booking.status.replace('_', ' ')}
-                </span>
+                <BookingStatusBadge status={booking.status as any} />
                 <div className="mt-2">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
-                    booking.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {booking.paymentStatus}
-                  </span>
+                  <PaymentStatusBadge status={booking.paymentStatus as any} />
                 </div>
               </div>
             </div>

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, DollarSign, Clock, Filter, Search } from 'lucide-react';
+import { Calendar, MapPin, DollarSign, Clock, Filter, Search, RefreshCw } from 'lucide-react';
 import { bookingAPI, BookingResponse, BookingFilterParams } from '../services/api';
+import BookingStatusBadge, { PaymentStatusBadge } from '../components/booking/BookingStatusBadge';
 
 const BookingHistoryPage: React.FC = () => {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<BookingResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filters, setFilters] = useState<BookingFilterParams>({});
   const [showFilters, setShowFilters] = useState(false);
 
@@ -14,16 +16,45 @@ const BookingHistoryPage: React.FC = () => {
     fetchBookings();
   }, [filters]);
 
-  const fetchBookings = async () => {
-    setLoading(true);
+  // Auto-refresh when user returns to the page
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchBookings(true);
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  // Auto-refresh when component mounts (user navigates back from detail page)
+  useEffect(() => {
+    fetchBookings(true);
+  }, []);
+
+  const fetchBookings = async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     try {
+      console.log('Fetching bookings with filters:', filters);
       const response = await bookingAPI.getMyBookings(filters);
+      console.log('API Response:', response.data);
+      console.log('Bookings data:', response.data.result?.content);
       setBookings(response.data.result.content || []);
     } catch (error) {
       console.error('Error fetching bookings:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchBookings(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -76,13 +107,34 @@ const BookingHistoryPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+            <button
+              onClick={() => {
+                console.log('Force refresh clicked');
+                fetchBookings(true);
+              }}
+              disabled={refreshing}
+              className="flex items-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3 w-3 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
+              Force
+            </button>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -103,6 +155,8 @@ const BookingHistoryPage: React.FC = () => {
                   <option value="CONFIRMED">Confirmed</option>
                   <option value="COMPLETED">Completed</option>
                   <option value="CANCELLED">Cancelled</option>
+                  <option value="CANCELLED_BY_GUEST">Cancelled by Guest</option>
+                  <option value="CANCELLED_BY_HOST">Cancelled by Host</option>
                   <option value="NO_SHOW">No Show</option>
                 </select>
               </div>
@@ -120,6 +174,10 @@ const BookingHistoryPage: React.FC = () => {
                   <option value="PAID">Paid</option>
                   <option value="FAILED">Failed</option>
                   <option value="REFUNDED">Refunded</option>
+                  <option value="PARTIALLY_REFUNDED">Partially Refunded</option>
+                  <option value="REFUND_PENDING">Refund Pending</option>
+                  <option value="NO_PAYMENT">No Payment</option>
+                  <option value="CANCELLED">No Refund</option>
                 </select>
               </div>
               <div>
@@ -188,17 +246,9 @@ const BookingHistoryPage: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${getStatusColor(booking.status)}`}>
-                          {booking.status.replace('_', ' ')}
-                        </span>
+                        <BookingStatusBadge status={booking.status as any} size="sm" />
                         <div className="mt-2">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
-                            booking.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {booking.paymentStatus}
-                          </span>
+                          <PaymentStatusBadge status={booking.paymentStatus as any} size="sm" />
                         </div>
                       </div>
                     </div>

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Users, DollarSign, Clock, ArrowLeft, Phone, Mail, Download, Check, X, AlertCircle, Star } from 'lucide-react';
 import { bookingAPI, BookingResponse } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
+import BookingStatusBadge, { PaymentStatusBadge } from '../../components/booking/BookingStatusBadge';
 
 const HostBookingDetail: React.FC = () => {
   const { id } = useParams();
@@ -12,6 +13,7 @@ const HostBookingDetail: React.FC = () => {
   const [booking, setBooking] = useState<BookingResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showCancellationModal, setShowCancellationModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -55,14 +57,18 @@ const HostBookingDetail: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
+      case 'COMPLETED':
         return 'bg-blue-100 text-blue-800';
-      case 'confirmed':
+      case 'CONFIRMED':
         return 'bg-green-100 text-green-800';
-      case 'pending':
+      case 'PENDING':
         return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled':
+      case 'CANCELLED':
+      case 'CANCELLED_BY_GUEST':
+      case 'CANCELLED_BY_HOST':
         return 'bg-red-100 text-red-800';
+      case 'NO_SHOW':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -70,11 +76,19 @@ const HostBookingDetail: React.FC = () => {
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
-      case 'paid':
+      case 'PAID':
         return 'bg-green-100 text-green-800';
-      case 'pending':
+      case 'PENDING':
         return 'bg-yellow-100 text-yellow-800';
-      case 'refunded':
+      case 'REFUNDED':
+      case 'PARTIALLY_REFUNDED':
+        return 'bg-blue-100 text-blue-800';
+      case 'REFUND_PENDING':
+        return 'bg-orange-100 text-orange-800';
+      case 'REFUND_REJECTED':
+      case 'NO_REFUND':
+        return 'bg-red-100 text-red-800';
+      case 'FAILED':
         return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -83,14 +97,20 @@ const HostBookingDetail: React.FC = () => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'completed':
+      case 'COMPLETED':
         return 'Đã hoàn thành';
-      case 'confirmed':
+      case 'CONFIRMED':
         return 'Đã xác nhận';
-      case 'pending':
+      case 'PENDING':
         return 'Chờ xác nhận';
-      case 'cancelled':
+      case 'CANCELLED':
         return 'Đã hủy';
+      case 'CANCELLED_BY_GUEST':
+        return 'Khách hủy';
+      case 'CANCELLED_BY_HOST':
+        return 'Host hủy';
+      case 'NO_SHOW':
+        return 'Không đến';
       default:
         return status;
     }
@@ -98,12 +118,22 @@ const HostBookingDetail: React.FC = () => {
 
   const getPaymentStatusText = (status: string) => {
     switch (status) {
-      case 'paid':
+      case 'PAID':
         return 'Đã thanh toán';
-      case 'pending':
+      case 'PENDING':
         return 'Chờ thanh toán';
-      case 'refunded':
+      case 'REFUNDED':
         return 'Đã hoàn tiền';
+      case 'PARTIALLY_REFUNDED':
+        return 'Hoàn một phần';
+      case 'REFUND_PENDING':
+        return 'Chờ hoàn tiền';
+      case 'REFUND_REJECTED':
+        return 'Từ chối hoàn tiền';
+      case 'NO_REFUND':
+        return 'Không hoàn tiền';
+      case 'FAILED':
+        return 'Thanh toán thất bại';
       default:
         return status;
     }
@@ -174,6 +204,245 @@ const HostBookingDetail: React.FC = () => {
     }
   };
 
+  // Cancellation Modal Component
+  const CancellationModal = () => {
+    const [refundType, setRefundType] = useState<'FULL' | 'PARTIAL' | 'NO_REFUND'>('FULL');
+    const [refundAmount, setRefundAmount] = useState(booking?.totalAmount || 0);
+    const [refundReason, setRefundReason] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleRefundTypeChange = (type: 'FULL' | 'PARTIAL' | 'NO_REFUND') => {
+      setRefundType(type);
+      if (!booking) return;
+      
+      switch (type) {
+        case 'FULL':
+          setRefundAmount(booking.totalAmount);
+          break;
+        case 'PARTIAL':
+          setRefundAmount(booking.totalAmount * 0.5);
+          break;
+        case 'NO_REFUND':
+          setRefundAmount(0);
+          break;
+      }
+    };
+
+    const handleProcessCancellation = async () => {
+      if (!booking || !id) return;
+      
+      if (!refundReason.trim()) {
+        showToast('error', 'Lỗi', 'Vui lòng nhập lý do xử lý');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        await bookingAPI.processCancellation(id, {
+          refundAmount,
+          reason: refundReason,
+          refundPercentage: refundType === 'FULL' ? 100 : refundType === 'PARTIAL' ? 50 : 0
+        });
+        
+        showToast('success', 'Thành công', 'Đã xử lý yêu cầu hủy booking');
+        setShowCancellationModal(false);
+        await fetchBookingDetail(id);
+      } catch (error: any) {
+        console.error('Error processing cancellation:', error);
+        showToast('error', 'Lỗi', error.response?.data?.message || 'Không thể xử lý yêu cầu hủy');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!showCancellationModal || !booking) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Xử lý yêu cầu hủy booking
+              </h2>
+              <button
+                onClick={() => setShowCancellationModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-6">
+            {/* Booking Info */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="font-medium text-gray-900 mb-2">Thông tin booking</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Mã booking:</span>
+                  <span className="ml-2 font-medium">{booking.bookingReference}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Khách hàng:</span>
+                  <span className="ml-2 font-medium">{booking.guestName}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Tổng tiền:</span>
+                  <span className="ml-2 font-medium text-blue-600">{formatCurrency(booking.totalAmount)}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Ngày nhận phòng:</span>
+                  <span className="ml-2 font-medium">{formatDate(booking.checkInDate)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Refund Options */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Chính sách hoàn tiền</h3>
+              <div className="space-y-3">
+                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="refundType"
+                    value="FULL"
+                    checked={refundType === 'FULL'}
+                    onChange={() => handleRefundTypeChange('FULL')}
+                    className="h-4 w-4 text-blue-600"
+                  />
+                  <div className="ml-3 flex-1">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-gray-900">Hoàn tiền đầy đủ</span>
+                      <span className="text-green-600 font-medium">{formatCurrency(booking.totalAmount)}</span>
+                    </div>
+                    <p className="text-sm text-gray-600">Hoàn lại 100% số tiền đã thanh toán</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="refundType"
+                    value="PARTIAL"
+                    checked={refundType === 'PARTIAL'}
+                    onChange={() => handleRefundTypeChange('PARTIAL')}
+                    className="h-4 w-4 text-blue-600"
+                  />
+                  <div className="ml-3 flex-1">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-gray-900">Hoàn tiền một phần</span>
+                      <span className="text-orange-600 font-medium">{formatCurrency(booking.totalAmount * 0.5)}</span>
+                    </div>
+                    <p className="text-sm text-gray-600">Hoàn lại 50% số tiền (giữ lại phí hủy)</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="refundType"
+                    value="NO_REFUND"
+                    checked={refundType === 'NO_REFUND'}
+                    onChange={() => handleRefundTypeChange('NO_REFUND')}
+                    className="h-4 w-4 text-blue-600"
+                  />
+                  <div className="ml-3 flex-1">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-gray-900">Không hoàn tiền</span>
+                      <span className="text-red-600 font-medium">{formatCurrency(0)}</span>
+                    </div>
+                    <p className="text-sm text-gray-600">Không hoàn lại số tiền (vi phạm chính sách)</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Custom Refund Amount */}
+            {refundType === 'PARTIAL' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Số tiền hoàn lại tùy chỉnh
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max={booking.totalAmount}
+                  step="1000"
+                  value={refundAmount}
+                  onChange={(e) => setRefundAmount(parseFloat(e.target.value) || 0)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            )}
+
+            {/* Refund Reason */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Lý do xử lý *
+              </label>
+              <textarea
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                rows={3}
+                placeholder="Nhập lý do xử lý yêu cầu hủy (ví dụ: khách hủy sớm, vi phạm chính sách, etc.)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+
+            {/* Summary */}
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-medium text-blue-900 mb-2">Tóm tắt xử lý</h4>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-blue-700">Trạng thái booking:</span>
+                  <span className="font-medium text-blue-900">Đã hủy bởi khách</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-blue-700">Số tiền hoàn lại:</span>
+                  <span className="font-medium text-blue-900">{formatCurrency(refundAmount)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-blue-700">Trạng thái thanh toán:</span>
+                  <span className="font-medium text-blue-900">
+                    {refundType === 'FULL' ? 'Đã hoàn tiền' : 
+                     refundType === 'PARTIAL' ? 'Hoàn một phần' : 'Không hoàn tiền'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => setShowCancellationModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleProcessCancellation}
+                disabled={loading || !refundReason.trim()}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Đang xử lý...
+                  </>
+                ) : (
+                  'Xác nhận xử lý'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 pt-20">
@@ -229,12 +498,8 @@ const HostBookingDetail: React.FC = () => {
                 </p>
               </div>
               <div className="flex flex-col space-y-2 mt-4 md:mt-0">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium text-center ${getStatusColor(booking.status)}`}>
-                  {getStatusText(booking.status)}
-                </span>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium text-center ${getPaymentStatusColor(booking.paymentStatus)}`}>
-                  {getPaymentStatusText(booking.paymentStatus)}
-                </span>
+                <BookingStatusBadge status={booking.status as any} size="md" />
+                <PaymentStatusBadge status={booking.paymentStatus as any} size="md" />
               </div>
             </div>
 
@@ -275,12 +540,6 @@ const HostBookingDetail: React.FC = () => {
                     <p className="text-gray-600">Loại phòng</p>
                     <p className="font-medium">{booking.roomTypeName}</p>
                   </div>
-                  {booking.roomName && (
-                    <div>
-                      <p className="text-gray-600">Tên phòng</p>
-                      <p className="font-medium">{booking.roomName}</p>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -345,7 +604,7 @@ const HostBookingDetail: React.FC = () => {
             {/* Action Buttons */}
             <div className="border-t pt-6">
               <div className="flex flex-wrap gap-3">
-                {booking.status === 'pending' && (
+                {booking.status === 'PENDING' && (
                   <>
                     <button
                       onClick={handleConfirmBooking}
@@ -374,7 +633,7 @@ const HostBookingDetail: React.FC = () => {
                   </>
                 )}
                 
-                {booking.status === 'confirmed' && (
+                {booking.status === 'CONFIRMED' && (
                   <button
                     onClick={handleCompleteBooking}
                     disabled={actionLoading === 'complete'}
@@ -389,17 +648,22 @@ const HostBookingDetail: React.FC = () => {
                   </button>
                 )}
 
-                <button 
-                  className="flex items-center px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                  onClick={() => window.print()}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  In thông tin đặt phòng
-                </button>
+                {booking.status === 'CONFIRMED' && (
+                  <button
+                    onClick={() => setShowCancellationModal(true)}
+                    className="flex items-center px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Xử lý yêu cầu hủy
+                  </button>
+                )}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Cancellation Modal */}
+        <CancellationModal />
       </div>
     </div>
   );

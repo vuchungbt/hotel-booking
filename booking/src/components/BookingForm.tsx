@@ -1,99 +1,122 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Users, CreditCard, MessageSquare, MapPin, Clock, Star } from 'lucide-react';
-import { bookingAPI, BookingCreateRequest, HotelResponse, RoomTypeResponse } from '../services/api';
+import { bookingAPI } from '../services/api';
+import type { BookingCreateRequest } from '../services/api';
+// import { useAuth } from '../hooks/useAuth'; // Comment out for now - will be implemented
 
 interface BookingFormProps {
-  hotel: HotelResponse;
-  roomType: RoomTypeResponse;
+  roomType: any;
+  hotel: any;
   checkInDate: string;
   checkOutDate: string;
   guests: number;
+  totalAmount: number;
   onSuccess?: (bookingId: string) => void;
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({
-  hotel,
-  roomType,
-  checkInDate,
-  checkOutDate,
+const BookingForm: React.FC<BookingFormProps> = ({ 
+  roomType, 
+  hotel, 
+  checkInDate, 
+  checkOutDate, 
   guests,
-  onSuccess
+  totalAmount,
+  onSuccess 
 }) => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
-  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
-
+  // const { user, isAuthenticated, loginRequired } = useAuth(); // Comment out for now
+  
+  // Temporary mock auth state - replace with real auth later
+  const user = { name: 'John Doe', email: 'john@example.com', tel: '+1234567890' };
+  const isAuthenticated = true;
+  const loginRequired = (message: string) => console.log(message);
+  
   const [formData, setFormData] = useState<BookingCreateRequest>({
     hotelId: hotel.id,
     roomTypeId: roomType.id,
-    guestName: '',
-    guestEmail: '',
-    guestPhone: '',
+    // Guest info removed - using authenticated user
     checkInDate,
     checkOutDate,
     guests,
-    totalAmount: 0,
-    paymentMethod: 'CREDIT_CARD',
+    totalAmount,
+    paymentMethod: '',
     specialRequests: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(true);
 
-  // Calculate number of nights and total amount
-  const numberOfNights = Math.ceil(
-    (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24)
-  );
-
+  // Check authentication
   useEffect(() => {
-    const totalAmount = numberOfNights * roomType.pricePerNight;
-    setFormData(prev => ({ ...prev, totalAmount }));
-  }, [numberOfNights, roomType.pricePerNight]);
+    if (!isAuthenticated) {
+      // Store current booking data to resume after login
+      const bookingData = { 
+        ...formData, 
+        roomType, 
+        hotel, 
+        checkInDate, 
+        checkOutDate, 
+        guests, 
+        totalAmount 
+      };
+      sessionStorage.setItem('pendingBooking', JSON.stringify(bookingData));
+      
+      // Redirect to login
+      loginRequired('You need to login to make a booking');
+      return;
+    }
+  }, [isAuthenticated, formData, roomType, hotel, checkInDate, checkOutDate, guests, totalAmount, loginRequired]);
 
-  // Check room availability
+  // Check availability
   useEffect(() => {
-    const checkAvailability = async () => {
-      setIsChecking(true);
-      try {
-        const response = await bookingAPI.checkRoomAvailability(
-          roomType.id,
-          checkInDate,
-          checkOutDate
-        );
-        setIsAvailable(response.data.result);
-      } catch (error) {
-        console.error('Error checking availability:', error);
-        setIsAvailable(false);
-      } finally {
-        setIsChecking(false);
-      }
-    };
-
     checkAvailability();
   }, [roomType.id, checkInDate, checkOutDate]);
+
+  const checkAvailability = async () => {
+    try {
+      const response = await bookingAPI.checkRoomAvailability(roomType.id, checkInDate, checkOutDate);
+      setIsAvailable(response.data.result);
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      setIsAvailable(false);
+    }
+  };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.guestName.trim()) {
-      newErrors.guestName = 'Guest name is required';
-    } else if (formData.guestName.length < 2) {
-      newErrors.guestName = 'Guest name must be at least 2 characters';
+    if (!user?.name) {
+      newErrors.user = 'Please complete your profile with name information';
     }
-
-    if (!formData.guestEmail.trim()) {
-      newErrors.guestEmail = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.guestEmail)) {
-      newErrors.guestEmail = 'Invalid email format';
-    }
-
-    if (formData.guestPhone && !/^[+]?[0-9\s\-\(\)]{10,15}$/.test(formData.guestPhone)) {
-      newErrors.guestPhone = 'Invalid phone number format';
+    
+    if (!user?.email) {
+      newErrors.user = 'Please complete your profile with email information';
     }
 
     if (guests > roomType.maxOccupancy) {
       newErrors.guests = `Maximum occupancy is ${roomType.maxOccupancy} guests`;
+    }
+
+    if (guests <= 0) {
+      newErrors.guests = 'Number of guests must be at least 1';
+    }
+
+    const today = new Date();
+    const checkIn = new Date(checkInDate);
+    const checkOut = new Date(checkOutDate);
+    
+    if (checkIn < today) {
+      newErrors.dates = 'Check-in date cannot be in the past';
+    }
+    
+    if (checkOut <= checkIn) {
+      newErrors.dates = 'Check-out date must be after check-in date';
+    }
+
+    const daysDiff = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysDiff > 30) {
+      newErrors.dates = 'Stay duration cannot exceed 30 days';
     }
 
     setErrors(newErrors);
@@ -103,7 +126,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!isAuthenticated) {
+      loginRequired('Please login to complete your booking');
+      return;
+    }
+    
     if (!validateForm()) return;
+    
     if (!isAvailable) {
       alert('Room is not available for the selected dates');
       return;
@@ -113,6 +142,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
     try {
       const response = await bookingAPI.createBooking(formData);
       const bookingId = response.data.result.id;
+      
+      sessionStorage.removeItem('pendingBooking');
       
       alert('Booking created successfully!');
       
@@ -130,214 +161,126 @@ const BookingForm: React.FC<BookingFormProps> = ({
     }
   };
 
-  const handleInputChange = (field: keyof BookingCreateRequest, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  if (isChecking) {
+  if (!isAuthenticated) {
     return (
-      <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-gray-600">Checking availability...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (isAvailable === false) {
-    return (
-      <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
-        <div className="text-center py-8">
-          <div className="text-red-500 text-lg font-semibold mb-2">
-            Room Not Available
-          </div>
-          <p className="text-gray-600 mb-4">
-            Sorry, this room type is not available for the selected dates.
-          </p>
-          <button
-            onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-          >
-            Go Back
-          </button>
-        </div>
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+        <h3 className="text-lg font-semibold text-yellow-800 mb-2">Login Required</h3>
+        <p className="text-yellow-700 mb-4">You need to login to make a booking</p>
+        <button 
+          onClick={() => loginRequired('Please login to make a booking')}
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+        >
+          Login to Continue
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Complete Your Booking</h2>
-
-      {/* Hotel & Room Summary */}
-      <div className="bg-gray-50 p-4 rounded-lg mb-6">
-        <div className="flex items-start space-x-4">
-          <img
-            src={roomType.imageUrl || hotel.imageUrl || '/default-hotel.jpg'}
-            alt={roomType.name}
-            className="w-24 h-24 object-cover rounded-lg"
-          />
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900">{hotel.name}</h3>
-            <div className="flex items-center text-gray-600 text-sm mb-1">
-              <MapPin className="h-4 w-4 mr-1" />
-              {hotel.address}
-            </div>
-            <div className="flex items-center text-gray-600 text-sm mb-2">
-              <Star className="h-4 w-4 mr-1 text-yellow-400" />
-              {hotel.starRating} Star Hotel
-            </div>
-            <div className="text-blue-600 font-semibold">{roomType.name}</div>
-            <div className="text-sm text-gray-600">
-              Max occupancy: {roomType.maxOccupancy} guests | {roomType.bedType}
-            </div>
-          </div>
+    <div className="bg-white rounded-lg shadow-lg p-6">
+      <h2 className="text-2xl font-bold mb-6">Complete Your Booking</h2>
+      
+      {errors.user && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+          {errors.user}
         </div>
+      )}
 
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="grid grid-cols-3 gap-4 text-sm">
-            <div>
-              <div className="text-gray-600">Check-in</div>
-              <div className="font-semibold">{checkInDate}</div>
-            </div>
-            <div>
-              <div className="text-gray-600">Check-out</div>
-              <div className="font-semibold">{checkOutDate}</div>
-            </div>
-            <div>
-              <div className="text-gray-600">Guests</div>
-              <div className="font-semibold">{guests}</div>
-            </div>
-          </div>
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">
-                ${roomType.pricePerNight} × {numberOfNights} nights
-              </span>
-              <span className="text-xl font-bold text-blue-600">
-                ${formData.totalAmount}
-              </span>
-            </div>
-          </div>
+      {!isAvailable && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+          Room is not available for the selected dates
         </div>
-      </div>
+      )}
 
-      {/* Booking Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Guest Name *
-            </label>
-            <input
-              type="text"
-              value={formData.guestName}
-              onChange={(e) => handleInputChange('guestName', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.guestName ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Enter full name"
-            />
-            {errors.guestName && (
-              <p className="text-red-500 text-sm mt-1">{errors.guestName}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address *
-            </label>
-            <input
-              type="email"
-              value={formData.guestEmail}
-              onChange={(e) => handleInputChange('guestEmail', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.guestEmail ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Enter email address"
-            />
-            {errors.guestEmail && (
-              <p className="text-red-500 text-sm mt-1">{errors.guestEmail}</p>
-            )}
+        <div className="border rounded-lg p-4 bg-gray-50">
+          <h3 className="font-semibold text-gray-700 mb-3">Guest Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Guest Name</label>
+              <input 
+                type="text" 
+                value={user?.name || ''} 
+                disabled 
+                className="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Email</label>
+              <input 
+                type="email" 
+                value={user?.email || ''} 
+                disabled 
+                className="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Phone (Optional)</label>
+              <input 
+                type="tel" 
+                value={user?.tel || 'Not provided'} 
+                disabled 
+                className="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-500"
+              />
+            </div>
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Phone Number
-          </label>
-          <input
-            type="tel"
-            value={formData.guestPhone}
-            onChange={(e) => handleInputChange('guestPhone', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.guestPhone ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="Enter phone number"
-          />
-          {errors.guestPhone && (
-            <p className="text-red-500 text-sm mt-1">{errors.guestPhone}</p>
-          )}
+        <div className="border rounded-lg p-4">
+          <h3 className="font-semibold text-gray-700 mb-3">Booking Details</h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>Check-in: <span className="font-medium">{checkInDate}</span></div>
+            <div>Check-out: <span className="font-medium">{checkOutDate}</span></div>
+            <div>Guests: <span className="font-medium">{guests}</span></div>
+            <div>Total: <span className="font-medium">${totalAmount}</span></div>
+          </div>
+          {errors.guests && <p className="text-red-500 text-sm mt-2">{errors.guests}</p>}
+          {errors.dates && <p className="text-red-500 text-sm mt-2">{errors.dates}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Payment Method
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Payment Method <span className="text-red-500">*</span>
           </label>
           <select
             value={formData.paymentMethod}
-            onChange={(e) => handleInputChange('paymentMethod', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            required
           >
+            <option value="">Select payment method</option>
             <option value="CREDIT_CARD">Credit Card</option>
             <option value="DEBIT_CARD">Debit Card</option>
-            <option value="PAYPAL">PayPal</option>
             <option value="BANK_TRANSFER">Bank Transfer</option>
+            <option value="CASH">Cash at Hotel</option>
           </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Special Requests
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Special Requests (Optional)
           </label>
           <textarea
             value={formData.specialRequests}
-            onChange={(e) => handleInputChange('specialRequests', e.target.value)}
+            onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Any special requests or notes..."
+            maxLength={1000}
           />
         </div>
 
-        <div className="flex space-x-4">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading || !isAvailable}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Processing...
-              </div>
-            ) : (
-              `Book Now - $${formData.totalAmount}`
-            )}
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={loading || !isAvailable}
+          className={`w-full py-3 px-4 rounded-md font-medium text-white ${
+            loading || !isAvailable
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+        >
+          {loading ? 'Creating Booking...' : 'Confirm Booking'}
+        </button>
       </form>
     </div>
   );
