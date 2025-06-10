@@ -52,7 +52,7 @@ const HostHotels: React.FC = () => {
   };
 
   const handleDeleteHotel = async (id: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa khách sạn này?')) {
+    if (!window.confirm('Are you sure you want to delete this hotel?')) {
       return;
     }
 
@@ -62,7 +62,7 @@ const HostHotels: React.FC = () => {
       fetchHotels();
     } catch (error: any) {
       console.error('Error deleting hotel:', error);
-      showToast('error', 'Lỗi', 'Không thể xóa khách sạn');
+      showToast('error', 'Error', 'Cannot delete hotel when it has bookings');
     }
   };
 
@@ -71,13 +71,13 @@ const HostHotels: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold mb-4 md:mb-0">Quản lý khách sạn</h1>
+          <h1 className="text-2xl font-bold mb-4 md:mb-0">Manage hotels</h1>
           <button
             onClick={handleAddHotel}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
           >
             <Plus size={20} className="mr-2" />
-            Thêm khách sạn
+            Add hotel
           </button>
         </div>
 
@@ -88,7 +88,7 @@ const HostHotels: React.FC = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Tìm kiếm khách sạn..."
+                  placeholder="Search hotels..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -100,7 +100,7 @@ const HostHotels: React.FC = () => {
               type="submit"
               className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              Tìm kiếm
+              Search
             </button>
           </form>
         </div>
@@ -109,18 +109,18 @@ const HostHotels: React.FC = () => {
         {loading ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Đang tải danh sách khách sạn...</p>
+            <p className="mt-4 text-gray-600">Loading hotel list...</p>
           </div>
         ) : hotels.length === 0 ? (
           <div className="text-center py-8">
             <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-4">Bạn chưa có khách sạn nào</p>
+            <p className="text-gray-600 mb-4">You don't have any hotel</p>
             <button
               onClick={handleAddHotel}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center"
             >
               <Plus size={20} className="mr-2" />
-              Thêm khách sạn đầu tiên
+              Add your first hotel
             </button>
           </div>
         ) : (

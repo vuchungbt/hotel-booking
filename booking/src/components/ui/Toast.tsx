@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, AlertTriangle, X, Info } from 'lucide-react';
+import { CheckCircle, AlertCircle, X, Info, AlertTriangle } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
-interface ToastProps {
+export interface ToastProps {
   id: string;
   type: ToastType;
   title: string;
@@ -21,112 +21,169 @@ const Toast: React.FC<ToastProps> = ({
   onClose
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [isLeaving, setIsLeaving] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+  const [progress, setProgress] = useState(100);
 
   useEffect(() => {
-    // Show toast with animation
-    setIsVisible(true);
-
-    // Auto close after duration
-    const timer = setTimeout(() => {
-      handleClose();
-    }, duration);
-
+    // Trigger entrance animation
+    const timer = setTimeout(() => setIsVisible(true), 10);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (duration > 0) {
+      // Progress bar animation
+      const startTime = Date.now();
+      const progressTimer = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
+        setProgress(remaining);
+        
+        if (remaining <= 0) {
+          clearInterval(progressTimer);
+        }
+      }, 50);
+
+      // Auto close timer
+      const closeTimer = setTimeout(() => {
+        handleClose();
+      }, duration);
+
+      return () => {
+        clearInterval(progressTimer);
+        clearTimeout(closeTimer);
+      };
+    }
   }, [duration]);
 
   const handleClose = () => {
-    setIsLeaving(true);
+    setIsExiting(true);
     setTimeout(() => {
       onClose(id);
-    }, 300); // Match animation duration
+    }, 300);
   };
 
   const getToastConfig = () => {
     switch (type) {
       case 'success':
         return {
-          icon: CheckCircle,
-          bgColor: 'bg-green-50',
-          borderColor: 'border-green-200',
-          iconColor: 'text-green-400',
-          titleColor: 'text-green-800',
-          messageColor: 'text-green-600'
+          bgColor: 'bg-white',
+          borderColor: 'border-l-green-500',
+          iconBg: 'bg-green-100',
+          iconColor: 'text-green-600',
+          icon: <CheckCircle className="h-5 w-5" />,
+          titleColor: 'text-gray-900',
+          messageColor: 'text-gray-600',
+          progressColor: 'bg-green-500'
         };
       case 'error':
         return {
-          icon: AlertTriangle,
-          bgColor: 'bg-red-50',
-          borderColor: 'border-red-200',
-          iconColor: 'text-red-400',
-          titleColor: 'text-red-800',
-          messageColor: 'text-red-600'
+          bgColor: 'bg-white',
+          borderColor: 'border-l-red-500',
+          iconBg: 'bg-red-100',
+          iconColor: 'text-red-600',
+          icon: <AlertCircle className="h-5 w-5" />,
+          titleColor: 'text-gray-900',
+          messageColor: 'text-gray-600',
+          progressColor: 'bg-red-500'
         };
       case 'warning':
         return {
-          icon: AlertTriangle,
-          bgColor: 'bg-yellow-50',
-          borderColor: 'border-yellow-200',
-          iconColor: 'text-yellow-400',
-          titleColor: 'text-yellow-800',
-          messageColor: 'text-yellow-600'
+          bgColor: 'bg-white',
+          borderColor: 'border-l-yellow-500',
+          iconBg: 'bg-yellow-100',
+          iconColor: 'text-yellow-600',
+          icon: <AlertTriangle className="h-5 w-5" />,
+          titleColor: 'text-gray-900',
+          messageColor: 'text-gray-600',
+          progressColor: 'bg-yellow-500'
         };
       case 'info':
         return {
-          icon: Info,
-          bgColor: 'bg-blue-50',
-          borderColor: 'border-blue-200',
-          iconColor: 'text-blue-400',
-          titleColor: 'text-blue-800',
-          messageColor: 'text-blue-600'
+          bgColor: 'bg-white',
+          borderColor: 'border-l-blue-500',
+          iconBg: 'bg-blue-100',
+          iconColor: 'text-blue-600',
+          icon: <Info className="h-5 w-5" />,
+          titleColor: 'text-gray-900',
+          messageColor: 'text-gray-600',
+          progressColor: 'bg-blue-500'
         };
       default:
         return {
-          icon: Info,
-          bgColor: 'bg-gray-50',
-          borderColor: 'border-gray-200',
-          iconColor: 'text-gray-400',
-          titleColor: 'text-gray-800',
-          messageColor: 'text-gray-600'
+          bgColor: 'bg-white',
+          borderColor: 'border-l-gray-500',
+          iconBg: 'bg-gray-100',
+          iconColor: 'text-gray-600',
+          icon: <Info className="h-5 w-5" />,
+          titleColor: 'text-gray-900',
+          messageColor: 'text-gray-600',
+          progressColor: 'bg-gray-500'
         };
     }
   };
 
   const config = getToastConfig();
-  const IconComponent = config.icon;
 
   return (
     <div
-      className={`max-w-sm w-full ${config.bgColor} ${config.borderColor} border rounded-lg shadow-lg p-4 transform transition-all duration-300 ease-in-out ${
-        isVisible && !isLeaving
-          ? 'translate-x-0 opacity-100'
-          : 'translate-x-full opacity-0'
-      }`}
+      className={`
+        max-w-sm w-full ${config.bgColor} ${config.borderColor} border-l-4 rounded-lg shadow-lg
+        transform transition-all duration-300 ease-in-out
+        ${isVisible && !isExiting 
+          ? 'translate-x-0 opacity-100 scale-100' 
+          : isExiting 
+            ? 'translate-x-full opacity-0 scale-95'
+            : 'translate-x-full opacity-0 scale-95'
+        }
+      `}
     >
-      <div className="flex">
-        <div className="flex-shrink-0">
-          <IconComponent className={`h-5 w-5 ${config.iconColor}`} />
-        </div>
-        <div className="ml-3 flex-1">
-          <p className={`text-sm font-medium ${config.titleColor}`}>
-            {title}
-          </p>
-          {message && (
-            <p className={`mt-1 text-sm ${config.messageColor}`}>
-              {message}
+      <div className="p-4">
+        <div className="flex items-start">
+          {/* Icon */}
+          <div className={`flex-shrink-0 ${config.iconBg} rounded-full p-2 mr-3`}>
+            <div className={config.iconColor}>
+              {config.icon}
+            </div>
+          </div>
+          
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-semibold ${config.titleColor} leading-5`}>
+              {title}
             </p>
-          )}
-        </div>
-        <div className="ml-4 flex-shrink-0 flex">
-          <button
-            onClick={handleClose}
-            className={`inline-flex ${config.titleColor} hover:${config.messageColor} focus:outline-none`}
-          >
-            <span className="sr-only">Close</span>
-            <X className="h-4 w-4" />
-          </button>
+            {message && (
+              <p className={`mt-1 text-sm ${config.messageColor} leading-5`}>
+                {message}
+              </p>
+            )}
+          </div>
+          
+          {/* Close Button */}
+          <div className="flex-shrink-0 ml-4">
+            <button
+              onClick={handleClose}
+              className="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600 transition-colors duration-200"
+            >
+              <span className="sr-only">Close</span>
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </div>
+      
+      {/* Progress Bar */}
+      {duration > 0 && (
+        <div className="h-1 bg-gray-100 rounded-b-lg overflow-hidden">
+          <div 
+            className={`h-full transition-all ease-linear ${config.progressColor}`}
+            style={{
+              width: `${progress}%`,
+              transition: 'width 50ms linear'
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };

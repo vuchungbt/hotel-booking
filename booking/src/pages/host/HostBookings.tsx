@@ -3,14 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, User, MapPin, DollarSign, Check, X, Clock, Eye, Phone, Mail, RefreshCw, BookOpen, Search, Filter, AlertTriangle } from 'lucide-react';
 import BookingStatusBadge, { PaymentStatusBadge } from '../../components/booking/BookingStatusBadge';
 import { bookingAPI, BookingResponse, BookingFilterParams } from '../../services/api';
-import { useToast } from '../../hooks/useToast';
-import { ToastContainer } from '../../components/ui/Toast';
+import { useToast } from '../../contexts/ToastContext';
 import BookingConfirmModal from '../../components/booking/BookingConfirmModal';
 import BookingCancelModal from '../../components/booking/BookingCancelModal';
 
 const HostBookings: React.FC = () => {
   const navigate = useNavigate();
-  const { toasts, removeToast, showSuccess, showError } = useToast();
+  const { showToast } = useToast();
   
   const [activeTab, setActiveTab] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -79,7 +78,7 @@ const HostBookings: React.FC = () => {
       setTotalElements(0);
       setCurrentPage(0);
       
-      showError('Notice', 'No bookings available or service temporarily unavailable');
+      showToast('info', 'Notice', 'No bookings available or service temporarily unavailable');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -153,7 +152,7 @@ const HostBookings: React.FC = () => {
       const response = await bookingAPI.confirmBooking(confirmModal.booking.id);
       
       if (response.data.success) {
-        showSuccess('Booking Confirmed', 'The booking has been confirmed successfully');
+        showToast('success', 'Booking Confirmed', 'The booking has been confirmed successfully');
         await fetchBookings(currentPage);
         setConfirmModal({ isOpen: false });
       } else {
@@ -161,7 +160,7 @@ const HostBookings: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error confirming booking:', error);
-      showError('Confirmation Failed', error.message || 'Cannot confirm booking');
+      showToast('error', 'Confirmation Failed', error.message || 'Cannot confirm booking');
     } finally {
       setActionLoading(null);
     }
@@ -179,7 +178,7 @@ const HostBookings: React.FC = () => {
       const response = await bookingAPI.cancelBooking(cancelModal.booking.id, reason || 'Cancelled by hotel owner');
       
       if (response.data.success) {
-        showSuccess('Booking Cancelled', 'The booking has been cancelled successfully');
+        showToast('success', 'Booking Cancelled', 'The booking has been cancelled successfully');
         await fetchBookings(currentPage);
         setCancelModal({ isOpen: false });
       } else {
@@ -187,7 +186,7 @@ const HostBookings: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error cancelling booking:', error);
-      showError('Cancellation Failed', error.message || 'Cannot cancel booking');
+      showToast('error', 'Cancellation Failed', error.message || 'Cannot cancel booking');
     } finally {
       setActionLoading(null);
     }
@@ -199,50 +198,46 @@ const HostBookings: React.FC = () => {
       const response = await bookingAPI.completeBooking(id);
       
       if (response.data.success) {
-        showSuccess('Booking Completed', 'The booking has been marked as completed');
+        showToast('success', 'Booking Completed', 'The booking has been marked as completed');
         await fetchBookings(currentPage);
       } else {
         throw new Error(response.data.message || 'Cannot complete booking');
       }
     } catch (error: any) {
       console.error('Error completing booking:', error);
-      showError('Completion Failed', error.message || 'Cannot complete booking');
+      showToast('error', 'Completion Failed', error.message || 'Cannot complete booking');
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleConfirmPayment = async (id: string) => {
-    if (!window.confirm('Are you sure you want to confirm this payment? This action cannot be undone.')) {
-      return;
-    }
-    
     try {
       setActionLoading(id);
       const response = await bookingAPI.confirmPayment(id);
       
       if (response.data.success) {
-        showSuccess('Payment Confirmed', 'The payment has been confirmed successfully');
+        showToast('success', 'Payment Confirmed', 'The payment has been confirmed successfully');
         await fetchBookings(currentPage);
       } else {
         throw new Error(response.data.message || 'Cannot confirm payment');
       }
     } catch (error: any) {
       console.error('Error confirming payment:', error);
-      showError('Payment Confirmation Failed', error.message || 'Cannot confirm payment');
+      showToast('error', 'Payment Confirmation Failed', error.message || 'Cannot confirm payment');
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleProcessCancellation = (bookingId: string) => {
-    // Navigate to booking detail page where the cancellation modal is available
     navigate(`/host/bookings/${bookingId}`);
   };
 
   const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-    fetchBookings(newPage);
+    if (newPage >= 0 && newPage < totalPages) {
+      fetchBookings(newPage);
+    }
   };
 
   if (loading) {
@@ -566,9 +561,6 @@ const HostBookings: React.FC = () => {
           </>
         )}
       </div>
-
-      {/* Toast Container */}
-      <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
 
       {/* Modals */}
       <BookingConfirmModal

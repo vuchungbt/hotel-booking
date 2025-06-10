@@ -32,10 +32,7 @@ export interface BookingFlowActions {
 }
 
 const initialFormData: Partial<BookingCreateRequest> = {
-  guestName: '',
-  guestEmail: '',
-  guestPhone: '',
-  paymentMethod: 'CREDIT_CARD',
+  paymentMethod: 'CASH_ON_CHECKIN',
   specialRequests: ''
 };
 
@@ -115,26 +112,45 @@ export const useBookingFlow = (
 
     switch (step) {
       case 1:
-        // Step 1: Review - no validation needed
+        // Step 1: Review - validate booking details
+        if (!formData.hotelId) {
+          newErrors.hotelId = 'Hotel is required';
+        }
+        if (!formData.roomTypeId) {
+          newErrors.roomTypeId = 'Room type is required';
+        }
+        if (!formData.checkInDate) {
+          newErrors.checkInDate = 'Check-in date is required';
+        }
+        if (!formData.checkOutDate) {
+          newErrors.checkOutDate = 'Check-out date is required';
+        }
+        if (!formData.guests || formData.guests < 1) {
+          newErrors.guests = 'Number of guests must be at least 1';
+        }
+        if (!formData.totalAmount || formData.totalAmount <= 0) {
+          newErrors.totalAmount = 'Total amount must be greater than 0';
+        }
+
+        // Validate dates
+        if (formData.checkInDate && formData.checkOutDate) {
+          const checkIn = new Date(formData.checkInDate);
+          const checkOut = new Date(formData.checkOutDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          if (checkIn < today) {
+            newErrors.checkInDate = 'Check-in date cannot be in the past';
+          }
+          if (checkOut <= checkIn) {
+            newErrors.checkOutDate = 'Check-out date must be after check-in date';
+          }
+        }
         break;
 
       case 2:
-        // Step 2: Guest Information
-        if (!formData.guestName?.trim()) {
-          newErrors.guestName = 'Guest name is required';
-        } else if (formData.guestName.length < 2) {
-          newErrors.guestName = 'Guest name must be at least 2 characters';
-        }
-
-        if (!formData.guestEmail?.trim()) {
-          newErrors.guestEmail = 'Email address is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.guestEmail)) {
-          newErrors.guestEmail = 'Please enter a valid email address';
-        }
-
-        if (formData.guestPhone && !/^[+]?[0-9\s\-\(\)]{10,15}$/.test(formData.guestPhone)) {
-          newErrors.guestPhone = 'Please enter a valid phone number';
-        }
+        // Step 2: Guest Information - handled by authentication system
+        // No validation needed as guest info comes from authenticated user
         break;
 
       case 3:
@@ -146,7 +162,7 @@ export const useBookingFlow = (
 
       case 4:
         // Step 4: Final validation (all previous steps)
-        return validateStep(2) && validateStep(3);
+        return validateStep(1) && validateStep(3);
     }
 
     setState(prev => ({ ...prev, errors: newErrors }));
@@ -191,7 +207,7 @@ export const getStepConfig = (currentStep: number): BookingFlowStep[] => [
   {
     step: 2,
     title: 'Guest Information',
-    description: 'Enter your details',
+    description: 'Authenticate and verify details',
     isCompleted: currentStep > 2,
     isActive: currentStep === 2
   },
@@ -211,36 +227,54 @@ export const getStepConfig = (currentStep: number): BookingFlowStep[] => [
   }
 ];
 
-// Validation rules
+// Validation rules for BookingCreateRequest fields
 export const validationRules = {
-  guestName: {
+  hotelId: {
     required: true,
-    minLength: 2,
-    maxLength: 100,
-    pattern: /^[a-zA-ZÀ-ỹ\s]+$/,
-    message: 'Please enter a valid name (letters and spaces only)'
+    message: 'Hotel selection is required'
   },
-  guestEmail: {
+  roomTypeId: {
     required: true,
-    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    message: 'Please enter a valid email address'
+    message: 'Room type selection is required'
   },
-  guestPhone: {
-    required: false,
-    pattern: /^[+]?[0-9\s\-\(\)]{10,15}$/,
-    message: 'Please enter a valid phone number'
+  checkInDate: {
+    required: true,
+    message: 'Check-in date is required'
+  },
+  checkOutDate: {
+    required: true,
+    message: 'Check-out date is required'
+  },
+  guests: {
+    required: true,
+    min: 1,
+    max: 10,
+    message: 'Number of guests must be between 1 and 10'
+  },
+  totalAmount: {
+    required: true,
+    min: 0,
+    message: 'Total amount must be greater than 0'
   },
   paymentMethod: {
     required: true,
     message: 'Please select a payment method'
+  },
+  specialRequests: {
+    required: false,
+    maxLength: 1000,
+    message: 'Special requests cannot exceed 1000 characters'
   }
 };
 
 // Field labels for error messages
 export const fieldLabels = {
-  guestName: 'Guest Name',
-  guestEmail: 'Email Address',
-  guestPhone: 'Phone Number',
+  hotelId: 'Hotel',
+  roomTypeId: 'Room Type',
+  checkInDate: 'Check-in Date',
+  checkOutDate: 'Check-out Date',
+  guests: 'Number of Guests',
+  totalAmount: 'Total Amount',
   paymentMethod: 'Payment Method',
   specialRequests: 'Special Requests'
 };

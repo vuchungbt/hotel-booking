@@ -7,12 +7,11 @@ import {
 import { bookingAPI, BookingResponse } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import BookingCancelModal from '../components/booking/BookingCancelModal';
-import { useToast } from '../hooks/useToast';
-import { ToastContainer } from '../components/ui/Toast';
+import { useToast } from '../contexts/ToastContext';
 
 const MyBookingsPage: React.FC = () => {
   const { user } = useAuth();
-  const { toasts, removeToast, showSuccess, showError } = useToast();
+  const { showToast } = useToast();
   const [bookings, setBookings] = useState<BookingResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -149,13 +148,13 @@ const MyBookingsPage: React.FC = () => {
         // Refresh bookings list
         await fetchBookings();
         setCancelModal({ isOpen: false });
-        showSuccess('Booking Cancelled', 'Your booking has been cancelled successfully');
+        showToast('success', 'Booking Cancelled', 'Your booking has been cancelled successfully');
       } else {
         throw new Error(response.data.message || 'Failed to cancel booking');
       }
     } catch (error: any) {
       console.error('Error cancelling booking:', error);
-      showError('Cancellation Failed', error.response?.data?.message || error.message || 'Failed to cancel booking');
+      showToast('error', 'Cancellation Failed', error.response?.data?.message || error.message || 'Failed to cancel booking');
     } finally {
       setCancellingBookingId(null);
     }
@@ -379,8 +378,7 @@ const MyBookingsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Toast Container */}
-        <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
+
 
         {/* Cancel Modal */}
         <BookingCancelModal
