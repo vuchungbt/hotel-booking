@@ -95,6 +95,17 @@ public enum ErrorResponse {
     UNAUTHENTICATED(1006, "Unauthenticated!", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1007, "You do not have permission!", HttpStatus.FORBIDDEN),
 
+    // Voucher-related errors
+    VOUCHER_NOT_FOUND(6001, "Voucher not found!", HttpStatus.NOT_FOUND),
+    VOUCHER_CODE_ALREADY_EXISTS(6002, "Voucher code already exists!", HttpStatus.CONFLICT),
+    VOUCHER_EXPIRED(6003, "Voucher has expired!", HttpStatus.BAD_REQUEST),
+    VOUCHER_NOT_ACTIVE(6004, "Voucher is not active!", HttpStatus.BAD_REQUEST),
+    VOUCHER_USAGE_LIMIT_EXCEEDED(6005, "Voucher usage limit exceeded!", HttpStatus.BAD_REQUEST),
+    VOUCHER_NOT_APPLICABLE_TO_HOTEL(6006, "Voucher is not applicable to this hotel!", HttpStatus.BAD_REQUEST),
+    VOUCHER_MIN_BOOKING_VALUE_NOT_MET(6007, "Minimum booking value requirement not met!", HttpStatus.BAD_REQUEST),
+    VOUCHER_ALREADY_USED_BY_USER(6008, "Voucher has already been used by this user!", HttpStatus.BAD_REQUEST),
+    VOUCHER_HAS_USAGE_RECORDS(6009, "Voucher has been used in bookings. Please disable instead of deleting to preserve data integrity!", HttpStatus.CONFLICT),
+
     ;
 
     private final int code;

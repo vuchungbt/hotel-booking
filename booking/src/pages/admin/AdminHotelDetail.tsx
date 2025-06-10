@@ -446,15 +446,7 @@ const AdminHotelDetail: React.FC = () => {
   const renderRoomTypes = () => (
     <div className="space-y-4">
       {/* Add Room Type Button */}
-      <div className="mb-6">
-        <button
-          onClick={() => navigate(`/admin/room-types/add?hotelId=${hotel?.id}`)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-        >
-          <Plus size={20} className="mr-2" />
-          Thêm loại phòng
-        </button>
-      </div>
+      
 
       {roomTypesLoading ? (
         <div className="text-center py-8">

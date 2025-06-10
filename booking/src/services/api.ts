@@ -1,4 +1,15 @@
 import axios from 'axios';
+import {
+  VoucherRequest,
+  VoucherUpdateRequest,
+  VoucherResponse,
+  VoucherValidationRequest,
+  VoucherValidationResponse,
+  VoucherFilterParams,
+  VoucherStatsResponse,
+  VoucherApiResponse,
+  VoucherListResponse
+} from '../types/voucher';
 
 //const API_URL = 'https://bk.blwsmartware.net';
 const API_URL = 'http://localhost:8080'; // Direct API endpoint
@@ -705,6 +716,7 @@ export interface BookingCreateRequest {
   totalAmount: number;
   paymentMethod?: string;
   specialRequests?: string;
+  voucherCode?: string;
 }
 
 export interface BookingUpdateRequest {
@@ -955,6 +967,68 @@ export const bookingAPI = {
   // Statistics endpoints
   getTotalBookingsCount: () => api.get('/bookings/admin/stats/total'),
   getHostBookingsCount: () => api.get('/bookings/host/stats/total')
+};
+
+export const voucherAPI = {
+  // Admin operations
+  getAllVouchers: (params?: VoucherFilterParams) =>
+    api.get<VoucherApiResponse<VoucherListResponse>>('/vouchers/admin', { params }),
+  
+  createVoucher: (data: VoucherRequest) =>
+    api.post<VoucherApiResponse<VoucherResponse>>('/vouchers/admin', data),
+  
+  updateVoucher: (id: string, data: VoucherUpdateRequest) =>
+    api.put<VoucherApiResponse<VoucherResponse>>(`/vouchers/admin/${id}`, data),
+  
+  deleteVoucher: (id: string) =>
+    api.delete<VoucherApiResponse<void>>(`/vouchers/admin/${id}`),
+  
+  getVoucherById: (id: string) =>
+    api.get<VoucherApiResponse<VoucherResponse>>(`/vouchers/admin/${id}`),
+  
+  toggleVoucherStatus: (id: string) =>
+    api.patch<VoucherApiResponse<VoucherResponse>>(`/vouchers/admin/${id}/toggle-status`),
+  
+  searchVouchers: (keyword: string, params?: VoucherFilterParams) =>
+    api.get<VoucherApiResponse<VoucherListResponse>>('/vouchers/admin/search', { 
+      params: { ...params, keyword } 
+    }),
+  
+  // Statistics
+  getVoucherStats: () =>
+    api.get<VoucherApiResponse<VoucherStatsResponse>>('/vouchers/admin/stats'),
+  
+  getTotalVouchersCount: () =>
+    api.get<VoucherApiResponse<number>>('/vouchers/admin/stats/total'),
+  
+  getActiveVouchersCount: () =>
+    api.get<VoucherApiResponse<number>>('/vouchers/admin/stats/active'),
+  
+  getExpiredVouchersCount: () =>
+    api.get<VoucherApiResponse<number>>('/vouchers/admin/stats/expired'),
+  
+  getUsedUpVouchersCount: () =>
+    api.get<VoucherApiResponse<number>>('/vouchers/admin/stats/used-up'),
+  
+  getTotalDiscountAmount: () =>
+    api.get<VoucherApiResponse<number>>('/vouchers/admin/stats/discount-amount'),
+  
+  getTotalUsageCount: () =>
+    api.get<VoucherApiResponse<number>>('/vouchers/admin/stats/usage-count'),
+  
+  // Public operations
+  validateVoucher: (data: VoucherValidationRequest) =>
+    api.post<VoucherApiResponse<VoucherValidationResponse>>('/vouchers/validate', data),
+  
+  getVoucherByCode: (code: string) =>
+    api.get<VoucherApiResponse<VoucherResponse>>(`/vouchers/code/${code}`),
+  
+  getAvailableVouchersForHotel: (hotelId: string) =>
+    api.get<VoucherApiResponse<VoucherResponse[]>>(`/vouchers/hotel/${hotelId}/available`),
+  
+  // Apply voucher to booking
+  applyVoucherToBooking: (data: { voucherCode: string; bookingId: string }) =>
+    api.post<VoucherApiResponse<{ discountAmount: number; finalAmount: number }>>('/vouchers/apply', data)
 };
 
 export default api;

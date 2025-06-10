@@ -23,6 +23,7 @@ import net.blwsmartware.booking.repository.HotelRepository;
 import net.blwsmartware.booking.repository.RoomTypeRepository;
 import net.blwsmartware.booking.repository.UserRepository;
 import net.blwsmartware.booking.service.BookingService;
+import net.blwsmartware.booking.service.VoucherService;
 import net.blwsmartware.booking.util.DataResponseUtils;
 import net.blwsmartware.booking.validator.IsAdmin;
 import net.blwsmartware.booking.validator.IsHost;
@@ -58,6 +59,7 @@ public class BookingServiceImpl implements BookingService {
     RoomTypeRepository roomTypeRepository;
     UserRepository userRepository;
     BookingMapper bookingMapper;
+    VoucherService voucherService;
     
     // ===== GUEST OPERATIONS =====
     
@@ -114,6 +116,26 @@ public class BookingServiceImpl implements BookingService {
         
         // 9. Save booking
         booking = bookingRepository.save(booking);
+        
+        // 10. Apply voucher if provided
+        if (request.getVoucherCode() != null && !request.getVoucherCode().trim().isEmpty()) {
+            try {
+                log.info("Applying voucher {} to booking {}", request.getVoucherCode(), booking.getId());
+                voucherService.applyVoucher(
+                    request.getVoucherCode(), 
+                    currentUser.getId(), 
+                    booking.getId(), 
+                    request.getTotalAmount(), 
+                    hotel.getId()
+                );
+                log.info("Voucher {} applied successfully to booking {}", request.getVoucherCode(), booking.getId());
+            } catch (Exception e) {
+                log.warn("Failed to apply voucher {} to booking {}: {}", 
+                        request.getVoucherCode(), booking.getId(), e.getMessage());
+                // Note: We don't fail the booking if voucher application fails
+                // The booking should succeed even if voucher is invalid
+            }
+        }
         
         log.info("Booking created successfully with ID: {} and reference: {}", 
                 booking.getId(), booking.getBookingReference());
@@ -229,6 +251,14 @@ public class BookingServiceImpl implements BookingService {
         
         booking.setUpdatedBy(currentUser.getId());
         booking = bookingRepository.save(booking);
+        
+        // Remove voucher usage if booking had voucher applied
+        try {
+            voucherService.removeVoucherUsage(booking.getId());
+            log.info("Voucher usage removed for cancelled booking: {}", booking.getId());
+        } catch (Exception e) {
+            log.warn("Failed to remove voucher usage for booking {}: {}", booking.getId(), e.getMessage());
+        }
         
         log.info("Booking cancelled: {}", bookingId);
         
@@ -582,6 +612,14 @@ public class BookingServiceImpl implements BookingService {
         booking.setUpdatedBy(currentUser.getId());
         booking = bookingRepository.save(booking);
         
+        // Remove voucher usage if booking had voucher applied
+        try {
+            voucherService.removeVoucherUsage(booking.getId());
+            log.info("Voucher usage removed for host cancelled booking: {}", booking.getId());
+        } catch (Exception e) {
+            log.warn("Failed to remove voucher usage for booking {}: {}", booking.getId(), e.getMessage());
+        }
+        
         return bookingMapper.toResponse(booking);
     }
     
@@ -702,6 +740,14 @@ public class BookingServiceImpl implements BookingService {
         
         booking = bookingRepository.save(booking);
         
+        // Remove voucher usage if booking had voucher applied
+        try {
+            voucherService.removeVoucherUsage(booking.getId());
+            log.info("Voucher usage removed for processed cancellation: {}", booking.getId());
+        } catch (Exception e) {
+            log.warn("Failed to remove voucher usage for booking {}: {}", booking.getId(), e.getMessage());
+        }
+        
         log.info("Successfully processed cancellation for booking: {}", bookingId);
         return bookingMapper.toResponse(booking);
     }
@@ -807,6 +853,14 @@ public class BookingServiceImpl implements BookingService {
         
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
+        
+        // Delete voucher usage records if booking had voucher applied
+        try {
+            voucherService.deleteVoucherUsageByBookingId(booking.getId());
+            log.info("Voucher usage records deleted before deleting booking: {}", booking.getId());
+        } catch (Exception e) {
+            log.warn("Failed to delete voucher usage for booking {}: {}", booking.getId(), e.getMessage());
+        }
         
         bookingRepository.delete(booking);
     }

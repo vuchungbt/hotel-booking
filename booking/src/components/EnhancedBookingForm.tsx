@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { bookingAPI, BookingCreateRequest, HotelResponse, RoomTypeResponse } from '../services/api';
+import VoucherInput from './VoucherInput';
 
 interface EnhancedBookingFormProps {
   hotel: HotelResponse;
@@ -54,15 +55,24 @@ const EnhancedBookingForm: React.FC<EnhancedBookingFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
 
+  // Voucher state
+  const [appliedVoucherCode, setAppliedVoucherCode] = useState<string>('');
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [originalAmount, setOriginalAmount] = useState<number>(0);
+
   // Calculate number of nights and total amount
   const numberOfNights = Math.ceil(
     (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24)
   );
 
   useEffect(() => {
-    const totalAmount = numberOfNights * roomType.pricePerNight;
-    setFormData(prev => ({ ...prev, totalAmount }));
-  }, [numberOfNights, roomType.pricePerNight]);
+    const baseAmount = numberOfNights * roomType.pricePerNight;
+    setOriginalAmount(baseAmount);
+    
+    // Apply discount if voucher is applied
+    const finalAmount = baseAmount - discountAmount;
+    setFormData(prev => ({ ...prev, totalAmount: finalAmount }));
+  }, [numberOfNights, roomType.pricePerNight, discountAmount]);
 
   // Steps configuration
   const steps: StepData[] = [
@@ -169,12 +179,28 @@ const EnhancedBookingForm: React.FC<EnhancedBookingFormProps> = ({
     }
   };
 
+  const handleVoucherApplied = (discount: number, voucherCode: string) => {
+    setDiscountAmount(discount);
+    setAppliedVoucherCode(voucherCode);
+  };
+
+  const handleVoucherRemoved = () => {
+    setDiscountAmount(0);
+    setAppliedVoucherCode('');
+  };
+
   const handleSubmit = async () => {
     if (!validateCurrentStep() || !isAvailable) return;
 
     setLoading(true);
     try {
-      const response = await bookingAPI.createBooking(formData);
+      // Include voucher code in booking data if applied
+      const bookingData = {
+        ...formData,
+        ...(appliedVoucherCode && { voucherCode: appliedVoucherCode })
+      };
+      
+      const response = await bookingAPI.createBooking(bookingData);
       const bookingId = response.data.result.id;
       
       if (onSuccess) {
@@ -583,6 +609,39 @@ const EnhancedBookingForm: React.FC<EnhancedBookingFormProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Voucher Section */}
+              <VoucherInput
+                hotelId={hotel.id}
+                bookingAmount={originalAmount}
+                onVoucherApplied={handleVoucherApplied}
+                onVoucherRemoved={handleVoucherRemoved}
+                appliedVoucherCode={appliedVoucherCode}
+                disabled={loading}
+              />
+
+              {/* Booking Summary with Discount */}
+              {originalAmount > 0 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">Chi tiết thanh toán</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Giá phòng ({numberOfNights} đêm):</span>
+                      <span>{formatCurrency(originalAmount)}</span>
+                    </div>
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Giảm giá ({appliedVoucherCode}):</span>
+                        <span>-{formatCurrency(discountAmount)}</span>
+                      </div>
+                    )}
+                    <div className="border-t pt-2 flex justify-between font-semibold">
+                      <span>Tổng cộng:</span>
+                      <span className="text-lg">{formatCurrency(formData.totalAmount)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -626,7 +685,22 @@ const EnhancedBookingForm: React.FC<EnhancedBookingFormProps> = ({
                         <span className="text-gray-600">Payment Method:</span> 
                         {formData.paymentMethod === 'VNPAY' ? ' VNPay' : ' Cash on Check-in'}
                       </div>
-                      <div><span className="text-gray-600">Total Amount:</span> {formatCurrency(formData.totalAmount)}</div>
+                      <div className="border-t pt-2 mt-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Room Price ({numberOfNights} nights):</span>
+                          <span>{formatCurrency(originalAmount)}</span>
+                        </div>
+                        {discountAmount > 0 && (
+                          <div className="flex justify-between text-green-600">
+                            <span>Discount ({appliedVoucherCode}):</span>
+                            <span>-{formatCurrency(discountAmount)}</span>
+                          </div>
+                        )}
+                        <div className="border-t pt-2 mt-2 flex justify-between font-semibold">
+                          <span>Total Amount:</span>
+                          <span>{formatCurrency(formData.totalAmount)}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
