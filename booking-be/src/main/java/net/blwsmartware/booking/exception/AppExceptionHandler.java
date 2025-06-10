@@ -11,6 +11,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 import java.util.StringJoiner;
 
@@ -134,5 +136,43 @@ public class AppExceptionHandler {
         return ResponseEntity.status(ErrorResponse.ACCESS_DENIED.getHttpCode()).body(responseBody(ErrorResponse.ACCESS_DENIED));
     }
 
+
+
+    @ExceptionHandler(value = MaxUploadSizeExceededException.class)
+    public ResponseEntity<MessageResponse<?>> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException exception) {
+        log.error("MaxUploadSizeExceededException: {}", exception.getMessage());
+        return ResponseEntity.status(ErrorResponse.FILE_TOO_LARGE.getHttpCode())
+                .body(responseBody(ErrorResponse.FILE_TOO_LARGE));
+    }
+
+    @ExceptionHandler(value = MultipartException.class)
+    public ResponseEntity<MessageResponse<?>> handleMultipartException(MultipartException exception) {
+        log.error("MultipartException: {}", exception.getMessage());
+        
+        // Check if it's a file size issue
+        if (exception.getCause() instanceof MaxUploadSizeExceededException) {
+            return ResponseEntity.status(ErrorResponse.FILE_TOO_LARGE.getHttpCode())
+                    .body(responseBody(ErrorResponse.FILE_TOO_LARGE));
+        }
+        
+        // Generic multipart error
+        return ResponseEntity.status(ErrorResponse.FILE_UPLOAD_ERROR.getHttpCode())
+                .body(responseBody(ErrorResponse.FILE_UPLOAD_ERROR));
+    }
+
+    @ExceptionHandler(value = IllegalArgumentException.class)
+    public ResponseEntity<MessageResponse<?>> handleIllegalArgumentException(IllegalArgumentException exception) {
+        log.error("IllegalArgumentException: {}", exception.getMessage());
+        
+        // Check if it's a file upload related error
+        if (exception.getMessage() != null && exception.getMessage().toLowerCase().contains("file")) {
+            return ResponseEntity.status(ErrorResponse.FILE_UPLOAD_ERROR.getHttpCode())
+                    .body(responseBody(ErrorResponse.FILE_UPLOAD_ERROR));
+        }
+        
+        // Generic illegal argument error
+        return ResponseEntity.badRequest()
+                .body(responseBody(ErrorResponse.UNCATEGORIZED_ERROR));
+    }
 
 }

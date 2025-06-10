@@ -49,7 +49,8 @@ public class SecurityConfig {
             "/hotels/search/filters",
             "/hotels/amenities",
             "/room-types/hotel/**",
-            "/bookings/check-availability" // Only keep availability check as public
+            "/bookings/check-availability", // Only keep availability check as public
+            "/api/upload/test" // Allow test endpoint for upload service verification
     };
     private final JwtCustomDecoder customJwtDecoder;
 

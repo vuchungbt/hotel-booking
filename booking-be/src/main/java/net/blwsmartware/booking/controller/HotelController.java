@@ -5,12 +5,15 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import io.swagger.v3.oas.annotations.Operation;
 import net.blwsmartware.booking.constant.PagePrepare;
 import net.blwsmartware.booking.dto.request.HotelCreateRequest;
 import net.blwsmartware.booking.dto.request.HotelUpdateRequest;
 import net.blwsmartware.booking.dto.response.DataResponse;
 import net.blwsmartware.booking.dto.response.HotelResponse;
 import net.blwsmartware.booking.dto.response.MessageResponse;
+import net.blwsmartware.booking.dto.response.UploadResponse;
+import net.blwsmartware.booking.service.CloudinaryService;
 import net.blwsmartware.booking.service.HotelService;
 import net.blwsmartware.booking.validator.IsAdmin;
 import net.blwsmartware.booking.validator.IsHost;
@@ -18,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -45,6 +49,7 @@ import java.util.UUID;
 public class HotelController {
     
     HotelService hotelService;
+    CloudinaryService cloudinaryService;
     
     // ===== ADMIN ENDPOINTS =====
     @GetMapping("/admin")
@@ -109,6 +114,32 @@ public class HotelController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(MessageResponse.<HotelResponse>builder()
                         .message("Hotel created successfully by admin")
+                        .result(response)
+                        .build());
+    }
+
+    @PostMapping(value = "/admin/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @IsAdmin
+    @Operation(summary = "Admin create hotel with image", description = "Admin create hotel and upload image in one request")
+    public ResponseEntity<MessageResponse<HotelResponse>> createHotelByAdminWithImage(
+            @RequestPart("hotel") @Valid HotelCreateRequest request,
+            @RequestPart("image") MultipartFile imageFile) {
+        
+        log.info("Admin creating hotel with image upload: {}", request.getName());
+        
+        // Upload image first
+        String imageUrl = cloudinaryService.uploadImageWithTransformation(imageFile, "hotels", 1200, 800);
+        
+        // Set image URL to request
+        request.setImageUrl(imageUrl);
+        
+        // Create hotel with image URL
+        HotelResponse response = hotelService.createHotelByAdmin(request);
+        
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<HotelResponse>builder()
+                        .message("Hotel created successfully by admin with image")
                         .result(response)
                         .build());
     }
@@ -302,6 +333,32 @@ public class HotelController {
                         .result(response)
                         .build());
     }
+
+    @PostMapping(value = "/host/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @IsHost
+    @Operation(summary = "Create hotel with image upload", description = "Create a new hotel and upload image in one request")
+    public ResponseEntity<MessageResponse<HotelResponse>> createMyHotelWithImage(
+            @RequestPart("hotel") @Valid HotelCreateRequest request,
+            @RequestPart("image") MultipartFile imageFile) {
+        
+        log.info("Creating hotel with image upload: {}", request.getName());
+        
+        // Upload image first
+        String imageUrl = cloudinaryService.uploadImageWithTransformation(imageFile, "hotels", 1200, 800);
+        
+        // Set image URL to request
+        request.setImageUrl(imageUrl);
+        
+        // Create hotel with image URL
+        HotelResponse response = hotelService.createMyHotel(request);
+        
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<HotelResponse>builder()
+                        .message("Hotel created successfully with image")
+                        .result(response)
+                        .build());
+    }
     
     @PutMapping("/host/{id}")
     @IsHost
@@ -315,6 +372,105 @@ public class HotelController {
                 .body(MessageResponse.<HotelResponse>builder()
                         .message("Hotel updated successfully")
                         .result(response)
+                        .build());
+    }
+
+    @PutMapping(value = "/host/{id}/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @IsHost
+    @Operation(summary = "Update hotel with image upload", description = "Update hotel and upload new image in one request")
+    public ResponseEntity<MessageResponse<HotelResponse>> updateMyHotelWithImage(
+            @PathVariable UUID id,
+            @RequestPart("hotel") @Valid HotelUpdateRequest request,
+            @RequestPart("image") MultipartFile imageFile) {
+        
+        log.info("Updating hotel {} with new image", id);
+        
+        // Get current hotel to possibly delete old image
+        HotelResponse currentHotel = hotelService.getMyHotelById(id);
+        String oldImageUrl = currentHotel.getImageUrl();
+        
+        // Upload new image
+        String newImageUrl = cloudinaryService.uploadImageWithTransformation(imageFile, "hotels", 1200, 800);
+        
+        // Set new image URL to request
+        request.setImageUrl(newImageUrl);
+        
+        // Update hotel with new image URL
+        HotelResponse response = hotelService.updateMyHotel(id, request);
+        
+        // Delete old image if exists and different from new one
+        if (oldImageUrl != null && !oldImageUrl.equals(newImageUrl)) {
+            try {
+                String publicId = cloudinaryService.extractPublicIdFromUrl(oldImageUrl);
+                if (publicId != null) {
+                    cloudinaryService.deleteImage(publicId);
+                    log.info("Deleted old hotel image: {}", publicId);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to delete old hotel image: {}", e.getMessage());
+                // Continue execution, don't fail the update because of image deletion failure
+            }
+        }
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<HotelResponse>builder()
+                        .message("Hotel updated successfully with new image")
+                        .result(response)
+                                                 .build());
+    }
+
+    @PatchMapping(value = "/host/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @IsHost
+    @Operation(summary = "Update only hotel image", description = "Update only the hotel image without changing other details")
+    public ResponseEntity<MessageResponse<UploadResponse>> updateMyHotelImage(
+            @PathVariable UUID id,
+            @RequestPart("image") MultipartFile imageFile) {
+        
+        log.info("Updating image for hotel {}", id);
+        
+        // Verify hotel ownership (this will throw exception if not owned by current user)
+        HotelResponse currentHotel = hotelService.getMyHotelById(id);
+        String oldImageUrl = currentHotel.getImageUrl();
+        
+        // Upload new image
+        String newImageUrl = cloudinaryService.uploadImageWithTransformation(imageFile, "hotels", 1200, 800);
+        
+        // Update only the image URL
+        HotelUpdateRequest updateRequest = HotelUpdateRequest.builder()
+                .imageUrl(newImageUrl)
+                .build();
+        
+        hotelService.updateMyHotel(id, updateRequest);
+        
+        // Delete old image if exists
+        if (oldImageUrl != null && !oldImageUrl.equals(newImageUrl)) {
+            try {
+                String publicId = cloudinaryService.extractPublicIdFromUrl(oldImageUrl);
+                if (publicId != null) {
+                    cloudinaryService.deleteImage(publicId);
+                    log.info("Deleted old hotel image: {}", publicId);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to delete old hotel image: {}", e.getMessage());
+            }
+        }
+        
+        // Return upload response
+        UploadResponse uploadResponse = UploadResponse.builder()
+                .imageUrl(newImageUrl)
+                .fileName(imageFile.getOriginalFilename())
+                .fileSize(imageFile.getSize())
+                .folder("hotels")
+                .dimensions("1200x800")
+                .optimized(true)
+                .build();
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<UploadResponse>builder()
+                        .message("Hotel image updated successfully")
+                        .result(uploadResponse)
                         .build());
     }
     

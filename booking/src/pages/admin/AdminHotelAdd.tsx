@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, X, Plus, Star, MapPin, Phone, Mail, Globe, Clock, Shield, Heart } from 'lucide-react';
 import { hotelAPI, HotelCreateRequest } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
+import ImageUploadSection from '../../components/ui/ImageUploadSection';
 
 const AdminHotelAdd: React.FC = () => {
   const navigate = useNavigate();
@@ -279,17 +280,13 @@ const AdminHotelAdd: React.FC = () => {
               {errors.pricePerNight && <p className="mt-1 text-sm text-red-600">{errors.pricePerNight}</p>}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Image URL
-              </label>
-              <input
-                type="url"
-                name="imageUrl"
-                value={formData.imageUrl}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="https://example.com/image.jpg"
+            <div className="md:col-span-2">
+              <ImageUploadSection
+                title="Hotel Image"
+                imageUrl={formData.imageUrl || ''}
+                onImageUrlChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
+                uploadType="hotel-image"
+                errors={{ imageUrl: errors.imageUrl }}
               />
             </div>
           </div>

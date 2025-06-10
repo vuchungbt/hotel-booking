@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Hotel, MapPin, Phone, Mail, Globe, Star, Clock, DollarSign, Image as ImageIcon, Save, ArrowLeft } from 'lucide-react';
+import { Hotel, MapPin, Phone, Mail, Globe, Star, Clock, DollarSign, Save, ArrowLeft } from 'lucide-react';
 import { hotelAPI, HotelCreateRequest } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
+import ImageUploadSection from '../../components/ui/ImageUploadSection';
 
 const HostHotelAdd: React.FC = () => {
   const navigate = useNavigate();
@@ -457,42 +458,14 @@ const HostHotelAdd: React.FC = () => {
               </div>
             </div>
 
-            {/* Image */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-8">
-              <h2 className="text-xl font-semibold mb-6 flex items-center text-gray-900">
-                <ImageIcon className="mr-3 text-indigo-600" size={24} />
-                Hình ảnh khách sạn
-              </h2>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL hình ảnh
-                </label>
-                <input
-                  type="url"
-                  name="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={handleInputChange}
-                  placeholder="https://example.com/hotel-image.jpg"
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.imageUrl ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
-                {errors.imageUrl && <p className="mt-1 text-sm text-red-600">{errors.imageUrl}</p>}
-                {formData.imageUrl && !errors.imageUrl && (
-                  <div className="mt-2">
-                    <img
-                      src={formData.imageUrl}
-                      alt="Preview"
-                      className="w-32 h-20 object-cover rounded-lg border border-gray-300"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* Enhanced Image Upload Section */}
+            <ImageUploadSection
+              title="Hình ảnh khách sạn"
+              imageUrl={formData.imageUrl || ''}
+              onImageUrlChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
+              uploadType="hotel-image"
+              errors={{ imageUrl: errors.imageUrl }}
+            />
 
             {/* Submit Button */}
             <div className="flex flex-col sm:flex-row gap-4 sm:justify-end pt-6 border-t border-gray-200">

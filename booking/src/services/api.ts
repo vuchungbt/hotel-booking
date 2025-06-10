@@ -173,8 +173,6 @@ export interface HotelUpdateRequest {
   featured?: boolean; // Note: Only admin can modify this field
 }
 
-
-
 export interface HotelFilterParams {
   city?: string;
   country?: string;
@@ -415,8 +413,6 @@ export const hotelAPI = {
   getAvailableAmenities: () =>
     api.get('/hotels/amenities'),
 
-
-
   // ===== ADMIN APIs =====
   getAdminHotels: (pageNumber = 0, pageSize = 10, sortBy = 'id') =>
     api.get('/hotels/admin', { params: { pageNumber, pageSize, sortBy } }),
@@ -636,8 +632,6 @@ export const hostRoomTypeAPI = {
   deleteMyRoomType: (id: string) => api.delete(`/room-types/host/${id}`)
 };
 
-
-
 // Review Types
 export interface ReviewCreateRequest {
   rating: number;
@@ -815,8 +809,6 @@ export const reviewAPI = {
   
   getReviewsByHotel: (hotelId: string, pageNumber = 0, pageSize = 10, sortBy = 'createdAt') =>
     api.get(`/reviews/hotel/${hotelId}`, { params: { pageNumber, pageSize, sortBy } }),
-  
-
   
   getHotelAverageRating: (hotelId: string) =>
     api.get(`/reviews/hotel/${hotelId}/average-rating`),
@@ -1029,6 +1021,186 @@ export const voucherAPI = {
   // Apply voucher to booking
   applyVoucherToBooking: (data: { voucherCode: string; bookingId: string }) =>
     api.post<VoucherApiResponse<{ discountAmount: number; finalAmount: number }>>('/vouchers/apply', data)
+};
+
+// Upload Types
+export interface UploadResponse {
+  imageUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  folder?: string;
+  dimensions?: string;
+  optimized?: boolean;
+  
+  // For multiple uploads
+  imageUrls?: string[];
+  uploadedCount?: number;
+  totalFiles?: number;
+  
+  // For delete operations
+  publicId?: string;
+  deleted?: boolean;
+}
+
+export interface UploadErrorResponse {
+  code: number;
+  success: boolean;
+  message: string;
+  errorCode: string;
+}
+
+export interface MessageResponse<T> {
+  code: number;
+  success: boolean;
+  message: string;
+  result: T;
+}
+
+// Upload APIs
+export const uploadAPI = {
+  // Generic single image upload
+  uploadImage: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return api.post<MessageResponse<UploadResponse>>('/api/upload/image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
+
+  // Hotel-specific image upload (optimized for hotels)
+  uploadHotelImage: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return api.post<MessageResponse<UploadResponse>>('/api/upload/hotel-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
+
+  // Room-specific image upload (optimized for rooms)
+  uploadRoomImage: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return api.post<MessageResponse<UploadResponse>>('/api/upload/room-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
+
+  // Multiple images upload
+  uploadMultipleImages: (files: File[]) => {
+    const formData = new FormData();
+    files.forEach((file, index) => {
+      formData.append('files', file);
+    });
+    
+    return api.post<MessageResponse<UploadResponse[]>>('/api/upload/images/multiple', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
+
+  // Delete image by URL
+  deleteImage: (imageUrl: string) => {
+    return api.delete<MessageResponse<void>>('/api/upload/image', {
+      params: { imageUrl: imageUrl }
+    });
+  },
+
+  // Test upload endpoint
+  testUpload: () => {
+    return api.get<MessageResponse<string>>('/api/upload/test');
+  }
+};
+
+// Enhanced Hotel APIs with image upload support
+export const hotelWithImageAPI = {
+  // Host APIs with image upload
+  createHotelWithImage: (hotelData: HotelCreateRequest, imageFile?: File) => {
+    const formData = new FormData();
+    
+    // Add hotel data
+    Object.entries(hotelData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value.toString());
+      }
+    });
+    
+    // Add image file if provided
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+    
+    return api.post<MessageResponse<HotelResponse>>('/api/hotels/host/with-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
+
+  updateHotelWithImage: (id: string, hotelData: HotelUpdateRequest, imageFile?: File) => {
+    const formData = new FormData();
+    
+    // Add hotel data
+    Object.entries(hotelData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value.toString());
+      }
+    });
+    
+    // Add image file if provided
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+    
+    return api.put<MessageResponse<HotelResponse>>(`/api/hotels/host/${id}/with-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
+
+  updateHotelImageOnly: (id: string, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    return api.patch<MessageResponse<UploadResponse>>(`/api/hotels/host/${id}/image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
+
+  // Admin APIs with image upload
+  createHotelWithImageByAdmin: (hotelData: HotelCreateRequest, imageFile?: File) => {
+    const formData = new FormData();
+    
+    // Add hotel data
+    Object.entries(hotelData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value.toString());
+      }
+    });
+    
+    // Add image file if provided
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+    
+    return api.post<MessageResponse<HotelResponse>>('/api/hotels/admin/with-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  }
 };
 
 export default api;

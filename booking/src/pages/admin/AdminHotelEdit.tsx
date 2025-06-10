@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, MapPin, Star, Clock, Globe, Phone, Mail, DollarSign, Image, FileText, Users, Bed, User, RefreshCw } from 'lucide-react';
 import { hotelAPI, HotelResponse, HotelUpdateRequest, userAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
+import ImageUploadSection from '../../components/ui/ImageUploadSection';
 
 interface HostOption {
   id: string;
@@ -396,15 +397,11 @@ const AdminHotelEdit: React.FC = () => {
           </h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                URL hình ảnh
-              </label>
-              <input
-                type="url"
-                name="imageUrl"
-                value={formData.imageUrl}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <ImageUploadSection
+                title="Hotel Image"
+                imageUrl={formData.imageUrl || ''}
+                onImageUrlChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
+                uploadType="hotel-image"
               />
             </div>
             <div>

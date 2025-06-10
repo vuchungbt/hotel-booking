@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Hotel, MapPin, Phone, Mail, Globe, Star, Clock, DollarSign, Image as ImageIcon, Save, ArrowLeft } from 'lucide-react';
+import { Hotel, MapPin, Phone, Mail, Globe, Star, Clock, DollarSign, Save, ArrowLeft } from 'lucide-react';
 import { hotelAPI, HotelResponse, HotelUpdateRequest } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
+import ImageUploadSection from '../../components/ui/ImageUploadSection';
 
 const HostHotelEdit: React.FC = () => {
   const navigate = useNavigate();
@@ -427,25 +428,13 @@ const HostHotelEdit: React.FC = () => {
             </div>
           </div>
 
-          {/* Image */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-8">
-            <h2 className="text-xl font-semibold mb-6 flex items-center text-gray-900">
-              <ImageIcon className="mr-3 text-indigo-600" size={24} />
-              Hình ảnh khách sạn
-            </h2>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                URL hình ảnh
-              </label>
-              <input
-                type="url"
-                name="imageUrl"
-                value={formData.imageUrl}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
+          {/* Enhanced Image Upload Section */}
+          <ImageUploadSection
+            title="Hình ảnh khách sạn"
+            imageUrl={formData.imageUrl || ''}
+            onImageUrlChange={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
+            uploadType="hotel-image"
+          />
 
           {/* Status */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:p-8">

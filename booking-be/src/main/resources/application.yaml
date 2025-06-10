@@ -6,13 +6,19 @@ spring:
   application:
     name: booking-service
   datasource:
-    url: ${DB_MYSQL_URL:jdbc:mysql://localhost:3306/booking10?createDatabaseIfNotExist=true}
+    url: ${DB_MYSQL_URL:jdbc:mysql://localhost:3306/booking11?createDatabaseIfNotExist=true}
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:}
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 25MB
+      file-size-threshold: 2KB
   mail:
     default-encoding: UTF-8
     host: ${EMAIL_HOST:smtp.larksuite.com}
@@ -41,6 +47,9 @@ jwt:
   expiration-minutes: 30
   expiration-day: 90
 config:
+  cloudinary_name: ${CLOUDINARY_NAME:fbooking}
+  cloudinary_key: ${CLOUDINARY_KEY:689372772569689}
+  cloudinary_secret: ${CLOUDINARY_SECRET:n_6mVDezXdTamj_X7WjI3_ywBI4}
   cors: ${URL_CORS:http://localhost:5173}
   file:
     upload-dir: ${UPLOAD_DIR:C:\temp}

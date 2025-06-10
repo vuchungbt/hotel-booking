@@ -106,6 +106,13 @@ public enum ErrorResponse {
     VOUCHER_ALREADY_USED_BY_USER(6008, "Voucher has already been used by this user!", HttpStatus.BAD_REQUEST),
     VOUCHER_HAS_USAGE_RECORDS(6009, "Voucher has been used in bookings. Please disable instead of deleting to preserve data integrity!", HttpStatus.CONFLICT),
 
+    // File upload-related errors
+    FILE_UPLOAD_ERROR(7001, "File upload failed!", HttpStatus.BAD_REQUEST),
+    FILE_TOO_LARGE(7002, "File size exceeds maximum allowed limit (5MB)!", HttpStatus.BAD_REQUEST),
+    INVALID_FILE_TYPE(7003, "Invalid file type! Only images are allowed!", HttpStatus.BAD_REQUEST),
+    FILE_EMPTY(7004, "File cannot be empty!", HttpStatus.BAD_REQUEST),
+    FILE_PROCESSING_ERROR(7005, "Error processing file!", HttpStatus.INTERNAL_SERVER_ERROR),
+
     ;
 
     private final int code;
