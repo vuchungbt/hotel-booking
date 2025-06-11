@@ -56,7 +56,7 @@ config:
     #tmn-code: ${VNPAY_CODE}
     tmn-code: DEMOV2
     notify-url: http://localhost:8080/payment/vnpay/callback
-    return-url: http://localhost:5173/payment/vnpay/return
+    return-url: http://localhost:8080/payment/return
     payment-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
     #hash-secret: ${VNPAY_SECRET}
     hash-secret: MMCXFRFUJVQYHGNZZTZPTGZUOBPQSHOP
