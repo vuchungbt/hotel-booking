@@ -685,7 +685,8 @@ const ProfilePage: React.FC = () => {
             {activeTab === 'profile' && renderProfileTab()}
             {activeTab === 'password' && renderPasswordTab()}
             {activeTab === 'roles' && renderRolesTab()}
-            {activeTab !== 'profile' && activeTab !== 'password' && activeTab !== 'roles' && renderOtherTabs()}
+            {activeTab === 'payment' && renderPaymentMethodsTab()}
+            {activeTab !== 'profile' && activeTab !== 'password' && activeTab !== 'roles' && activeTab !== 'payment' && renderOtherTabs()}
           </div>
         </div>
       </div>

@@ -55,13 +55,17 @@ const VNPayPayment: React.FC<VNPayPaymentProps> = ({
       bookingId
     };
 
+    console.log('Creating VNPay payment with data:', paymentData);
     const result = await createPayment(paymentData);
+    console.log('VNPay payment result:', result);
     
     if (result) {
+      console.log('Redirecting to VNPay URL:', result.paymentUrl);
       onPaymentInitiated?.(result.paymentUrl, result.txnRef);
       // Redirect to VNPay
       window.location.href = result.paymentUrl;
     } else if (error) {
+      console.error('VNPay payment error:', error);
       onError?.(error);
     }
   };

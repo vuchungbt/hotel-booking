@@ -1224,6 +1224,12 @@ export const vnpayAPI = {
   // Handle VNPay return (this would be called internally, but can be useful for polling)
   getReturnResult: (params: URLSearchParams) =>
     api.get<VNPayApiResponse<VNPayReturnResult>>(`/payment/vnpay/return?${params.toString()}`),
+  
+  // Link payment to booking after booking is created
+  linkPaymentToBooking: (txnRef: string, bookingId: string) =>
+    api.post<MessageResponse<string>>('/payment/vnpay/link-booking', null, {
+      params: { txnRef, bookingId }
+    }),
 };
 
 export default api;

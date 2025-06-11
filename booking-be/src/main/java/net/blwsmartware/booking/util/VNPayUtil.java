@@ -73,17 +73,18 @@ public class VNPayUtil {
         List<String> fieldNames = new ArrayList<>(fields.keySet());
         Collections.sort(fieldNames);
         StringBuilder sb = new StringBuilder();
-        Iterator<String> itr = fieldNames.iterator();
-        while (itr.hasNext()) {
-            String fieldName = itr.next();
+        
+        boolean first = true;
+        for (String fieldName : fieldNames) {
             String fieldValue = fields.get(fieldName);
             if ((fieldValue != null) && (fieldValue.length() > 0)) {
+                if (!first) {
+                    sb.append("&");
+                }
                 sb.append(fieldName);
                 sb.append("=");
                 sb.append(fieldValue);
-                if (itr.hasNext()) {
-                    sb.append("&");
-                }
+                first = false;
             }
         }
         return sb.toString();
@@ -96,18 +97,18 @@ public class VNPayUtil {
         List<String> fieldNames = new ArrayList<>(params.keySet());
         Collections.sort(fieldNames);
         StringBuilder query = new StringBuilder();
-        Iterator<String> itr = fieldNames.iterator();
         
-        while (itr.hasNext()) {
-            String fieldName = itr.next();
+        boolean first = true;
+        for (String fieldName : fieldNames) {
             String fieldValue = params.get(fieldName);
             if ((fieldValue != null) && (fieldValue.length() > 0)) {
+                if (!first) {
+                    query.append('&');
+                }
                 query.append(URLEncoder.encode(fieldName, StandardCharsets.UTF_8));
                 query.append('=');
                 query.append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8));
-                if (itr.hasNext()) {
-                    query.append('&');
-                }
+                first = false;
             }
         }
         return query.toString();
@@ -123,6 +124,13 @@ public class VNPayUtil {
         
         String hashData = hashAllFields(validateParams);
         String calculatedSignature = hmacSHA512(secretKey, hashData);
+        
+        // Debug log
+        System.out.println("=== VNPay Signature Validation ===");
+        System.out.println("Hash data: " + hashData);
+        System.out.println("Expected signature: " + signature);
+        System.out.println("Calculated signature: " + calculatedSignature);
+        System.out.println("Match: " + calculatedSignature.equals(signature));
         
         return calculatedSignature.equals(signature);
     }

@@ -53,6 +53,8 @@ public class SecurityConfig {
             "/bookings/check-availability", // Only keep availability check as public
             "/api/upload/test", // Allow test endpoint for upload service verification
             "/payment/vnpay/return" // Allow VNPay return endpoint
+            ,"/payment/vnpay/test-config",
+            "/payment/return"
     };
     private final JwtCustomDecoder customJwtDecoder;
 

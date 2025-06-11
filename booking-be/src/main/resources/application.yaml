@@ -6,7 +6,7 @@ spring:
   application:
     name: booking-service
   datasource:
-    url: ${DB_MYSQL_URL:jdbc:mysql://localhost:3306/booking11?createDatabaseIfNotExist=true}
+    url: ${DB_MYSQL_URL:jdbc:mysql://localhost:3306/booking12?createDatabaseIfNotExist=true}
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:}
   jpa:
@@ -53,11 +53,13 @@ config:
   cloudinary_secret: ${CLOUDINARY_SECRET}
 
   vnpay:
-    tmn-code: ${VNPAY_CODE}
-    notify-url: http://localhost:8080/payment/vnpay-notify
-    return-url: http://localhost:8080/payment/vnpay-return
+    #tmn-code: ${VNPAY_CODE}
+    tmn-code: DEMOV2
+    notify-url: http://localhost:8080/payment/vnpay/callback
+    return-url: http://localhost:5173/payment/vnpay/return
     payment-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-    hash-secret: ${VNPAY_SECRET}
+    #hash-secret: ${VNPAY_SECRET}
+    hash-secret: MMCXFRFUJVQYHGNZZTZPTGZUOBPQSHOP
 
   cors: ${URL_CORS:http://localhost:5173}
 

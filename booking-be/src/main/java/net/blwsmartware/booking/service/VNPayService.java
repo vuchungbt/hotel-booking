@@ -6,6 +6,7 @@ import net.blwsmartware.booking.dto.response.VNPayCallbackResponse;
 import net.blwsmartware.booking.dto.response.VNPayCreateResponse;
 
 import java.util.Map;
+import java.util.UUID;
 
 public interface VNPayService {
     
@@ -28,4 +29,9 @@ public interface VNPayService {
      * Lấy thông tin trạng thái thanh toán
      */
     PaymentStatusResponse getPaymentStatus(String txnRef);
+    
+    /**
+     * Liên kết payment với booking sau khi booking được tạo
+     */
+    void linkPaymentToBooking(String txnRef, UUID bookingId);
 } 

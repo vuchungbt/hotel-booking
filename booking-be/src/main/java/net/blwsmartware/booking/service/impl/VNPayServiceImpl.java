@@ -67,7 +67,9 @@ public class VNPayServiceImpl implements VNPayService {
             params.put("vnp_Version", "2.1.0");
             params.put("vnp_Command", "pay");
             params.put("vnp_TmnCode", vnPayConfig.getTmnCode());
-            params.put("vnp_Amount", String.valueOf(request.getAmount() * 100)); // VNPay requires amount in đồng, multiply by 100
+            // VNPay requires amount in đồng (smallest unit), so multiply by 100 if amount is in VND
+            long vnpAmount = Math.round(request.getAmount() * 100);
+            params.put("vnp_Amount", String.valueOf(vnpAmount));
             params.put("vnp_CurrCode", "VND");
             params.put("vnp_TxnRef", txnRef);
             params.put("vnp_OrderInfo", request.getOrderInfo());
@@ -83,6 +85,7 @@ public class VNPayServiceImpl implements VNPayService {
             
             // Create timestamp
             SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+            formatter.setTimeZone(java.util.TimeZone.getTimeZone("GMT+7"));
             String createDate = formatter.format(new Date());
             params.put("vnp_CreateDate", createDate);
             
@@ -102,11 +105,19 @@ public class VNPayServiceImpl implements VNPayService {
             String hashData = VNPayUtil.hashAllFields(params);
             String vnpSecureHash = VNPayUtil.hmacSHA512(vnPayConfig.getHashSecret(), hashData);
             
+            // Debug logs
+            log.info("=== VNPay Signature Debug ===");
+            log.info("Hash data: {}", hashData);
+            log.info("Hash secret length: {}", vnPayConfig.getHashSecret().length());
+            log.info("Generated signature: {}", vnpSecureHash);
+            log.info("Parameters: {}", params);
+            
             // Build payment URL
             String queryUrl = VNPayUtil.buildQueryString(params);
             String paymentUrl = vnPayConfig.getPaymentUrl() + "?" + queryUrl + "&vnp_SecureHash=" + vnpSecureHash;
             
             log.info("Created VNPay payment URL for txnRef: {}", txnRef);
+            log.info("Full payment URL: {}", paymentUrl);
             
             return VNPayCreateResponse.builder()
                     .code("00")
@@ -269,5 +280,32 @@ public class VNPayServiceImpl implements VNPayService {
                 .bookingId(payment.getBooking() != null ? payment.getBooking().getId() : null)
                 .bookingStatus(payment.getBooking() != null ? payment.getBooking().getStatus() : null)
                 .build();
+    }
+    
+    @Override
+    @Transactional
+    public void linkPaymentToBooking(String txnRef, UUID bookingId) {
+        // Find payment by transaction reference
+        Payment payment = paymentRepository.findByVnpTxnRef(txnRef)
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.PAYMENT_NOT_FOUND));
+        
+        // Find booking by ID
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
+        
+        // Link payment to booking
+        payment.setBooking(booking);
+        paymentRepository.save(payment);
+        
+        // Update booking payment status if payment is already successful
+        if (payment.getPaymentStatus() == PaymentStatus.PAID) {
+            booking.setPaymentStatus(PaymentStatus.PAID);
+            if (booking.getStatus() == BookingStatus.PENDING) {
+                booking.setStatus(BookingStatus.CONFIRMED);
+            }
+            bookingRepository.save(booking);
+        }
+        
+        log.info("Successfully linked payment {} to booking {}", txnRef, bookingId);
     }
 } 

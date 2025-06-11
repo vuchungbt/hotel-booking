@@ -6,7 +6,7 @@ import {
   User, Mail, Phone, MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { bookingAPI, BookingCreateRequest, HotelResponse, RoomTypeResponse } from '../services/api';
+import { bookingAPI, vnpayAPI, BookingCreateRequest, HotelResponse, RoomTypeResponse } from '../services/api';
 import VoucherInput from './VoucherInput';
 import PaymentMethodSelector from './PaymentMethodSelector';
 
@@ -201,8 +201,27 @@ const EnhancedBookingForm: React.FC<EnhancedBookingFormProps> = ({
         ...(appliedVoucherCode && { voucherCode: appliedVoucherCode })
       };
       
+      // Create booking first
       const response = await bookingAPI.createBooking(bookingData);
       const bookingId = response.data.result.id;
+      
+      // If VNPay payment method, check for pending payment and link it
+      if (formData.paymentMethod === 'VNPAY') {
+        const pendingPayment = localStorage.getItem('pendingPayment');
+        if (pendingPayment) {
+          try {
+            const paymentData = JSON.parse(pendingPayment);
+            if (paymentData.txnRef) {
+              // Link the existing payment to the new booking
+              await vnpayAPI.linkPaymentToBooking(paymentData.txnRef, bookingId);
+              localStorage.removeItem('pendingPayment');
+            }
+          } catch (linkError) {
+            console.error('Error linking payment to booking:', linkError);
+            // Don't fail the booking creation for this
+          }
+        }
+      }
       
       if (onSuccess) {
         onSuccess(bookingId);

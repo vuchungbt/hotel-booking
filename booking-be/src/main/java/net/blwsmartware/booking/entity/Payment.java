@@ -25,7 +25,7 @@ public class Payment {
     UUID id;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "booking_id", nullable = false)
+    @JoinColumn(name = "booking_id", nullable = true)
     Booking booking;
     
     @Column(name = "vnp_txn_ref", nullable = false, unique = true, length = 100)
