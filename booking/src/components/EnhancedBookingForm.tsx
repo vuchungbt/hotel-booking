@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { bookingAPI, BookingCreateRequest, HotelResponse, RoomTypeResponse } from '../services/api';
 import VoucherInput from './VoucherInput';
+import PaymentMethodSelector from './PaymentMethodSelector';
 
 interface EnhancedBookingFormProps {
   hotel: HotelResponse;
@@ -524,92 +525,6 @@ const EnhancedBookingForm: React.FC<EnhancedBookingFormProps> = ({
               <h2 className="text-2xl font-bold text-gray-900">Payment Method</h2>
               <p className="text-gray-600">Choose how you'd like to pay for your booking.</p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { 
-                    value: 'VNPAY', 
-                    label: 'VNPay', 
-                    desc: 'Thanh toán qua ví điện tử VNPay (Sắp ra mắt)',
-                    icon: 'smartphone',
-                    color: 'text-blue-600',
-                    disabled: true
-                  },
-                  { 
-                    value: 'CASH_ON_CHECKIN', 
-                    label: 'Thanh toán khi đặt phòng', 
-                    desc: 'Thanh toán bằng tiền mặt khi nhận phòng',
-                    icon: 'banknote',
-                    color: 'text-green-600',
-                    disabled: false
-                  }
-                ].map((method) => (
-                  <label
-                    key={method.value}
-                    className={`border-2 rounded-lg p-4 transition-all ${
-                      method.disabled 
-                        ? 'cursor-not-allowed bg-gray-50 border-gray-200 opacity-60'
-                        : `cursor-pointer ${
-                            formData.paymentMethod === method.value
-                              ? method.value === 'VNPAY' 
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-green-500 bg-green-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value={method.value}
-                      checked={formData.paymentMethod === method.value}
-                      onChange={(e) => !method.disabled && handleInputChange('paymentMethod', e.target.value)}
-                      disabled={method.disabled}
-                      className="sr-only"
-                    />
-                    <div className="flex items-center">
-                      {method.icon === 'smartphone' ? (
-                        <Smartphone className={`h-5 w-5 mr-3 ${
-                          method.disabled 
-                            ? 'text-gray-400' 
-                            : formData.paymentMethod === method.value ? method.color : 'text-gray-400'
-                        }`} />
-                      ) : (
-                        <Banknote className={`h-5 w-5 mr-3 ${
-                          method.disabled 
-                            ? 'text-gray-400' 
-                            : formData.paymentMethod === method.value ? method.color : 'text-gray-400'
-                        }`} />
-                      )}
-                      <div className="flex-1">
-                        <div className={`font-medium ${method.disabled ? 'text-gray-400' : ''}`}>
-                          {method.label}
-                        </div>
-                        <div className="text-sm text-gray-500">{method.desc}</div>
-                      </div>
-                      {formData.paymentMethod === method.value && !method.disabled && (
-                        <Check className={`h-5 w-5 ml-3 ${method.color}`} />
-                      )}
-                    </div>
-                  </label>
-                ))}
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start">
-                  <Check className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
-                  <div>
-                    <h4 className="font-medium text-blue-800">Phương thức thanh toán an toàn</h4>
-                    <div className="text-blue-700 text-sm mt-1">
-                      {formData.paymentMethod === 'VNPAY' ? (
-                        <p>VNPay sử dụng công nghệ bảo mật tiên tiến để đảm bảo giao dịch an toàn. Thanh toán nhanh chóng và bảo mật.</p>
-                      ) : (
-                        <p>Bạn có thể thanh toán bằng tiền mặt khi nhận phòng tại khách sạn. Vui lòng chuẩn bị đúng số tiền.</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Voucher Section */}
               <VoucherInput
                 hotelId={hotel.id}
@@ -620,28 +535,24 @@ const EnhancedBookingForm: React.FC<EnhancedBookingFormProps> = ({
                 disabled={loading}
               />
 
-              {/* Booking Summary with Discount */}
-              {originalAmount > 0 && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-semibold mb-3">Chi tiết thanh toán</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Giá phòng ({numberOfNights} đêm):</span>
-                      <span>{formatCurrency(originalAmount)}</span>
-                    </div>
-                    {discountAmount > 0 && (
-                      <div className="flex justify-between text-green-600">
-                        <span>Giảm giá ({appliedVoucherCode}):</span>
-                        <span>-{formatCurrency(discountAmount)}</span>
-                      </div>
-                    )}
-                    <div className="border-t pt-2 flex justify-between font-semibold">
-                      <span>Tổng cộng:</span>
-                      <span className="text-lg">{formatCurrency(formData.totalAmount)}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Payment Method Selector */}
+              <PaymentMethodSelector
+                amount={formData.totalAmount}
+                orderInfo={`Booking ${hotel.name} - ${roomType.name} (${numberOfNights} nights)`}
+                selectedMethod={formData.paymentMethod as 'CASH_ON_CHECKIN' | 'VNPAY'}
+                onMethodChange={(method) => handleInputChange('paymentMethod', method)}
+                onVNPayInitiated={(paymentUrl, txnRef) => {
+                  // Store payment info and redirect to VNPay
+                  localStorage.setItem('pendingPayment', JSON.stringify({
+                    bookingData: formData,
+                    paymentUrl,
+                    txnRef,
+                    timestamp: Date.now()
+                  }));
+                  window.location.href = paymentUrl;
+                }}
+                disabled={loading}
+              />
             </div>
           )}
 

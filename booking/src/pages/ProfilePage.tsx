@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { userAPI, ProfileUpdateRequest, PasswordUpdateRequest } from '../services/api';
+import PaymentMethodsTab from '../components/PaymentMethodsTab';
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -630,6 +631,10 @@ const ProfilePage: React.FC = () => {
         )}
       </div>
     );
+  };
+
+  const renderPaymentMethodsTab = () => {
+    return <PaymentMethodsTab userId={user?.id} />;
   };
 
   const renderOtherTabs = () => (

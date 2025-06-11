@@ -47,12 +47,23 @@ jwt:
   expiration-minutes: 30
   expiration-day: 90
 config:
-  cloudinary_name: ${CLOUDINARY_NAME:dvmzhu5ra}
-  cloudinary_key: ${CLOUDINARY_KEY:613489846624929}
-  cloudinary_secret: ${CLOUDINARY_SECRET:r717QEtgHZPiBqlUZ02m9gq26Vg}
+
+  cloudinary_name: ${CLOUDINARY_NAME}
+  cloudinary_key: ${CLOUDINARY_KEY}
+  cloudinary_secret: ${CLOUDINARY_SECRET}
+
+  vnpay:
+    tmn-code: ${VNPAY_CODE}
+    notify-url: http://localhost:8080/payment/vnpay-notify
+    return-url: http://localhost:8080/payment/vnpay-return
+    payment-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+    hash-secret: ${VNPAY_SECRET}
+
   cors: ${URL_CORS:http://localhost:5173}
+
   file:
     upload-dir: ${UPLOAD_DIR:C:\temp}
+
   admin:
     name: ${ADMIN_NAME:adminadmin}
     password: ${ADMIN_PASSWORD:adminadmin123}

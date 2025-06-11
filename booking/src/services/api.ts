@@ -10,6 +10,14 @@ import {
   VoucherApiResponse,
   VoucherListResponse
 } from '../types/voucher';
+import {
+  VNPayCreateRequest,
+  VNPayCreateResponse,
+  VNPayCallbackResponse,
+  PaymentStatusResponse,
+  VNPayReturnResult,
+  VNPayApiResponse
+} from '../types/vnpay';
 
 //const API_URL = 'https://bk.blwsmartware.net';
 const API_URL = 'http://localhost:8080'; // Direct API endpoint
@@ -1201,6 +1209,21 @@ export const hotelWithImageAPI = {
       }
     });
   }
+};
+
+// VNPay APIs
+export const vnpayAPI = {
+  // Create VNPay payment URL
+  createPayment: (data: VNPayCreateRequest) =>
+    api.post<VNPayApiResponse<VNPayCreateResponse>>('/payment/vnpay/create', data),
+  
+  // Get payment status by transaction reference
+  getPaymentStatus: (txnRef: string) =>
+    api.get<VNPayApiResponse<PaymentStatusResponse>>(`/payment/vnpay/status/${txnRef}`),
+  
+  // Handle VNPay return (this would be called internally, but can be useful for polling)
+  getReturnResult: (params: URLSearchParams) =>
+    api.get<VNPayApiResponse<VNPayReturnResult>>(`/payment/vnpay/return?${params.toString()}`),
 };
 
 export default api;

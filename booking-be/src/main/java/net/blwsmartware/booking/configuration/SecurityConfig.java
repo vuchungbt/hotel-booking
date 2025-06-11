@@ -35,7 +35,8 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/users",
-            "/auth/**"
+            "/auth/**",
+            "/payment/vnpay/callback"
     };
 
     private static final String[] PUBLIC_GET_ENDPOINTS = {
@@ -50,7 +51,8 @@ public class SecurityConfig {
             "/hotels/amenities",
             "/room-types/hotel/**",
             "/bookings/check-availability", // Only keep availability check as public
-            "/api/upload/test" // Allow test endpoint for upload service verification
+            "/api/upload/test", // Allow test endpoint for upload service verification
+            "/payment/vnpay/return" // Allow VNPay return endpoint
     };
     private final JwtCustomDecoder customJwtDecoder;
 
