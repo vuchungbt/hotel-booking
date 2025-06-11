@@ -95,7 +95,13 @@ public class BookingServiceImpl implements BookingService {
         // 7. Enhanced room availability check with conflict detection
         validateRoomAvailability(request.getRoomTypeId(), request.getCheckInDate(), request.getCheckOutDate());
         
-        // 8. Create booking entity with authenticated user info
+        // 8. Kiểm tra availableRooms trước khi book
+        if (roomType.getAvailableRooms() <= 0) {
+            log.warn("Cannot create booking - no available rooms for roomType: {}", roomType.getId());
+            throw new AppRuntimeException(ErrorResponse.NO_ROOMS_AVAILABLE);
+        }
+        
+        // 9. Create booking entity with authenticated user info
         Booking booking = bookingMapper.toEntity(request);
         booking.setHotel(hotel);
         booking.setRoomType(roomType);
@@ -114,10 +120,16 @@ public class BookingServiceImpl implements BookingService {
             booking.setCreatedBy(currentUser.getId());
         }
         
-        // 9. Save booking
+        // 10. Cập nhật số lượng phòng có sẵn (giảm 1 phòng)
+        roomType.setAvailableRooms(roomType.getAvailableRooms() - 1);
+        roomTypeRepository.save(roomType);
+        log.info("Room availability updated for roomType {}: {} -> {}", 
+                roomType.getId(), roomType.getAvailableRooms() + 1, roomType.getAvailableRooms());
+        
+        // 11. Save booking
         booking = bookingRepository.save(booking);
         
-        // 10. Apply voucher if provided
+        // 12. Apply voucher if provided
         if (request.getVoucherCode() != null && !request.getVoucherCode().trim().isEmpty()) {
             try {
                 log.info("Applying voucher {} to booking {}", request.getVoucherCode(), booking.getId());
@@ -247,6 +259,16 @@ public class BookingServiceImpl implements BookingService {
             // If already paid, set to REFUND_PENDING for host to process
             booking.setPaymentStatus(PaymentStatus.REFUND_PENDING);
         }
+        
+        // Cập nhật lại số lượng phòng có sẵn (tăng 1 phòng khi cancel)
+        RoomType roomType = booking.getRoomType();
+        if (roomType.getAvailableRooms() < roomType.getTotalRooms()) {
+            roomType.setAvailableRooms(roomType.getAvailableRooms() + 1);
+            roomTypeRepository.save(roomType);
+            log.info("Room availability restored for roomType {}: {} -> {} (booking cancelled)", 
+                    roomType.getId(), roomType.getAvailableRooms() - 1, roomType.getAvailableRooms());
+        }
+        
         // Other payment statuses remain unchanged
         
         booking.setUpdatedBy(currentUser.getId());
@@ -458,6 +480,61 @@ public class BookingServiceImpl implements BookingService {
         return user != null ? user.getId() : null;
     }
     
+    /**
+     * Xử lý cập nhật availableRooms khi thay đổi trạng thái booking
+     */
+    private void handleRoomAvailabilityOnStatusChange(Booking booking, BookingStatus oldStatus, BookingStatus newStatus) {
+        log.info("Handling room availability change for booking {}: {} -> {}", 
+                booking.getId(), oldStatus, newStatus);
+        
+        RoomType roomType = booking.getRoomType();
+        boolean shouldReleaseRoom = false;
+        boolean shouldReserveRoom = false;
+        
+        // Logic xử lý dựa trên trạng thái cũ và mới
+        // Các trạng thái "đã sử dụng phòng": PENDING, CONFIRMED
+        // Các trạng thái "không sử dụng phòng": CANCELLED, CANCELLED_BY_GUEST, CANCELLED_BY_HOST, COMPLETED, NO_SHOW
+        
+        boolean oldStatusUsesRoom = isStatusUsingRoom(oldStatus);
+        boolean newStatusUsesRoom = isStatusUsingRoom(newStatus);
+        
+        if (oldStatusUsesRoom && !newStatusUsesRoom) {
+            // Chuyển từ "đang dùng phòng" sang "không dùng phòng" → Release room
+            shouldReleaseRoom = true;
+        } else if (!oldStatusUsesRoom && newStatusUsesRoom) {
+            // Chuyển từ "không dùng phòng" sang "đang dùng phòng" → Reserve room
+            shouldReserveRoom = true;
+        }
+        
+        if (shouldReleaseRoom) {
+            if (roomType.getAvailableRooms() < roomType.getTotalRooms()) {
+                roomType.setAvailableRooms(roomType.getAvailableRooms() + 1);
+                roomTypeRepository.save(roomType);
+                log.info("Room released for booking status change {}: {} -> {} (availability: {} -> {})", 
+                        booking.getId(), oldStatus, newStatus, 
+                        roomType.getAvailableRooms() - 1, roomType.getAvailableRooms());
+            }
+        } else if (shouldReserveRoom) {
+            if (roomType.getAvailableRooms() > 0) {
+                roomType.setAvailableRooms(roomType.getAvailableRooms() - 1);
+                roomTypeRepository.save(roomType);
+                log.info("Room reserved for booking status change {}: {} -> {} (availability: {} -> {})", 
+                        booking.getId(), oldStatus, newStatus, 
+                        roomType.getAvailableRooms() + 1, roomType.getAvailableRooms());
+            } else {
+                log.warn("Cannot reserve room for booking {}: no available rooms", booking.getId());
+                throw new AppRuntimeException(ErrorResponse.NO_ROOMS_AVAILABLE);
+            }
+        }
+    }
+    
+    /**
+     * Kiểm tra xem trạng thái booking có "sử dụng phòng" không
+     */
+    private boolean isStatusUsingRoom(BookingStatus status) {
+        return status == BookingStatus.PENDING || status == BookingStatus.CONFIRMED;
+    }
+    
     @Override
     public boolean isRoomAvailable(UUID roomTypeId, LocalDate checkInDate, LocalDate checkOutDate) {
         return isRoomAvailable(roomTypeId, checkInDate, checkOutDate, null);
@@ -467,6 +544,12 @@ public class BookingServiceImpl implements BookingService {
     public boolean isRoomAvailable(UUID roomTypeId, LocalDate checkInDate, LocalDate checkOutDate, UUID excludeBookingId) {
         RoomType roomType = getRoomTypeById(roomTypeId);
         
+        // Kiểm tra availableRooms trước (nhanh hơn)
+        if (roomType.getAvailableRooms() <= 0) {
+            return false;
+        }
+        
+        // Kiểm tra conflict với bookings existing (đảm bảo accuracy)
         Long conflictingBookings;
         if (excludeBookingId != null) {
             conflictingBookings = bookingRepository.countConflictingBookingsExcluding(
@@ -553,9 +636,18 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findByIdAndHotelOwnerId(bookingId, currentUser.getId())
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
+        // Lưu status cũ để so sánh
+        BookingStatus oldStatus = booking.getStatus();
+        
         // Host can update more fields than regular users
         bookingMapper.updateEntity(booking, request);
         booking.setUpdatedBy(currentUser.getId());
+        
+        // Xử lý cập nhật availableRooms khi thay đổi status
+        if (request.getStatus() != null && !oldStatus.equals(request.getStatus())) {
+            handleRoomAvailabilityOnStatusChange(booking, oldStatus, request.getStatus());
+        }
+        
         booking = bookingRepository.save(booking);
         
         return bookingMapper.toResponse(booking);
@@ -610,6 +702,16 @@ public class BookingServiceImpl implements BookingService {
         
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setUpdatedBy(currentUser.getId());
+        
+        // Cập nhật lại số lượng phòng có sẵn (tăng 1 phòng khi host cancel)
+        RoomType roomType = booking.getRoomType();
+        if (roomType.getAvailableRooms() < roomType.getTotalRooms()) {
+            roomType.setAvailableRooms(roomType.getAvailableRooms() + 1);
+            roomTypeRepository.save(roomType);
+            log.info("Room availability restored for roomType {}: {} -> {} (host cancelled booking)", 
+                    roomType.getId(), roomType.getAvailableRooms() - 1, roomType.getAvailableRooms());
+        }
+        
         booking = bookingRepository.save(booking);
         
         // Remove voucher usage if booking had voucher applied
@@ -644,11 +746,18 @@ public class BookingServiceImpl implements BookingService {
             return bookingMapper.toResponse(booking);
         }
         
+        // Lưu status cũ để xử lý room availability
+        BookingStatus oldStatus = booking.getStatus();
+        
         booking.setStatus(BookingStatus.COMPLETED);
         booking.setUpdatedAt(LocalDateTime.now());
+        
+        // Xử lý cập nhật availableRooms khi complete booking (khách trả phòng)
+        handleRoomAvailabilityOnStatusChange(booking, oldStatus, BookingStatus.COMPLETED);
+        
         booking = bookingRepository.save(booking);
         
-        log.info("Successfully completed booking: {}", bookingId);
+        log.info("Successfully completed booking: {} (room released)", bookingId);
         return bookingMapper.toResponse(booking);
     }
     
@@ -737,6 +846,15 @@ public class BookingServiceImpl implements BookingService {
         booking.setRefundAmount(request.getRefundAmount());
         booking.setUpdatedAt(LocalDateTime.now());
         booking.setUpdatedBy(currentUser.getId());
+        
+        // Cập nhật lại số lượng phòng có sẵn (tăng 1 phòng khi process cancellation)
+        RoomType roomType = booking.getRoomType();
+        if (roomType.getAvailableRooms() < roomType.getTotalRooms()) {
+            roomType.setAvailableRooms(roomType.getAvailableRooms() + 1);
+            roomTypeRepository.save(roomType);
+            log.info("Room availability restored for roomType {}: {} -> {} (cancellation processed)", 
+                    roomType.getId(), roomType.getAvailableRooms() - 1, roomType.getAvailableRooms());
+        }
         
         booking = bookingRepository.save(booking);
         
@@ -838,8 +956,17 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
+        // Lưu status cũ để so sánh (Admin có thể thay đổi status)
+        BookingStatus oldStatus = booking.getStatus();
+        
         bookingMapper.updateEntity(booking, request);
         booking.setUpdatedBy(currentUser.getId());
+        
+        // Xử lý cập nhật availableRooms khi Admin thay đổi status
+        if (request.getStatus() != null && !oldStatus.equals(request.getStatus())) {
+            handleRoomAvailabilityOnStatusChange(booking, oldStatus, request.getStatus());
+        }
+        
         booking = bookingRepository.save(booking);
         
         return bookingMapper.toResponse(booking);
@@ -853,6 +980,17 @@ public class BookingServiceImpl implements BookingService {
         
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
+        
+        // Cập nhật availableRooms nếu booking đang sử dụng phòng
+        if (isStatusUsingRoom(booking.getStatus())) {
+            RoomType roomType = booking.getRoomType();
+            if (roomType.getAvailableRooms() < roomType.getTotalRooms()) {
+                roomType.setAvailableRooms(roomType.getAvailableRooms() + 1);
+                roomTypeRepository.save(roomType);
+                log.info("Room availability restored after booking deletion {}: {} -> {}", 
+                        booking.getId(), roomType.getAvailableRooms() - 1, roomType.getAvailableRooms());
+            }
+        }
         
         // Delete voucher usage records if booking had voucher applied
         try {
