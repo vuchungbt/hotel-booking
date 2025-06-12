@@ -217,7 +217,7 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
               orderInfo={orderInfo}
               bookingId={bookingId}
               onPaymentInitiated={handleVNPayPaymentInitiated}
-              onError={(error) => {
+              onError={(error: string) => {
                 console.error('VNPay payment error:', error);
               }}
               disabled={disabled}
