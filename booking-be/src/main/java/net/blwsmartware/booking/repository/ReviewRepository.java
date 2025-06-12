@@ -16,30 +16,26 @@ import java.util.UUID;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, UUID> {
-    
-    // Find reviews by hotel
+
     Page<Review> findByHotel(Hotel hotel, Pageable pageable);
     List<Review> findByHotel(Hotel hotel);
-    
-    // Find reviews by hotel ID
+
     Page<Review> findByHotelId(UUID hotelId, Pageable pageable);
     List<Review> findByHotelId(UUID hotelId);
-    
-    // Find reviews by user
+
     Page<Review> findByUser(User user, Pageable pageable);
     List<Review> findByUser(User user);
-    
-    // Find reviews by user ID
+
     Page<Review> findByUserId(UUID userId, Pageable pageable);
     List<Review> findByUserId(UUID userId);
     
 
     
-    // Find reviews by rating
+
     Page<Review> findByRating(Integer rating, Pageable pageable);
     List<Review> findByRating(Integer rating);
     
-    // Search reviews by comment
+
     @Query("SELECT r FROM Review r WHERE LOWER(r.comment) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<Review> searchByComment(@Param("keyword") String keyword, Pageable pageable);
     
@@ -52,20 +48,14 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
                                 @Param("userId") UUID userId,
                                 @Param("rating") Integer rating,
                                 Pageable pageable);
-    
-    // Check if user has reviewed hotel
+
     boolean existsByUserAndHotel(User user, Hotel hotel);
     boolean existsByUserIdAndHotelId(UUID userId, UUID hotelId);
-    
-    // Find review by user and hotel
+
     Optional<Review> findByUserAndHotel(User user, Hotel hotel);
     Optional<Review> findByUserIdAndHotelId(UUID userId, UUID hotelId);
-    
-    // Count reviews by hotel
     long countByHotel(Hotel hotel);
     long countByHotelId(UUID hotelId);
-    
-    // Count reviews by user
     long countByUser(User user);
     long countByUserId(UUID userId);
     

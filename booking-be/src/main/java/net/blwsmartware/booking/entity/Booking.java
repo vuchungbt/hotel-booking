@@ -81,7 +81,6 @@ public class Booking {
     @Column(name = "refund_amount", precision = 10, scale = 2)
     BigDecimal refundAmount;
 
-    // Audit fields
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     LocalDateTime createdAt;

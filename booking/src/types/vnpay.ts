@@ -1,109 +1,79 @@
-// VNPay Request Types
-export interface VNPayCreateRequest {
+// VNPay Payment Types
+export interface VNPayPaymentRequest {
+  bookingId: string;
   amount: number;
   orderInfo: string;
   bankCode?: string;
-  language?: string;
-  bookingId?: string;
+  locale?: string;
 }
 
-// VNPay Response Types
-export interface VNPayCreateResponse {
+export interface VNPayPaymentResponse {
   code: string;
   message: string;
   paymentUrl: string;
-  txnRef: string;
 }
 
-export interface VNPayCallbackResponse {
-  rspCode: string;
-  message: string;
+export interface VNPayCallbackRequest {
+  vnp_TmnCode: string;
+  vnp_Amount: number;
+  vnp_BankCode?: string;
+  vnp_BankTranNo?: string;
+  vnp_CardType?: string;
+  vnp_PayDate?: string;
+  vnp_OrderInfo?: string;
+  vnp_TransactionNo?: string;
+  vnp_ResponseCode: string;
+  vnp_TransactionStatus: string;
+  vnp_TxnRef: string;
+  vnp_SecureHashType?: string;
+  vnp_SecureHash: string;
 }
 
-export interface PaymentStatusResponse {
-  txnRef: string;
-  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED' | 'REFUND_PENDING' | 'NO_PAYMENT' | 'CANCELLED';
-  amount: number;
-  responseCode?: string;
-  transactionNo?: string;
-  payDate?: string;
-  callbackReceived?: boolean;
-  bookingId?: string;
-  bookingStatus?: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED_BY_GUEST' | 'CANCELLED_BY_HOST';
+export interface VNPayReturnParams {
+  vnp_Amount?: string;
+  vnp_BankCode?: string;
+  vnp_BankTranNo?: string;
+  vnp_CardType?: string;
+  vnp_OrderInfo?: string;
+  vnp_PayDate?: string;
+  vnp_ResponseCode?: string;
+  vnp_TmnCode?: string;
+  vnp_TransactionNo?: string;
+  vnp_TransactionStatus?: string;
+  vnp_TxnRef?: string;
+  vnp_SecureHash?: string;
+  vnp_SecureHashType?: string;
 }
 
-// VNPay Return Types
-export interface VNPayReturnResult {
-  txnRef: string;
-  responseCode: string;
-  success: boolean;
-  message: string;
-  amount?: number;
-  orderInfo?: string;
-  bookingId?: string;
-}
-
-// VNPay API Response Types
-export interface VNPayApiResponse<T> {
-  code: number;
-  success: boolean;
-  message: string;
-  result: T;
-}
-
-// VNPay Error Types
-export interface VNPayError {
+export interface PaymentBankOption {
   code: string;
-  message: string;
-  details?: string;
+  name: string;
+  logo?: string;
+  description?: string;
 }
 
-// VNPay Bank Codes
-export const VNPAY_BANK_CODES = {
-  NCB: 'NCB',
-  AGRIBANK: 'AGRIBANK', 
-  SCB: 'SCB',
-  SACOMBANK: 'SACOMBANK',
-  EXIMBANK: 'EXIMBANK',
-  MSBANK: 'MSBANK',
-  NAMABANK: 'NAMABANK',
-  VNMART: 'VNMART',
-  VIETINBANK: 'VIETINBANK',
-  VIETCOMBANK: 'VIETCOMBANK',
-  HDBANK: 'HDBANK',
-  DONGABANK: 'DONGABANK',
-  TPBANK: 'TPBANK',
-  OJB: 'OJB',
-  BIDV: 'BIDV',
-  TECHCOMBANK: 'TECHCOMBANK',
-  VPBANK: 'VPBANK',
-  MBBANK: 'MBBANK',
-  ACB: 'ACB',
-  OCB: 'OCB',
-  IVB: 'IVB',
-  VISA: 'VISA'
-} as const;
+export const VNPAY_BANK_OPTIONS: PaymentBankOption[] = [
+  { code: '', name: 'Tất cả phương thức thanh toán', description: 'VNPay sẽ hiển thị tất cả phương thức có sẵn' },
+  { code: 'VNPAYQR', name: 'Thanh toán QR Code', description: 'Quét mã QR để thanh toán' },
+  { code: 'VNBANK', name: 'Chuyển khoản ngân hàng', description: 'Chuyển khoản qua tài khoản ngân hàng' },
+  { code: 'INTCARD', name: 'Thẻ quốc tế', description: 'Visa, Mastercard, JCB' },
+  { code: 'VISA', name: 'Thẻ Visa', description: 'Thanh toán bằng thẻ Visa' },
+  { code: 'MASTERCARD', name: 'Thẻ Mastercard', description: 'Thanh toán bằng thẻ Mastercard' },
+  { code: 'JCB', name: 'Thẻ JCB', description: 'Thanh toán bằng thẻ JCB' },
+];
 
-export type VNPayBankCode = keyof typeof VNPAY_BANK_CODES;
-
-// VNPay Response Codes
-export const VNPAY_RESPONSE_CODES = {
-  SUCCESS: '00',
-  TRANSACTION_FAILED: '07',
-  INVALID_SIGNATURE: '97',
-  TRANSACTION_CANCELLED: '24',
-  INSUFFICIENT_FUNDS: '51',
-  CARD_EXPIRED: '54',
-  INCORRECT_PAYMENT_INFO: '75',
-  DAILY_LIMIT_EXCEEDED: '61'
-} as const;
-
-export type VNPayResponseCode = typeof VNPAY_RESPONSE_CODES[keyof typeof VNPAY_RESPONSE_CODES];
-
-// VNPay Languages
-export const VNPAY_LANGUAGES = {
-  VN: 'vn',
-  EN: 'en'
-} as const;
-
-export type VNPayLanguage = typeof VNPAY_LANGUAGES[keyof typeof VNPAY_LANGUAGES]; 
+export const VNPAY_RESPONSE_CODES: Record<string, string> = {
+  '00': 'Giao dịch thành công',
+  '07': 'Trừ tiền thành công. Giao dịch bị nghi ngờ (liên quan tới lừa đảo, giao dịch bất thường).',
+  '09': 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng chưa đăng ký dịch vụ InternetBanking tại ngân hàng.',
+  '10': 'Giao dịch không thành công do: Khách hàng xác thực thông tin thẻ/tài khoản không đúng quá 3 lần',
+  '11': 'Giao dịch không thành công do: Đã hết hạn chờ thanh toán. Xin quý khách vui lòng thực hiện lại giao dịch.',
+  '12': 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng bị khóa.',
+  '13': 'Giao dịch không thành công do Quý khách nhập sai mật khẩu xác thực giao dịch (OTP). Xin quý khách vui lòng thực hiện lại giao dịch.',
+  '24': 'Giao dịch không thành công do: Khách hàng hủy giao dịch',
+  '51': 'Giao dịch không thành công do: Tài khoản của quý khách không đủ số dư để thực hiện giao dịch.',
+  '65': 'Giao dịch không thành công do: Tài khoản của Quý khách đã vượt quá hạn mức giao dịch trong ngày.',
+  '75': 'Ngân hàng thanh toán đang bảo trì.',
+  '79': 'Giao dịch không thành công do: KH nhập sai mật khẩu thanh toán quá số lần quy định. Xin quý khách vui lòng thực hiện lại giao dịch',
+  '99': 'Các lỗi khác (lỗi còn lại, không có trong danh sách mã lỗi đã liệt kê)'
+}; 

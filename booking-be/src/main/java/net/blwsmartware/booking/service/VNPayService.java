@@ -1,37 +1,36 @@
 package net.blwsmartware.booking.service;
 
-import net.blwsmartware.booking.dto.request.VNPayCreateRequest;
-import net.blwsmartware.booking.dto.response.PaymentStatusResponse;
-import net.blwsmartware.booking.dto.response.VNPayCallbackResponse;
-import net.blwsmartware.booking.dto.response.VNPayCreateResponse;
+import net.blwsmartware.booking.dto.vnpay.VNPayCallbackRequest;
+import net.blwsmartware.booking.dto.vnpay.VNPayPaymentRequest;
+import net.blwsmartware.booking.dto.vnpay.VNPayPaymentResponse;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
-import java.util.UUID;
 
 public interface VNPayService {
     
     /**
      * Tạo URL thanh toán VNPay
      */
-    VNPayCreateResponse createPaymentUrl(VNPayCreateRequest request, String clientIp);
+    VNPayPaymentResponse createPaymentUrl(VNPayPaymentRequest request, HttpServletRequest httpRequest);
     
     /**
-     * Xử lý callback từ VNPay (IPN)
+     * Xử lý IPN (Instant Payment Notification) từ VNPay
      */
-    VNPayCallbackResponse handleCallback(Map<String, String> params);
+    String processIPN(Map<String, String> vnpParams);
     
     /**
-     * Xử lý return từ VNPay (sau khi khách hàng thanh toán xong)
+     * Xử lý Return URL từ VNPay
      */
-    Map<String, Object> handleReturn(Map<String, String> params);
+    VNPayCallbackRequest processReturnUrl(Map<String, String> vnpParams);
     
     /**
-     * Lấy thông tin trạng thái thanh toán
+     * Verify signature từ VNPay
      */
-    PaymentStatusResponse getPaymentStatus(String txnRef);
+    boolean verifySignature(Map<String, String> vnpParams, String secureHash);
     
     /**
-     * Liên kết payment với booking sau khi booking được tạo
+     * Query transaction status từ VNPay
      */
-    void linkPaymentToBooking(String txnRef, UUID bookingId);
+    Map<String, String> queryTransaction(String txnRef, String transDate);
 } 

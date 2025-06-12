@@ -113,12 +113,13 @@ public enum ErrorResponse {
     FILE_EMPTY(7004, "File cannot be empty!", HttpStatus.BAD_REQUEST),
     FILE_PROCESSING_ERROR(7005, "Error processing file!", HttpStatus.INTERNAL_SERVER_ERROR),
 
-    // Payment-related errors
-    PAYMENT_NOT_FOUND(8001, "Payment not found!", HttpStatus.NOT_FOUND),
-    PAYMENT_CREATION_FAILED(8002, "Payment creation failed!", HttpStatus.INTERNAL_SERVER_ERROR),
-    PAYMENT_INVALID_SIGNATURE(8003, "Invalid payment signature!", HttpStatus.BAD_REQUEST),
-    PAYMENT_ALREADY_PROCESSED(8004, "Payment has already been processed!", HttpStatus.CONFLICT),
-    BOOKING_ALREADY_PAID(8005, "Booking has already been paid!", HttpStatus.CONFLICT),
+    // VNPay-related errors
+    VNPAY_PAYMENT_URL_CREATION_FAILED(8001, "Failed to create VNPay payment URL!", HttpStatus.INTERNAL_SERVER_ERROR),
+    VNPAY_INVALID_SIGNATURE(8002, "Invalid VNPay signature!", HttpStatus.BAD_REQUEST),
+    VNPAY_TRANSACTION_NOT_FOUND(8003, "VNPay transaction not found!", HttpStatus.NOT_FOUND),
+    VNPAY_PAYMENT_FAILED(8004, "VNPay payment failed!", HttpStatus.BAD_REQUEST),
+    VNPAY_INVALID_AMOUNT(8005, "Invalid payment amount!", HttpStatus.BAD_REQUEST),
+    BOOKING_ALREADY_PAID(8006, "Booking has already been paid!", HttpStatus.BAD_REQUEST),
 
     ;
 

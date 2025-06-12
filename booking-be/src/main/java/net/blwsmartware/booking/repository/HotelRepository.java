@@ -16,16 +16,13 @@ import java.util.UUID;
 
 @Repository
 public interface HotelRepository extends JpaRepository<Hotel, UUID> {
-    
-    // Find hotels by owner
+
     Page<Hotel> findByOwner(User owner, Pageable pageable);
     List<Hotel> findByOwner(User owner);
-    
-    // Find hotels by owner ID
+
     Page<Hotel> findByOwnerId(UUID ownerId, Pageable pageable);
     List<Hotel> findByOwnerId(UUID ownerId);
-    
-    // Find active hotels
+
     Page<Hotel> findByIsActiveTrue(Pageable pageable);
     List<Hotel> findByIsActiveTrue();
     
@@ -143,8 +140,7 @@ public interface HotelRepository extends JpaRepository<Hotel, UUID> {
     boolean existsByNameAndOwner(String name, User owner);
     boolean existsByNameAndOwnerId(String name, UUID ownerId);
     boolean existsByNameAndCity(String name, String city);
-    
-    // Get hotel statistics
+
     @Query("SELECT COUNT(h) FROM Hotel h WHERE h.isActive = true")
     long countActiveHotels();
     
@@ -157,7 +153,6 @@ public interface HotelRepository extends JpaRepository<Hotel, UUID> {
     @Query("SELECT COUNT(r) FROM Review r WHERE r.hotel.id = :hotelId")
     long getReviewCount(@Param("hotelId") UUID hotelId);
 
-    // Find hotels with filters including amenities - PUBLIC API (force active)
     @Query("SELECT h FROM Hotel h WHERE " +
            "h.isActive = true AND " +
            "(:city IS NULL OR LOWER(h.city) = LOWER(:city)) AND " +

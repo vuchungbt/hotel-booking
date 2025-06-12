@@ -36,7 +36,7 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {
             "/users",
             "/auth/**",
-            "/payment/vnpay/callback"
+            "/api/payment/vnpay/ipn" // VNPay IPN callback - không cần authentication
     };
 
     private static final String[] PUBLIC_GET_ENDPOINTS = {
@@ -52,9 +52,7 @@ public class SecurityConfig {
             "/room-types/hotel/**",
             "/bookings/check-availability", // Only keep availability check as public
             "/api/upload/test", // Allow test endpoint for upload service verification
-            "/payment/vnpay/return" // Allow VNPay return endpoint
-            ,"/payment/vnpay/test-config",
-            "/payment/return"
+            "/api/payment/vnpay/return" // VNPay return URL - không cần authentication
     };
     private final JwtCustomDecoder customJwtDecoder;
 

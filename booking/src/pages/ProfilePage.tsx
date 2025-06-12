@@ -7,7 +7,6 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { userAPI, ProfileUpdateRequest, PasswordUpdateRequest } from '../services/api';
-import PaymentMethodsTab from '../components/PaymentMethodsTab';
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -633,10 +632,6 @@ const ProfilePage: React.FC = () => {
     );
   };
 
-  const renderPaymentMethodsTab = () => {
-    return <PaymentMethodsTab userId={user?.id} />;
-  };
-
   const renderOtherTabs = () => (
     <div className="text-center py-12">
       <div className="text-gray-400 mb-4">
@@ -685,8 +680,7 @@ const ProfilePage: React.FC = () => {
             {activeTab === 'profile' && renderProfileTab()}
             {activeTab === 'password' && renderPasswordTab()}
             {activeTab === 'roles' && renderRolesTab()}
-            {activeTab === 'payment' && renderPaymentMethodsTab()}
-            {activeTab !== 'profile' && activeTab !== 'password' && activeTab !== 'roles' && activeTab !== 'payment' && renderOtherTabs()}
+            {activeTab !== 'profile' && activeTab !== 'password' && activeTab !== 'roles' && renderOtherTabs()}
           </div>
         </div>
       </div>

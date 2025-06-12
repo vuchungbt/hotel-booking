@@ -1,311 +1,307 @@
 package net.blwsmartware.booking.service.impl;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import net.blwsmartware.booking.configuration.VNPayConfig;
-import net.blwsmartware.booking.dto.request.VNPayCreateRequest;
-import net.blwsmartware.booking.dto.response.PaymentStatusResponse;
-import net.blwsmartware.booking.dto.response.VNPayCallbackResponse;
-import net.blwsmartware.booking.dto.response.VNPayCreateResponse;
+import net.blwsmartware.booking.dto.vnpay.VNPayCallbackRequest;
+import net.blwsmartware.booking.dto.vnpay.VNPayPaymentRequest;
+import net.blwsmartware.booking.dto.vnpay.VNPayPaymentResponse;
 import net.blwsmartware.booking.entity.Booking;
-import net.blwsmartware.booking.entity.Payment;
-import net.blwsmartware.booking.enums.BookingStatus;
-import net.blwsmartware.booking.enums.ErrorResponse;
+import net.blwsmartware.booking.entity.VNPayTransaction;
 import net.blwsmartware.booking.enums.PaymentStatus;
 import net.blwsmartware.booking.exception.AppRuntimeException;
+import net.blwsmartware.booking.enums.ErrorResponse;
 import net.blwsmartware.booking.repository.BookingRepository;
-import net.blwsmartware.booking.repository.PaymentRepository;
+import net.blwsmartware.booking.repository.VNPayTransactionRepository;
 import net.blwsmartware.booking.service.VNPayService;
 import net.blwsmartware.booking.util.VNPayUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class VNPayServiceImpl implements VNPayService {
     
-    VNPayConfig vnPayConfig;
-    PaymentRepository paymentRepository;
-    BookingRepository bookingRepository;
+    private final VNPayConfig vnPayConfig;
+    private final BookingRepository bookingRepository;
+    private final VNPayTransactionRepository vnPayTransactionRepository;
     
     @Override
     @Transactional
-    public VNPayCreateResponse createPaymentUrl(VNPayCreateRequest request, String clientIp) {
+    public VNPayPaymentResponse createPaymentUrl(VNPayPaymentRequest request, HttpServletRequest httpRequest) {
         try {
-            // Validate booking if provided
-            Booking booking = null;
-            if (request.getBookingId() != null) {
-                booking = bookingRepository.findById(request.getBookingId())
-                        .orElseThrow(() -> new AppRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
-                
-                // Check if payment already exists
-                Optional<Payment> existingPayment = paymentRepository.findByBookingId(booking.getId());
-                if (existingPayment.isPresent() && 
-                    existingPayment.get().getPaymentStatus() == PaymentStatus.PAID) {
-                    throw new AppRuntimeException(ErrorResponse.BOOKING_ALREADY_PAID);
-                }
+            log.info("Creating VNPay payment URL for booking: {}", request.getBookingId());
+            
+            // Validate booking exists
+            Booking booking = bookingRepository.findById(request.getBookingId())
+                    .orElseThrow(() -> new AppRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
+            
+            // Check if booking is in valid state for payment
+            if (booking.getPaymentStatus() == PaymentStatus.PAID) {
+                throw new AppRuntimeException(ErrorResponse.BOOKING_ALREADY_PAID);
             }
             
             // Generate transaction reference
             String txnRef = VNPayUtil.generateTxnRef();
             
-            // Ensure unique transaction reference
-            while (paymentRepository.existsByVnpTxnRef(txnRef)) {
-                txnRef = VNPayUtil.generateTxnRef();
-            }
+            // Build VNPay parameters
+            Map<String, String> vnpParams = new HashMap<>();
+            vnpParams.put("vnp_Version", VNPayConfig.VERSION);
+            vnpParams.put("vnp_Command", VNPayConfig.COMMAND);
+            vnpParams.put("vnp_TmnCode", vnPayConfig.getTmnCode());
+            vnpParams.put("vnp_Amount", String.valueOf(request.getAmount().multiply(BigDecimal.valueOf(100)).longValue()));
+            vnpParams.put("vnp_CurrCode", VNPayConfig.CURR_CODE);
             
-            // Create payment parameters
-            Map<String, String> params = new TreeMap<>();
-            params.put("vnp_Version", "2.1.0");
-            params.put("vnp_Command", "pay");
-            params.put("vnp_TmnCode", vnPayConfig.getTmnCode());
-            // VNPay requires amount in đồng (smallest unit), so multiply by 100 if amount is in VND
-            long vnpAmount = Math.round(request.getAmount() * 100);
-            params.put("vnp_Amount", String.valueOf(vnpAmount));
-            params.put("vnp_CurrCode", "VND");
-            params.put("vnp_TxnRef", txnRef);
-            params.put("vnp_OrderInfo", request.getOrderInfo());
-            params.put("vnp_OrderType", "other");
-            params.put("vnp_Locale", request.getLanguage() != null ? request.getLanguage() : "vn");
-            params.put("vnp_ReturnUrl", vnPayConfig.getReturnUrl());
-            params.put("vnp_IpAddr", clientIp);
-            
-            // Add optional bank code
             if (request.getBankCode() != null && !request.getBankCode().isEmpty()) {
-                params.put("vnp_BankCode", request.getBankCode());
+                vnpParams.put("vnp_BankCode", request.getBankCode());
             }
             
-            // Create timestamp
+            vnpParams.put("vnp_TxnRef", txnRef);
+            vnpParams.put("vnp_OrderInfo", request.getOrderInfo());
+            vnpParams.put("vnp_OrderType", VNPayConfig.ORDER_TYPE);
+            vnpParams.put("vnp_Locale", request.getLocale() != null ? request.getLocale() : VNPayConfig.LOCALE);
+            vnpParams.put("vnp_ReturnUrl", vnPayConfig.getReturnUrl());
+            vnpParams.put("vnp_IpAddr", VNPayUtil.getIpAddress(httpRequest));
+            vnpParams.put("vnp_CreateDate", VNPayUtil.getCurrentTimeString());
+            
+            // Add expire date (15 minutes from now)
+            Calendar expireCal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+            expireCal.add(Calendar.MINUTE, 15);
             SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-            formatter.setTimeZone(java.util.TimeZone.getTimeZone("GMT+7"));
-            String createDate = formatter.format(new Date());
-            params.put("vnp_CreateDate", createDate);
+            formatter.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+            vnpParams.put("vnp_ExpireDate", formatter.format(expireCal.getTime()));
             
-            // Create payment record
-            Payment payment = Payment.builder()
-                    .booking(booking)
-                    .vnpTxnRef(txnRef)
-                    .vnpOrderInfo(request.getOrderInfo())
-                    .vnpAmount(BigDecimal.valueOf(request.getAmount()))
-                    .paymentStatus(PaymentStatus.PENDING)
-                    .callbackReceived(false)
-                    .build();
-            
-            paymentRepository.save(payment);
+            // Debug: Log all parameters before signature
+            log.info("VNPay parameters before signature: {}", vnpParams);
             
             // Create signature
-            String hashData = VNPayUtil.hashAllFields(params);
-            String vnpSecureHash = VNPayUtil.hmacSHA512(vnPayConfig.getHashSecret(), hashData);
+            String secureHash = VNPayUtil.hashAllFields(vnpParams, vnPayConfig.getSecretKey());
+            vnpParams.put("vnp_SecureHash", secureHash);
             
-            // Debug logs
-            log.info("=== VNPay Signature Debug ===");
-            log.info("Hash data: {}", hashData);
-            log.info("Hash secret length: {}", vnPayConfig.getHashSecret().length());
-            log.info("Generated signature: {}", vnpSecureHash);
-            log.info("Parameters: {}", params);
+            // Debug: Log signature and final parameters
+            log.info("Generated signature: {}", secureHash);
+            log.info("Final VNPay parameters: {}", vnpParams);
             
             // Build payment URL
-            String queryUrl = VNPayUtil.buildQueryString(params);
-            String paymentUrl = vnPayConfig.getPaymentUrl() + "?" + queryUrl + "&vnp_SecureHash=" + vnpSecureHash;
+            StringBuilder paymentUrl = new StringBuilder(vnPayConfig.getPaymentUrl());
+            paymentUrl.append("?");
             
-            log.info("Created VNPay payment URL for txnRef: {}", txnRef);
-            log.info("Full payment URL: {}", paymentUrl);
+            List<String> fieldNames = new ArrayList<>(vnpParams.keySet());
+            Collections.sort(fieldNames);
             
-            return VNPayCreateResponse.builder()
+            Iterator<String> itr = fieldNames.iterator();
+            while (itr.hasNext()) {
+                String fieldName = itr.next();
+                String fieldValue = vnpParams.get(fieldName);
+                if ((fieldValue != null) && (fieldValue.length() > 0)) {
+                    paymentUrl.append(URLEncoder.encode(fieldName, StandardCharsets.UTF_8));
+                    paymentUrl.append('=');
+                    paymentUrl.append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8));
+                    if (itr.hasNext()) {
+                        paymentUrl.append('&');
+                    }
+                }
+            }
+            
+            // Save transaction to database
+            VNPayTransaction transaction = VNPayTransaction.builder()
+                    .booking(booking)
+                    .vnpTxnRef(txnRef)
+                    .vnpAmount(request.getAmount())
+                    .vnpOrderInfo(request.getOrderInfo())
+                    .paymentStatus(PaymentStatus.PENDING)
+                    .isIpnReceived(false)
+                    .isReturnProcessed(false)
+                    .build();
+            
+            vnPayTransactionRepository.save(transaction);
+            
+            // Update booking payment status
+            booking.setPaymentStatus(PaymentStatus.PENDING);
+            booking.setPaymentMethod("VNPAY");
+            bookingRepository.save(booking);
+            
+            log.info("VNPay payment URL created successfully for booking: {}, txnRef: {}", 
+                     request.getBookingId(), txnRef);
+            log.info("Final payment URL: {}", paymentUrl.toString());
+            
+            return VNPayPaymentResponse.builder()
                     .code("00")
                     .message("Success")
-                    .paymentUrl(paymentUrl)
-                    .txnRef(txnRef)
+                    .paymentUrl(paymentUrl.toString())
                     .build();
                     
         } catch (AppRuntimeException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error creating VNPay payment URL", e);
-            throw new AppRuntimeException(ErrorResponse.PAYMENT_CREATION_FAILED);
+            log.error("Error creating VNPay payment URL: {}", e.getMessage(), e);
+            throw new AppRuntimeException(ErrorResponse.VNPAY_PAYMENT_URL_CREATION_FAILED);
         }
     }
     
     @Override
     @Transactional
-    public VNPayCallbackResponse handleCallback(Map<String, String> params) {
+    public String processIPN(Map<String, String> vnpParams) {
         try {
-            String vnpSecureHash = params.get("vnp_SecureHash");
-            String txnRef = params.get("vnp_TxnRef");
-            String responseCode = params.get("vnp_ResponseCode");
-            String transactionNo = params.get("vnp_TransactionNo");
-            String bankCode = params.get("vnp_BankCode");
-            String payDate = params.get("vnp_PayDate");
+            log.info("Processing VNPay IPN: {}", vnpParams);
             
-            log.info("Received VNPay callback for txnRef: {}, responseCode: {}", txnRef, responseCode);
+            String secureHash = vnpParams.get("vnp_SecureHash");
             
-            // Validate signature
-            if (!VNPayUtil.validateSignature(params, vnPayConfig.getHashSecret(), vnpSecureHash)) {
-                log.warn("Invalid signature for txnRef: {}", txnRef);
-                return VNPayCallbackResponse.builder()
-                        .rspCode(VNPayCallbackResponse.INVALID_SIGNATURE)
-                        .message("Invalid signature")
-                        .build();
+            // Verify signature
+            if (!verifySignature(vnpParams, secureHash)) {
+                log.error("Invalid signature in IPN");
+                return "97"; // Invalid signature
             }
             
-            // Find payment
-            Optional<Payment> paymentOpt = paymentRepository.findByVnpTxnRef(txnRef);
-            if (paymentOpt.isEmpty()) {
-                log.warn("Payment not found for txnRef: {}", txnRef);
-                return VNPayCallbackResponse.builder()
-                        .rspCode(VNPayCallbackResponse.ORDER_NOT_FOUND)
-                        .message("Order not found")
-                        .build();
+            String txnRef = vnpParams.get("vnp_TxnRef");
+            String responseCode = vnpParams.get("vnp_ResponseCode");
+            String transactionStatus = vnpParams.get("vnp_TransactionStatus");
+            
+            // Find transaction
+            VNPayTransaction transaction = vnPayTransactionRepository.findByVnpTxnRef(txnRef)
+                    .orElse(null);
+            
+            if (transaction == null) {
+                log.error("Transaction not found for txnRef: {}", txnRef);
+                return "01"; // Order not found
             }
             
-            Payment payment = paymentOpt.get();
-            
-            // Check if already processed
-            if (payment.getCallbackReceived()) {
-                log.info("Callback already processed for txnRef: {}", txnRef);
-                return VNPayCallbackResponse.builder()
-                        .rspCode(VNPayCallbackResponse.ORDER_ALREADY_CONFIRMED)
-                        .message("Order already confirmed")
-                        .build();
+            // Check if IPN already processed
+            if (transaction.getIsIpnReceived()) {
+                log.info("IPN already processed for txnRef: {}", txnRef);
+                return "00"; // Already processed
             }
             
-            // Update payment
-            payment.setVnpResponseCode(responseCode);
-            payment.setVnpTransactionNo(transactionNo);
-            payment.setVnpBankCode(bankCode);
-            payment.setVnpPayDate(payDate);
-            payment.setCallbackReceived(true);
-            payment.setGatewayResponse(params.toString());
+            // Update transaction
+            transaction.setVnpResponseCode(responseCode);
+            transaction.setVnpTransactionStatus(transactionStatus);
+            transaction.setVnpTransactionNo(vnpParams.get("vnp_TransactionNo"));
+            transaction.setVnpBankCode(vnpParams.get("vnp_BankCode"));
+            transaction.setVnpBankTranNo(vnpParams.get("vnp_BankTranNo"));
+            transaction.setVnpCardType(vnpParams.get("vnp_CardType"));
+            transaction.setVnpPayDate(vnpParams.get("vnp_PayDate"));
+            transaction.setIsIpnReceived(true);
             
-            // Update payment status based on response code
-            if ("00".equals(responseCode)) {
-                payment.setPaymentStatus(PaymentStatus.PAID);
-                
-                // Update booking status if exists
-                if (payment.getBooking() != null) {
-                    Booking booking = payment.getBooking();
-                    booking.setPaymentStatus(PaymentStatus.PAID);
-                    if (booking.getStatus() == BookingStatus.PENDING) {
-                        booking.setStatus(BookingStatus.CONFIRMED);
-                    }
-                    bookingRepository.save(booking);
-                }
+            // Update payment status based on response
+            Booking booking = transaction.getBooking();
+            if ("00".equals(responseCode) && "00".equals(transactionStatus)) {
+                transaction.setPaymentStatus(PaymentStatus.PAID);
+                booking.setPaymentStatus(PaymentStatus.PAID);
+                log.info("Payment successful for booking: {}", booking.getId());
             } else {
-                payment.setPaymentStatus(PaymentStatus.FAILED);
+                transaction.setPaymentStatus(PaymentStatus.FAILED);
+                booking.setPaymentStatus(PaymentStatus.FAILED);
+                log.info("Payment failed for booking: {}, responseCode: {}", booking.getId(), responseCode);
             }
             
-            paymentRepository.save(payment);
-            
-            log.info("Successfully processed VNPay callback for txnRef: {}", txnRef);
-            
-            return VNPayCallbackResponse.builder()
-                    .rspCode(VNPayCallbackResponse.SUCCESS)
-                    .message("Confirm Success")
-                    .build();
-                    
-        } catch (Exception e) {
-            log.error("Error processing VNPay callback", e);
-            return VNPayCallbackResponse.builder()
-                    .rspCode(VNPayCallbackResponse.UNKNOWN_ERROR)
-                    .message("System error")
-                    .build();
-        }
-    }
-    
-    @Override
-    public Map<String, Object> handleReturn(Map<String, String> params) {
-        String vnpSecureHash = params.get("vnp_SecureHash");
-        String txnRef = params.get("vnp_TxnRef");
-        String responseCode = params.get("vnp_ResponseCode");
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("txnRef", txnRef);
-        result.put("responseCode", responseCode);
-        
-        // Validate signature
-        if (!VNPayUtil.validateSignature(params, vnPayConfig.getHashSecret(), vnpSecureHash)) {
-            result.put("success", false);
-            result.put("message", "Invalid signature");
-            return result;
-        }
-        
-        // Find payment
-        Optional<Payment> paymentOpt = paymentRepository.findByVnpTxnRef(txnRef);
-        if (paymentOpt.isEmpty()) {
-            result.put("success", false);
-            result.put("message", "Payment not found");
-            return result;
-        }
-        
-        Payment payment = paymentOpt.get();
-        result.put("amount", payment.getVnpAmount());
-        result.put("orderInfo", payment.getVnpOrderInfo());
-        
-        if ("00".equals(responseCode)) {
-            result.put("success", true);
-            result.put("message", "Payment successful");
-        } else {
-            result.put("success", false);
-            result.put("message", "Payment failed");
-        }
-        
-        if (payment.getBooking() != null) {
-            result.put("bookingId", payment.getBooking().getId());
-        }
-        
-        return result;
-    }
-    
-    @Override
-    public PaymentStatusResponse getPaymentStatus(String txnRef) {
-        Payment payment = paymentRepository.findByVnpTxnRef(txnRef)
-                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.PAYMENT_NOT_FOUND));
-        
-        return PaymentStatusResponse.builder()
-                .txnRef(payment.getVnpTxnRef())
-                .paymentStatus(payment.getPaymentStatus())
-                .amount(payment.getVnpAmount())
-                .responseCode(payment.getVnpResponseCode())
-                .transactionNo(payment.getVnpTransactionNo())
-                .payDate(payment.getVnpPayDate())
-                .callbackReceived(payment.getCallbackReceived())
-                .bookingId(payment.getBooking() != null ? payment.getBooking().getId() : null)
-                .bookingStatus(payment.getBooking() != null ? payment.getBooking().getStatus() : null)
-                .build();
-    }
-    
-    @Override
-    @Transactional
-    public void linkPaymentToBooking(String txnRef, UUID bookingId) {
-        // Find payment by transaction reference
-        Payment payment = paymentRepository.findByVnpTxnRef(txnRef)
-                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.PAYMENT_NOT_FOUND));
-        
-        // Find booking by ID
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
-        
-        // Link payment to booking
-        payment.setBooking(booking);
-        paymentRepository.save(payment);
-        
-        // Update booking payment status if payment is already successful
-        if (payment.getPaymentStatus() == PaymentStatus.PAID) {
-            booking.setPaymentStatus(PaymentStatus.PAID);
-            if (booking.getStatus() == BookingStatus.PENDING) {
-                booking.setStatus(BookingStatus.CONFIRMED);
-            }
+            vnPayTransactionRepository.save(transaction);
             bookingRepository.save(booking);
+            
+            return "00"; // Success
+            
+        } catch (Exception e) {
+            log.error("Error processing VNPay IPN: {}", e.getMessage(), e);
+            return "99"; // Unknown error
         }
+    }
+    
+    @Override
+    public VNPayCallbackRequest processReturnUrl(Map<String, String> vnpParams) {
+        try {
+            log.info("Processing VNPay return URL: {}", vnpParams);
+            
+            VNPayCallbackRequest callbackRequest = VNPayCallbackRequest.builder()
+                    .vnp_TmnCode(vnpParams.get("vnp_TmnCode"))
+                    .vnp_Amount(vnpParams.get("vnp_Amount") != null ? 
+                               new BigDecimal(vnpParams.get("vnp_Amount")).divide(BigDecimal.valueOf(100)) : null)
+                    .vnp_BankCode(vnpParams.get("vnp_BankCode"))
+                    .vnp_BankTranNo(vnpParams.get("vnp_BankTranNo"))
+                    .vnp_CardType(vnpParams.get("vnp_CardType"))
+                    .vnp_PayDate(vnpParams.get("vnp_PayDate"))
+                    .vnp_OrderInfo(vnpParams.get("vnp_OrderInfo"))
+                    .vnp_TransactionNo(vnpParams.get("vnp_TransactionNo"))
+                    .vnp_ResponseCode(vnpParams.get("vnp_ResponseCode"))
+                    .vnp_TransactionStatus(vnpParams.get("vnp_TransactionStatus"))
+                    .vnp_TxnRef(vnpParams.get("vnp_TxnRef"))
+                    .vnp_SecureHashType(vnpParams.get("vnp_SecureHashType"))
+                    .vnp_SecureHash(vnpParams.get("vnp_SecureHash"))
+                    .build();
+            
+            // Mark return as processed and update payment status
+            String txnRef = vnpParams.get("vnp_TxnRef");
+            String responseCode = vnpParams.get("vnp_ResponseCode");
+            String transactionStatus = vnpParams.get("vnp_TransactionStatus");
+            
+            if (txnRef != null) {
+                vnPayTransactionRepository.findByVnpTxnRef(txnRef)
+                        .ifPresent(transaction -> {
+                            // Update transaction details
+                            transaction.setVnpResponseCode(responseCode);
+                            transaction.setVnpTransactionStatus(transactionStatus);
+                            transaction.setVnpTransactionNo(vnpParams.get("vnp_TransactionNo"));
+                            transaction.setVnpBankCode(vnpParams.get("vnp_BankCode"));
+                            transaction.setVnpBankTranNo(vnpParams.get("vnp_BankTranNo"));
+                            transaction.setVnpCardType(vnpParams.get("vnp_CardType"));
+                            transaction.setVnpPayDate(vnpParams.get("vnp_PayDate"));
+                            transaction.setIsReturnProcessed(true);
+                            
+                            // Update payment status for both transaction and booking
+                            Booking booking = transaction.getBooking();
+                            if ("00".equals(responseCode) && "00".equals(transactionStatus)) {
+                                transaction.setPaymentStatus(PaymentStatus.PAID);
+                                booking.setPaymentStatus(PaymentStatus.PAID);
+                                log.info("Payment successful via return URL for booking: {}", booking.getId());
+                            } else {
+                                transaction.setPaymentStatus(PaymentStatus.FAILED);
+                                booking.setPaymentStatus(PaymentStatus.FAILED);
+                                log.info("Payment failed via return URL for booking: {}, responseCode: {}", 
+                                        booking.getId(), responseCode);
+                            }
+                            
+                            vnPayTransactionRepository.save(transaction);
+                            bookingRepository.save(booking);
+                        });
+            }
+            
+            return callbackRequest;
+            
+        } catch (Exception e) {
+            log.error("Error processing VNPay return URL: {}", e.getMessage(), e);
+            throw new AppRuntimeException(ErrorResponse.UNKNOWN_EXCEPTION);
+        }
+    }
+    
+    @Override
+    public boolean verifySignature(Map<String, String> vnpParams, String secureHash) {
+        try {
+            Map<String, String> fields = new HashMap<>(vnpParams);
+            fields.remove("vnp_SecureHash");
+            fields.remove("vnp_SecureHashType");
+            
+            String signValue = VNPayUtil.hashAllFields(fields, vnPayConfig.getSecretKey());
+            return signValue.equals(secureHash);
+            
+        } catch (Exception e) {
+            log.error("Error verifying signature: {}", e.getMessage());
+            return false;
+        }
+    }
+    
+    @Override
+    public Map<String, String> queryTransaction(String txnRef, String transDate) {
+        // Implementation for querying transaction status from VNPay
+        // This would involve making HTTP request to VNPay's query API
+        log.info("Query transaction - txnRef: {}, transDate: {}", txnRef, transDate);
         
-        log.info("Successfully linked payment {} to booking {}", txnRef, bookingId);
+        // For now, return empty map - can be implemented based on requirements
+        return new HashMap<>();
     }
 } 

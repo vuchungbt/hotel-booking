@@ -187,28 +187,4 @@ public class UploadController {
                         .result(uploadResponse)
                         .build());
     }
-
-    // ===== TEST ENDPOINTS =====
-
-    @GetMapping("/test")
-    @Operation(summary = "Test upload service", description = "Test if upload service is working")
-    public ResponseEntity<MessageResponse<List<String>>> testUpload() {
-        log.info("Testing upload service");
-        List<String> endpoints = List.of(
-            "POST /api/upload/image",
-            "POST /api/upload/images/multiple",
-            "POST /api/upload/hotel-image",
-            "POST /api/upload/room-image",
-            "DELETE /api/upload/image",
-            "GET /api/upload/test"
-        );
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(MessageResponse.<List<String>>builder()
-                        .success(true)
-                        .message("Upload service is ready")
-                        .result(endpoints)
-                        .build());
-    }
 } 

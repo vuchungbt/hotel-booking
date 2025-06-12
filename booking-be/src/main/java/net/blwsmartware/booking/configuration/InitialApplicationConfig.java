@@ -48,7 +48,6 @@ public class InitialApplicationConfig {
         log.info("********** Initializing application...");
         return args -> {
             if (userRepository.findByUsername(adminUsername).isEmpty()) {
-
                 Role admin = roleRepository.save(Role.builder()
                                 .name(PredefinedRole.ADMIN_ROLE)
                                 .description("Admin")
@@ -61,7 +60,6 @@ public class InitialApplicationConfig {
                         .name(PredefinedRole.HOST_ROLE)
                         .description("Owner")
                         .build());
-
                 Set<Role> roles = new HashSet<>();
                 roles.add(admin);
                 roles.add(user);

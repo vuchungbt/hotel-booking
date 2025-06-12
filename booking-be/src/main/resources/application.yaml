@@ -6,7 +6,7 @@ spring:
   application:
     name: booking-service
   datasource:
-    url: ${DB_MYSQL_URL:jdbc:mysql://localhost:3306/booking15?createDatabaseIfNotExist=true}
+    url: ${DB_MYSQL_URL:jdbc:mysql://localhost:3306/booking11?createDatabaseIfNotExist=true}
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:}
   jpa:
@@ -47,27 +47,24 @@ jwt:
   expiration-minutes: 30
   expiration-day: 90
 config:
-
-  cloudinary_name: ${CLOUDINARY_NAME}
-  cloudinary_key: ${CLOUDINARY_KEY}
-  cloudinary_secret: ${CLOUDINARY_SECRET}
-
-  vnpay:
-    tmn-code: ${VNPAY_CODE}
-    #tmn-code: DEMOV2
-    notify-url: ${VNPAY_NOTIFY:http://localhost:8080/payment/vnpay/callback}
-    return-url: ${VNPAY_RETURN:http://localhost:8080/payment/return}
-    payment-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-    hash-secret: ${VNPAY_SECRET}
-    #hash-secret: MMCXFRFUJVQYHGNZZTZPTGZUOBPQSHOP
+  cloudinary_name: ${CLOUDINARY_NAME:dvmzhu5ra}
+  cloudinary_key: ${CLOUDINARY_KEY:613489846624929}
+  cloudinary_secret: ${CLOUDINARY_SECRET:r717QEtgHZPiBqlUZ02m9gq26Vg}
 
   cors: ${URL_CORS:http://localhost:5173}
-
   file:
     upload-dir: ${UPLOAD_DIR:C:\temp}
-
   admin:
     name: ${ADMIN_NAME:adminadmin}
     password: ${ADMIN_PASSWORD:adminadmin123}
     email: ${ADMIN_EMAIL:adminadmin@blwsmartware.net}
     username: ${ADMIN_USERNAME:adminadmin}
+vnpay:
+  tmnCode: ${VNPAY_TMN_CODE:SANDBOX01}
+  secretKey: ${VNPAY_SECRET_KEY:SANDBOX_SECRET_KEY}
+  paymentUrl: ${VNPAY_PAYMENT_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+  apiUrl: ${VNPAY_API_URL:https://sandbox.vnpayment.vn/merchant_webapi/api/transaction}
+  returnUrl: ${VNPAY_RETURN_URL:http://localhost:5173/payment/return}
+  ipnUrl: ${VNPAY_IPN_URL:http://localhost:8080/api/payment/vnpay/ipn}
+
+

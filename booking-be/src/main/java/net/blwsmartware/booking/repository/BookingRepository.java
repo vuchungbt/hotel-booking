@@ -50,9 +50,6 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     Page<Booking> findByHotelIdAndStatusOrderByCreatedAtDesc(UUID hotelId, BookingStatus status, Pageable pageable);
     
     // ===== AVAILABILITY QUERIES =====
-    /**
-     * Count bookings that conflict with the given date range for a specific room type
-     */
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.roomType.id = :roomTypeId " +
            "AND b.status != 'CANCELLED' " +
            "AND ((b.checkInDate <= :checkOutDate AND b.checkOutDate > :checkInDate))")
@@ -60,9 +57,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
                                  @Param("checkInDate") LocalDate checkInDate, 
                                  @Param("checkOutDate") LocalDate checkOutDate);
     
-    /**
-     * Count bookings that conflict with the given date range excluding a specific booking
-     */
+
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.roomType.id = :roomTypeId " +
            "AND b.status != 'CANCELLED' " +
            "AND b.id != :excludeBookingId " +
@@ -72,9 +67,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
                                           @Param("checkOutDate") LocalDate checkOutDate,
                                           @Param("excludeBookingId") UUID excludeBookingId);
     
-    /**
-     * Find bookings that overlap with the given date range for conflict detection
-     */
+
     @Query("SELECT b FROM Booking b WHERE b.roomType.id = :roomTypeId " +
            "AND b.status IN ('PENDING', 'CONFIRMED') " +
            "AND ((b.checkInDate <= :checkOutDate AND b.checkOutDate > :checkInDate))")
@@ -125,8 +118,5 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     Page<Booking> findByCreatedAtBetweenOrderByCreatedAtDesc(LocalDate startDate, LocalDate endDate, Pageable pageable);
     
     // ===== VALIDATION QUERIES =====
-    /**
-     * Check if booking reference exists (for uniqueness)
-     */
     boolean existsByBookingReference(String bookingReference);
 } 

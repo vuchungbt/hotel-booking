@@ -12,14 +12,18 @@ import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
+
     User toUser(UserRequest request);
+
     @Mapping(target = "roles", ignore = true)
     void updateUser(UserUpdate userUpdate,@MappingTarget User user);
+
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "emailVerified", ignore = true)
     @Mapping(target = "password", ignore = true)
     void updateProfile(ProfileUpdateRequest profileUpdate, @MappingTarget User user);
+
     UserResponse toUserResponse(User user);
-    ProfileRequest toProfile(User user);
+
 }

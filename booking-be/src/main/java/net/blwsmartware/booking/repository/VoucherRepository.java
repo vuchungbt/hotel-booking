@@ -16,16 +16,11 @@ import java.util.UUID;
 
 @Repository
 public interface VoucherRepository extends JpaRepository<Voucher, UUID> {
-    
-    // Find voucher by code
+
     Optional<Voucher> findByCode(String code);
-    
-    // Check if code exists
     boolean existsByCode(String code);
-    
-    // Find vouchers by status
     Page<Voucher> findByStatus(VoucherStatus status, Pageable pageable);
-    
+
     // Find active vouchers
     @Query("SELECT v FROM Voucher v WHERE v.status = 'ACTIVE' AND v.startDate <= :now AND v.endDate >= :now")
     List<Voucher> findActiveVouchers(@Param("now") LocalDateTime now);
@@ -49,11 +44,9 @@ public interface VoucherRepository extends JpaRepository<Voucher, UUID> {
     // Find expiring vouchers
     @Query("SELECT v FROM Voucher v WHERE v.status = 'ACTIVE' AND v.endDate BETWEEN :startDate AND :endDate")
     List<Voucher> findExpiringVouchers(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
-    
-    // Count vouchers by status
+
     long countByStatus(VoucherStatus status);
-    
-    // Find vouchers with usage limit exceeded
+
     @Query("SELECT v FROM Voucher v WHERE v.usageLimit IS NOT NULL AND v.usageCount >= v.usageLimit")
     List<Voucher> findVouchersWithExceededUsageLimit();
 } 

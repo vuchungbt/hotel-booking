@@ -30,7 +30,6 @@ public class Review {
     @Column(name = "helpful_count")
     Integer helpfulCount = 0;
 
-    // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id", nullable = false)
     Hotel hotel;

@@ -11,16 +11,14 @@ import {
   VoucherListResponse
 } from '../types/voucher';
 import {
-  VNPayCreateRequest,
-  VNPayCreateResponse,
-  VNPayCallbackResponse,
-  PaymentStatusResponse,
-  VNPayReturnResult,
-  VNPayApiResponse
+  VNPayPaymentRequest,
+  VNPayPaymentResponse,
+  VNPayCallbackRequest,
+  VNPayReturnParams
 } from '../types/vnpay';
 
-const API_URL = 'https://bk.blwsmartware.net';
-//const API_URL = 'http://localhost:8080'; // Direct API endpoint
+//const API_URL = 'https://bk.blwsmartware.net';
+const API_URL = 'http://localhost:8080'; // Direct API endpoint
 
 const api = axios.create({
   baseURL: API_URL,
@@ -1211,25 +1209,25 @@ export const hotelWithImageAPI = {
   }
 };
 
-// VNPay APIs
+// VNPay Payment APIs
 export const vnpayAPI = {
   // Create VNPay payment URL
-  createPayment: (data: VNPayCreateRequest) =>
-    api.post<VNPayApiResponse<VNPayCreateResponse>>('/payment/vnpay/create', data),
+  createPayment: (data: VNPayPaymentRequest) =>
+    api.post<MessageResponse<VNPayPaymentResponse>>('/api/payment/vnpay/create', data),
   
-  // Get payment status by transaction reference
-  getPaymentStatus: (txnRef: string) =>
-    api.get<VNPayApiResponse<PaymentStatusResponse>>(`/payment/vnpay/status/${txnRef}`),
+  // Process VNPay return URL (for frontend to handle)
+  processReturn: (params: VNPayReturnParams) =>
+    api.get<MessageResponse<VNPayCallbackRequest>>('/api/payment/vnpay/return', { params }),
   
-  // Handle VNPay return (this would be called internally, but can be useful for polling)
-  getReturnResult: (params: URLSearchParams) =>
-    api.get<VNPayApiResponse<VNPayReturnResult>>(`/payment/vnpay/return?${params.toString()}`),
+  // Verify VNPay signature (optional frontend verification)
+  verifySignature: (params: VNPayReturnParams) =>
+    api.post<MessageResponse<boolean>>('/api/payment/vnpay/verify', params),
   
-  // Link payment to booking after booking is created
-  linkPaymentToBooking: (txnRef: string, bookingId: string) =>
-    api.post<MessageResponse<string>>('/payment/vnpay/link-booking', null, {
-      params: { txnRef, bookingId }
-    }),
+  // Query VNPay transaction status
+  queryTransaction: (txnRef: string, transDate: string) =>
+    api.get<MessageResponse<Record<string, string>>>(`/api/payment/vnpay/query/${txnRef}`, {
+      params: { transDate }
+    })
 };
 
 export default api;

@@ -15,15 +15,12 @@ import java.util.UUID;
 
 @Repository
 public interface RoomTypeRepository extends JpaRepository<RoomType, UUID> {
-    
-    // Find room types by hotel
+
     Page<RoomType> findByHotel(Hotel hotel, Pageable pageable);
     List<RoomType> findByHotel(Hotel hotel);
-    
-    // Find room types by hotel ID
     Page<RoomType> findByHotelId(UUID hotelId, Pageable pageable);
     List<RoomType> findByHotelId(UUID hotelId);
-    
+
     // Find room types by host (owner of the hotel)
     @Query("SELECT rt FROM RoomType rt WHERE rt.hotel.owner.id = :hostId")
     Page<RoomType> findByHostId(@Param("hostId") UUID hostId, Pageable pageable);
@@ -34,23 +31,19 @@ public interface RoomTypeRepository extends JpaRepository<RoomType, UUID> {
     // Find room types by max occupancy
     Page<RoomType> findByMaxOccupancyGreaterThanEqual(Integer minOccupancy, Pageable pageable);
     List<RoomType> findByMaxOccupancyGreaterThanEqual(Integer minOccupancy);
-    
-    // Find room types by price range
+
     Page<RoomType> findByPricePerNightBetween(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
     List<RoomType> findByPricePerNightBetween(BigDecimal minPrice, BigDecimal maxPrice);
-    
-    // Find available room types (where availableRooms > 0)
+
     @Query("SELECT rt FROM RoomType rt WHERE rt.availableRooms > 0")
     Page<RoomType> findAvailableRoomTypes(Pageable pageable);
     
     @Query("SELECT rt FROM RoomType rt WHERE rt.hotel.id = :hotelId AND rt.availableRooms > 0")
     Page<RoomType> findAvailableRoomTypesByHotel(@Param("hotelId") UUID hotelId, Pageable pageable);
-    
-    // Find room types by hotel ID with available rooms
+
     Page<RoomType> findByHotelIdAndAvailableRoomsGreaterThan(UUID hotelId, Integer availableRooms, Pageable pageable);
     List<RoomType> findByHotelIdAndAvailableRoomsGreaterThan(UUID hotelId, Integer availableRooms);
-    
-    // Search room types by name
+
     @Query("SELECT rt FROM RoomType rt WHERE LOWER(rt.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<RoomType> searchByName(@Param("keyword") String keyword, Pageable pageable);
     
@@ -73,23 +66,19 @@ public interface RoomTypeRepository extends JpaRepository<RoomType, UUID> {
                                   @Param("minPrice") BigDecimal minPrice,
                                   @Param("maxPrice") BigDecimal maxPrice,
                                   Pageable pageable);
-    
-    // Count room types by hotel
+
     long countByHotel(Hotel hotel);
     long countByHotelId(UUID hotelId);
-    
-    // Check if room type name exists for hotel (for validation)
+
     boolean existsByNameAndHotel(String name, Hotel hotel);
     boolean existsByNameAndHotelId(String name, UUID hotelId);
-    
-    // Get total and available rooms for hotel
+
     @Query("SELECT SUM(rt.totalRooms) FROM RoomType rt WHERE rt.hotel.id = :hotelId")
     Long getTotalRoomsByHotel(@Param("hotelId") UUID hotelId);
     
     @Query("SELECT SUM(rt.availableRooms) FROM RoomType rt WHERE rt.hotel.id = :hotelId")
     Long getAvailableRoomsByHotel(@Param("hotelId") UUID hotelId);
-    
-    // Get price range for hotel
+
     @Query("SELECT MIN(rt.pricePerNight) FROM RoomType rt WHERE rt.hotel.id = :hotelId")
     BigDecimal getMinPriceByHotel(@Param("hotelId") UUID hotelId);
     

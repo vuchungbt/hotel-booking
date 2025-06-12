@@ -1,53 +1,82 @@
 package net.blwsmartware.booking.util;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.HmacAlgorithms;
+import org.apache.commons.codec.digest.HmacUtils;
+
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+@Slf4j
 public class VNPayUtil {
     
-    private VNPayUtil() {
-        // Utility class
+    public static String hashAllFields(Map<String, String> fields, String secretKey) {
+        // Remove hash fields
+        List<String> fieldNames = new ArrayList<>(fields.keySet());
+        Collections.sort(fieldNames);
+        
+        StringBuilder hashData = new StringBuilder();
+        StringBuilder query = new StringBuilder();
+        
+        Iterator<String> itr = fieldNames.iterator();
+        while (itr.hasNext()) {
+            String fieldName = itr.next();
+            String fieldValue = fields.get(fieldName);
+            if ((fieldValue != null) && (fieldValue.length() > 0)) {
+                // Build hash data
+                hashData.append(fieldName);
+                hashData.append('=');
+                try {
+                    hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8.toString()));
+                } catch (UnsupportedEncodingException e) {
+                    log.error("Error encoding field value: {}", e.getMessage());
+                }
+                
+                // Build query
+                query.append(URLEncoder.encode(fieldName, StandardCharsets.UTF_8));
+                query.append('=');
+                try {
+                    query.append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8.toString()));
+                } catch (UnsupportedEncodingException e) {
+                    log.error("Error encoding field value: {}", e.getMessage());
+                }
+                
+                if (itr.hasNext()) {
+                    query.append('&');
+                    hashData.append('&');
+                }
+            }
+        }
+        
+        String queryUrl = query.toString();
+        return hmacSHA512(secretKey, hashData.toString());
     }
     
-    /**
-     * Tạo mã HMAC SHA512
-     */
     public static String hmacSHA512(String key, String data) {
         try {
-            Mac mac = Mac.getInstance("HmacSHA512");
-            SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
-            mac.init(secretKeySpec);
-            byte[] hashBytes = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-            
-            StringBuilder hash = new StringBuilder();
-            for (byte b : hashBytes) {
-                hash.append(String.format("%02x", b));
+            return new HmacUtils(HmacAlgorithms.HMAC_SHA_512, key).hmacHex(data);
+        } catch (Exception e) {
+            log.error("Error generating HMAC SHA512: {}", e.getMessage());
+            return "";
+        }
+    }
+    
+    public static String getIpAddress(jakarta.servlet.http.HttpServletRequest request) {
+        String ipAdress;
+        try {
+            ipAdress = request.getHeader("X-FORWARDED-FOR");
+            if (ipAdress == null || ipAdress.isEmpty()) {
+                ipAdress = request.getRemoteAddr();
             }
-            return hash.toString();
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            throw new RuntimeException("Error creating HMAC SHA512", e);
+        } catch (Exception e) {
+            ipAdress = "Invalid IP:" + e.getMessage();
         }
+        return ipAdress;
     }
     
-    /**
-     * Lấy địa chỉ IP từ request
-     */
-    public static String getIpAddress(String forwarded, String remoteAddr) {
-        if (forwarded != null && !forwarded.isEmpty()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return remoteAddr != null ? remoteAddr : "127.0.0.1";
-    }
-    
-    /**
-     * Tạo mã giao dịch ngẫu nhiên
-     */
     public static String getRandomNumber(int len) {
         Random rnd = new Random();
         String chars = "0123456789";
@@ -58,80 +87,14 @@ public class VNPayUtil {
         return sb.toString();
     }
     
-    /**
-     * Tạo mã đơn hàng với timestamp
-     */
-    public static String generateTxnRef() {
+    public static String getCurrentTimeString() {
+        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-        return formatter.format(new Date()) + getRandomNumber(6);
+        formatter.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+        return formatter.format(cld.getTime());
     }
     
-    /**
-     * Tạo hash từ tất cả các fields
-     */
-    public static String hashAllFields(Map<String, String> fields) {
-        List<String> fieldNames = new ArrayList<>(fields.keySet());
-        Collections.sort(fieldNames);
-        StringBuilder sb = new StringBuilder();
-        
-        boolean first = true;
-        for (String fieldName : fieldNames) {
-            String fieldValue = fields.get(fieldName);
-            if ((fieldValue != null) && (fieldValue.length() > 0)) {
-                if (!first) {
-                    sb.append("&");
-                }
-                sb.append(fieldName);
-                sb.append("=");
-                sb.append(fieldValue);
-                first = false;
-            }
-        }
-        return sb.toString();
-    }
-    
-    /**
-     * Xây dựng query string từ parameters
-     */
-    public static String buildQueryString(Map<String, String> params) {
-        List<String> fieldNames = new ArrayList<>(params.keySet());
-        Collections.sort(fieldNames);
-        StringBuilder query = new StringBuilder();
-        
-        boolean first = true;
-        for (String fieldName : fieldNames) {
-            String fieldValue = params.get(fieldName);
-            if ((fieldValue != null) && (fieldValue.length() > 0)) {
-                if (!first) {
-                    query.append('&');
-                }
-                query.append(URLEncoder.encode(fieldName, StandardCharsets.UTF_8));
-                query.append('=');
-                query.append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8));
-                first = false;
-            }
-        }
-        return query.toString();
-    }
-    
-    /**
-     * Validate VNPay response signature
-     */
-    public static boolean validateSignature(Map<String, String> params, String secretKey, String signature) {
-        Map<String, String> validateParams = new HashMap<>(params);
-        validateParams.remove("vnp_SecureHash");
-        validateParams.remove("vnp_SecureHashType");
-        
-        String hashData = hashAllFields(validateParams);
-        String calculatedSignature = hmacSHA512(secretKey, hashData);
-        
-        // Debug log
-        System.out.println("=== VNPay Signature Validation ===");
-        System.out.println("Hash data: " + hashData);
-        System.out.println("Expected signature: " + signature);
-        System.out.println("Calculated signature: " + calculatedSignature);
-        System.out.println("Match: " + calculatedSignature.equals(signature));
-        
-        return calculatedSignature.equals(signature);
+    public static String generateTxnRef() {
+        return getCurrentTimeString() + getRandomNumber(6);
     }
 } 

@@ -29,7 +29,7 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
             try {
                 err = ErrorResponse.valueOf(authException.getCause().getMessage());
             }catch (IllegalArgumentException e){
-                log.error(e.getMessage());
+                log.info(e.getMessage());
             }
         }
 

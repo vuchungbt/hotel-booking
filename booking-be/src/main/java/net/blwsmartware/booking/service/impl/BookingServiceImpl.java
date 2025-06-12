@@ -22,6 +22,7 @@ import net.blwsmartware.booking.repository.BookingRepository;
 import net.blwsmartware.booking.repository.HotelRepository;
 import net.blwsmartware.booking.repository.RoomTypeRepository;
 import net.blwsmartware.booking.repository.UserRepository;
+import net.blwsmartware.booking.repository.VNPayTransactionRepository;
 import net.blwsmartware.booking.service.BookingService;
 import net.blwsmartware.booking.service.VoucherService;
 import net.blwsmartware.booking.util.DataResponseUtils;
@@ -58,6 +59,7 @@ public class BookingServiceImpl implements BookingService {
     HotelRepository hotelRepository;
     RoomTypeRepository roomTypeRepository;
     UserRepository userRepository;
+    VNPayTransactionRepository vnPayTransactionRepository;
     BookingMapper bookingMapper;
     VoucherService voucherService;
     
@@ -335,25 +337,20 @@ public class BookingServiceImpl implements BookingService {
      * Enhanced room availability validation with conflict detection
      */
     private void validateRoomAvailability(UUID roomTypeId, LocalDate checkInDate, LocalDate checkOutDate) {
-        // Check basic availability
+        // Check basic availability using the comprehensive isRoomAvailable method
         if (!isRoomAvailable(roomTypeId, checkInDate, checkOutDate)) {
             throw new AppRuntimeException(ErrorResponse.NO_ROOMS_AVAILABLE);
         }
         
-        // Check for overlapping bookings (conflict detection)
-        List<Booking> overlappingBookings = bookingRepository.findOverlappingBookings(
-                roomTypeId, checkInDate, checkOutDate);
-        
-        if (!overlappingBookings.isEmpty()) {
-            log.warn("Found {} overlapping bookings for room type {} between {} and {}", 
-                    overlappingBookings.size(), roomTypeId, checkInDate, checkOutDate);
-            throw new AppRuntimeException(ErrorResponse.BOOKING_CONFLICT_DETECTED);
-        }
-        
-        // Check for maintenance periods (if implemented)
+        // Additional validation: Check for maintenance periods (if implemented)
         if (isRoomUnderMaintenance(roomTypeId, checkInDate, checkOutDate)) {
             throw new AppRuntimeException(ErrorResponse.ROOM_UNDER_MAINTENANCE);
         }
+        
+        // Note: Conflict detection is already handled in isRoomAvailable() method
+        // which properly considers totalRooms vs conflicting bookings
+        log.info("Room availability validated successfully for roomType {} between {} and {}", 
+                roomTypeId, checkInDate, checkOutDate);
     }
     
     /**
@@ -990,6 +987,14 @@ public class BookingServiceImpl implements BookingService {
                 log.info("Room availability restored after booking deletion {}: {} -> {}", 
                         booking.getId(), roomType.getAvailableRooms() - 1, roomType.getAvailableRooms());
             }
+        }
+        
+        // Delete VNPay transaction records before deleting booking
+        try {
+            vnPayTransactionRepository.deleteByBookingId(booking.getId());
+            log.info("VNPay transaction records deleted before deleting booking: {}", booking.getId());
+        } catch (Exception e) {
+            log.warn("Failed to delete VNPay transactions for booking {}: {}", booking.getId(), e.getMessage());
         }
         
         // Delete voucher usage records if booking had voucher applied
