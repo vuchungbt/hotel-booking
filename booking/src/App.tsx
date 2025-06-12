@@ -23,6 +23,7 @@ import BookingConfirmationPage from './pages/BookingConfirmationPage';
 import BookingFormPage from './pages/BookingFormPage';
 import MyReviews from './pages/MyReviews';
 import MyBookingsPage from './pages/MyBookingsPage';
+import PaymentReturnPage from './pages/PaymentReturnPage';
 
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -158,6 +159,9 @@ function App() {
                 <PublicLayout><MyReviews /></PublicLayout>
               </ProtectedRoute>
             } />
+            
+            {/* Payment return route - public access for VNPay callback */}
+            <Route path="/payment/return" element={<PublicLayout><PaymentReturnPage /></PublicLayout>} />
 
             {/* Admin routes - require ADMIN role */}
             <Route path="/admin" element={

@@ -49,8 +49,7 @@ const VoucherForm: React.FC<VoucherFormProps> = ({
     // Date validation
     if (formData.startDate && formData.endDate) {
       const startDate = new Date(formData.startDate);
-      const endDate = new Date(formData.endDate);
-      const now = new Date();
+      const endDate = new Date(formData.endDate); 
 
       if (endDate <= startDate) newErrors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu';
     }

@@ -19,8 +19,8 @@ import {
   VNPayApiResponse
 } from '../types/vnpay';
 
-const API_URL = 'https://bk.blwsmartware.net';
-//const API_URL = 'http://localhost:8080'; // Direct API endpoint
+//const API_URL = 'https://bk.blwsmartware.net';
+const API_URL = 'http://localhost:8080'; // Direct API endpoint
 
 const api = axios.create({
   baseURL: API_URL,
