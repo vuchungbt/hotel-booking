@@ -336,19 +336,17 @@ const AdminUserDetail: React.FC = () => {
             </div>
             
             <div className="space-y-3">
-              {user.roles.map((role, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-3">
+              {user.roles.length > 0 ? (
+                <div className="border border-gray-200 rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
-                    {getRoleBadges([role])}
+                    {getRoleBadges([user.roles[0]])}
                   </div>
-                  <p className="text-sm text-gray-600">{role.description}</p>
+                  <p className="text-sm text-gray-600">{user.roles[0].description}</p>
                 </div>
-              ))}
+              ) : (
+                <p className="text-gray-500 text-center py-4">No role assigned yet</p>
+              )}
             </div>
-
-            {user.roles.length === 0 && (
-                              <p className="text-gray-500 text-center py-4">No roles assigned yet</p>
-            )}
           </div>
         </div>
       </div>
@@ -393,6 +391,33 @@ const AdminUserDetail: React.FC = () => {
           onSuccess={handleRoleModalSuccess}
         />
       )}
+
+      <div className="border-t border-gray-200 pt-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <Shield className="h-5 w-5 mr-2" />
+          Current Role
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {user.roles.length > 0 ? (
+            <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${
+              user.roles[0].name === 'ADMIN' 
+                ? 'bg-purple-100 text-purple-800' 
+                : user.roles[0].name === 'HOST'
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'bg-gray-100 text-gray-800'
+            }`}>
+              <Shield className="h-4 w-4 mr-1" />
+              {user.roles[0].name === 'ADMIN' ? 'Administrator' : 
+               user.roles[0].name === 'HOST' ? 'Hotel Owner' : 'User'}
+            </span>
+          ) : (
+            <span className="text-gray-500 text-sm">No role assigned</span>
+          )}
+        </div>
+        <p className="text-sm text-gray-500 mt-2">
+          To change role, please use the role management button above.
+        </p>
+      </div>
     </div>
   );
 };

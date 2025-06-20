@@ -12,7 +12,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Date;
-import java.util.Set;
 import java.util.UUID;
 
 @Data
@@ -65,8 +64,28 @@ public class User {
     @UpdateTimestamp
     Instant updateAt;
 
-    @ManyToMany
-    Set<Role> roles;
+    @ManyToOne
+    @JoinColumn(name = "role_id")
+    Role role;
 
+    public boolean hasPermission(String roleName) {
+        if (this.role == null) return false;
+        return this.role.getName().equals(roleName);
+    }
 
+    public boolean isAdmin() {
+        return hasPermission("ADMIN");
+    }
+
+    public boolean isHost() {
+        return hasPermission("HOST") || hasPermission("ADMIN");
+    }
+
+    public boolean isUser() {
+        return hasPermission("USER") || hasPermission("HOST") || hasPermission("ADMIN");
+    }
+
+    public boolean hasRole(String roleName) {
+        return hasPermission(roleName);
+    }
 }

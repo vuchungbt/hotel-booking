@@ -20,7 +20,7 @@ public interface UserService {
     UserResponse updateProfile(UUID id, ProfileUpdateRequest request);
     UserResponse updatePassword(UUID id, PasswordUpdateRequest request);
     UserResponse adminUpdatePassword(UUID id, AdminPasswordUpdateRequest request);
-    UserResponse updateRoleOfUser(UUID id, RoleOfUpdate request);
+    UserResponse updateUserRole(UUID id, RoleOfUpdate request);
     UserResponse toggleEmailVerification(UUID id);
     UserResponse requestHost(UUID id);
     UserResponse approveHostRequest(UUID id);

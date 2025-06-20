@@ -2,11 +2,10 @@ package net.blwsmartware.booking.dto.response;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import net.blwsmartware.booking.entity.Role;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Set;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -23,5 +22,5 @@ public class UserResponse {
     LocalDate dob;
     Instant createAt;
     Instant updateAt;
-    Set<Role> roles;
+    List<RoleResponse> roles;
 }

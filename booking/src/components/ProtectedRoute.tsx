@@ -36,9 +36,26 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check if specific role is required
   if (requiredRole && user) {
-    const userRoles = user.roles.map(role => role.name);
+    // Get user's current role
+    const userRole = user.roles && user.roles.length > 0 ? user.roles[0].name : null;
     
-    if (!userRoles.includes(requiredRole)) {
+    // Check hierarchical permissions
+    const hasPermission = () => {
+      if (!userRole) return false;
+      
+      // ADMIN has all permissions
+      if (userRole === 'ADMIN') return true;
+      
+      // HOST has HOST and USER permissions
+      if (userRole === 'HOST' && (requiredRole === 'HOST' || requiredRole === 'USER')) return true;
+      
+      // USER has only USER permissions
+      if (userRole === 'USER' && requiredRole === 'USER') return true;
+      
+      return false;
+    };
+    
+    if (!hasPermission()) {
       // User doesn't have required role
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -53,7 +70,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
               Bạn không có quyền truy cập vào trang này. Trang này yêu cầu quyền <strong>{requiredRole}</strong>.
             </p>
             <p className="text-sm text-gray-500 mb-6">
-              Vai trò hiện tại của bạn: {userRoles.join(', ')}
+              Vai trò hiện tại của bạn: {userRole || 'Chưa có vai trò'}
             </p>
             <div className="space-y-2">
               <button

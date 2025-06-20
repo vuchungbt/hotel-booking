@@ -517,8 +517,10 @@ const ProfilePage: React.FC = () => {
   );
 
   const renderRolesTab = () => {
-    const hasHostRole = user?.roles?.some(role => role.name === 'HOST');
-    const hasAdminRole = user?.roles?.some(role => role.name === 'ADMIN');
+    // Get user's current role
+    const userRole = user?.roles && user.roles.length > 0 ? user.roles[0].name : null;
+    const hasHostRole = userRole === 'HOST';
+    const hasAdminRole = userRole === 'ADMIN';
     
     return (
       <div className="space-y-6">
@@ -531,50 +533,101 @@ const ProfilePage: React.FC = () => {
           
           <div className="space-y-3">
             {user?.roles && user.roles.length > 0 ? (
-              user.roles.map((role) => (
-                <div key={role.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <div className={`w-3 h-3 rounded-full mr-3 ${
-                      role.name === 'ADMIN' ? 'bg-red-500' :
-                      role.name === 'HOST' ? 'bg-green-500' : 'bg-blue-500'
-                    }`}></div>
-                    <div>
-                      <span className="font-medium text-gray-900">
-                                                  {role.name === 'ADMIN' ? 'Administrator' :
-                         role.name === 'HOST' ? 'Hotel Owner' :
-                         role.name === 'USER' ? 'Người dùng' : role.name}
-                      </span>
-                      <p className="text-sm text-gray-500">{role.description}</p>
-                    </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center">
+                  <div className={`w-3 h-3 rounded-full mr-3 ${
+                    user.roles[0].name === 'ADMIN' ? 'bg-red-500' :
+                    user.roles[0].name === 'HOST' ? 'bg-green-500' : 'bg-blue-500'
+                  }`}></div>
+                  <div>
+                    <span className="font-medium text-gray-900">
+                      {user.roles[0].name === 'ADMIN' ? 'Administrator' :
+                       user.roles[0].name === 'HOST' ? 'Hotel Owner' :
+                       user.roles[0].name === 'USER' ? 'Người dùng' : user.roles[0].name}
+                    </span>
+                    <p className="text-sm text-gray-500">{user.roles[0].description}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    role.name === 'ADMIN' ? 'bg-red-100 text-red-800' :
-                    role.name === 'HOST' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    Đã kích hoạt
-                  </span>
                 </div>
-              ))
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  user.roles[0].name === 'ADMIN' ? 'bg-red-100 text-red-800' :
+                  user.roles[0].name === 'HOST' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                }`}>
+                  Đã kích hoạt
+                </span>
+              </div>
             ) : (
               <p className="text-gray-500 text-center py-4">Chưa có vai trò nào được gán</p>
             )}
           </div>
         </div>
 
+        {/* Role Permissions Info */}
+        {userRole && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Shield className="h-5 w-5 mr-2 text-blue-600" />
+              Quyền hạn của vai trò {userRole}
+            </h3>
+            
+            <div className="space-y-3">
+              {userRole === 'ADMIN' && (
+                <div className="text-gray-700">
+                  <h4 className="font-medium mb-2 text-red-600">Quyền Administrator (Toàn quyền):</h4>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    <li>Quản lý tất cả người dùng và phân quyền</li>
+                    <li>Quản lý tất cả khách sạn và phòng</li>
+                    <li>Xem và quản lý tất cả booking</li>
+                    <li>Quản lý hệ thống và cài đặt</li>
+                    <li>Xem báo cáo và thống kê toàn hệ thống</li>
+                    <li>Tất cả quyền của HOST và USER</li>
+                  </ul>
+                </div>
+              )}
+              
+              {userRole === 'HOST' && (
+                <div className="text-gray-700">
+                  <h4 className="font-medium mb-2 text-green-600">Quyền Hotel Owner:</h4>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    <li>Đăng tải và quản lý khách sạn của bạn</li>
+                    <li>Tạo và quản lý các loại phòng</li>
+                    <li>Nhận và quản lý booking từ khách hàng</li>
+                    <li>Xem thống kê doanh thu và báo cáo</li>
+                    <li>Nhận hoa hồng từ mỗi booking thành công</li>
+                    <li>Tất cả quyền của USER</li>
+                  </ul>
+                </div>
+              )}
+              
+              {userRole === 'USER' && (
+                <div className="text-gray-700">
+                  <h4 className="font-medium mb-2 text-blue-600">Quyền User:</h4>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    <li>Tìm kiếm và đặt phòng khách sạn</li>
+                    <li>Quản lý booking cá nhân</li>
+                    <li>Viết và quản lý đánh giá</li>
+                    <li>Cập nhật thông tin cá nhân</li>
+                    <li>Sử dụng voucher giảm giá</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Host Request Section */}
         {!hasHostRole && !hasAdminRole && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <Crown className="h-5 w-5 mr-2 text-amber-600" />
-                                Become a Host
+              Become a Host
             </h3>
             
             <div className="space-y-4">
               <div className="text-gray-700">
-                                  <h4 className="font-medium mb-2">Benefits of becoming a Host:</h4>
+                <h4 className="font-medium mb-2">Benefits of becoming a Host:</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                                        <li>Upload and manage your own hotels</li>
-                      <li>Receive and manage bookings from customers</li>
+                  <li>Upload and manage your own hotels</li>
+                  <li>Receive and manage bookings from customers</li>
                   <li>Tạo và quản lý các loại phòng khác nhau</li>
                   <li>Xem thống kê doanh thu và báo cáo chi tiết</li>
                   <li>Nhận hoa hồng từ mỗi booking thành công</li>

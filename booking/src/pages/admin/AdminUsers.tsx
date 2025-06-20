@@ -92,8 +92,9 @@ const AdminUsers: React.FC = () => {
       user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const userRoles = user.roles.map(role => role.name);
-    const matchesRole = roleFilter === 'all' || userRoles.includes(roleFilter);
+    // Get user's current role
+    const userRole = user.roles && user.roles.length > 0 ? user.roles[0].name : null;
+    const matchesRole = roleFilter === 'all' || userRole === roleFilter;
     const matchesStatus = statusFilter === 'all' || 
       (statusFilter === 'active' && user.active) ||
       (statusFilter === 'inactive' && !user.active);
@@ -204,23 +205,6 @@ const AdminUsers: React.FC = () => {
     return active 
               ? <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Active</span>
         : <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Inactive</span>;
-  };
-
-  const getRoleBadges = (roles: Array<{name: string}>) => {
-    return roles.map((role, index) => (
-      <span 
-        key={index} 
-        className={`px-2 py-1 text-xs font-medium rounded-full ${
-          role.name === 'ADMIN' 
-            ? 'bg-purple-100 text-purple-800' 
-            : role.name === 'HOST'
-              ? 'bg-blue-100 text-blue-800'
-              : 'bg-gray-100 text-gray-800'
-        }`}
-      >
-        {role.name === 'ADMIN' ? 'Administrator' : role.name === 'HOST' ? 'Hotel Owner' : 'User'}
-      </span>
-    ));
   };
 
   const handleManageRoles = (user: User) => {
@@ -417,7 +401,20 @@ const AdminUsers: React.FC = () => {
                   </td> 
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-wrap gap-1">
-                      {getRoleBadges(user.roles)}
+                      {user.roles.length > 0 ? (
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                          user.roles[0].name === 'ADMIN' 
+                            ? 'bg-purple-100 text-purple-800' 
+                            : user.roles[0].name === 'HOST'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {user.roles[0].name === 'ADMIN' ? 'Administrator' : 
+                           user.roles[0].name === 'HOST' ? 'Hotel Owner' : 'User'}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500 text-xs">No role</span>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

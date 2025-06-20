@@ -67,8 +67,7 @@ public class UserServiceImp implements UserService {
         Role roleUserDefault = roleRepository.findByName(PredefinedRole.USER_ROLE)
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.ROLE_NOT_EXISTED) );
 
-        Set<Role> roleSet = Set.of(roleUserDefault);
-        user.setRoles(roleSet);
+        user.setRole(roleUserDefault);
 
         String code = generateRandomString(6);
         user.setCode(code);
@@ -187,7 +186,7 @@ public class UserServiceImp implements UserService {
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.ROLE_NOT_EXISTED));
         
         // Find users with HOST role
-        Page<User> pageOfUsers = userRepository.findByRolesContaining(hostRole, pageable);
+        Page<User> pageOfUsers = userRepository.findByRole(hostRole, pageable);
         List<User> userList = pageOfUsers.getContent();
         List<UserResponse> userResponses = userList.stream().map(userMapper::toUserResponse).toList();
         
@@ -265,12 +264,15 @@ public class UserServiceImp implements UserService {
 
     @Override
     @IsAdmin
-    public UserResponse updateRoleOfUser(UUID id, RoleOfUpdate request) {
-        User old = userRepository.findById(id)
+    public UserResponse updateUserRole(UUID id, RoleOfUpdate request) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.USER_NOT_FOUND));
-        var roles = roleRepository.findAllById(request.getRoleIds());
-        old.setRoles(new HashSet<>(roles));
-        return userMapper.toUserResponse(userRepository.save(old));
+        
+        Role newRole = roleRepository.findById(request.getRoleId())
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.ROLE_NOT_EXISTED));
+        
+        user.setRole(newRole);
+        return userMapper.toUserResponse(userRepository.save(user));
     }
 
     @Override
@@ -288,10 +290,7 @@ public class UserServiceImp implements UserService {
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.USER_NOT_FOUND));
         
         // Check if user already has HOST role
-        boolean hasHostRole = user.getRoles().stream()
-                .anyMatch(role -> role.getName().equals(PredefinedRole.HOST_ROLE));
-        
-        if (hasHostRole) {
+        if (user.isHost()) {
             throw new AppRuntimeException(ErrorResponse.USER_ALREADY_HOST);
         }
         
@@ -314,9 +313,7 @@ public class UserServiceImp implements UserService {
         Role hostRole = roleRepository.findByName(PredefinedRole.HOST_ROLE)
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.ROLE_NOT_EXISTED));
         
-        Set<Role> userRoles = new HashSet<>(user.getRoles());
-        userRoles.add(hostRole);
-        user.setRoles(userRoles);
+        user.setRole(hostRole);
         
         // Reset host request flag
         user.setHostRequested(false);

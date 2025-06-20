@@ -172,6 +172,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, type }) => 
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white truncate">{user?.name}</p>
             <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+            {user?.roles && user.roles.length > 0 && (
+              <div className="flex items-center mt-1">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                  user.roles[0].name === 'ADMIN' ? 'bg-red-100 text-red-800' :
+                  user.roles[0].name === 'HOST' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                }`}>
+                  {user.roles[0].name === 'ADMIN' ? 'Admin' :
+                   user.roles[0].name === 'HOST' ? 'Host' : 'User'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>

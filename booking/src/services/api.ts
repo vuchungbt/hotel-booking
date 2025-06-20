@@ -131,7 +131,7 @@ export interface AdminPasswordUpdateRequest {
 }
 
 export interface RoleUpdateRequest {
-  roleIds: number[];
+  roleId: number;
 }
 
 // Hotel Types

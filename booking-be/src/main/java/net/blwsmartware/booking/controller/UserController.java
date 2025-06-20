@@ -170,11 +170,12 @@ public class UserController {
     }
     
     @PutMapping("/role/{id}")
-    public ResponseEntity<MessageResponse<UserResponse>> updateRoleOfUser(@RequestBody RoleOfUpdate roles, @PathVariable UUID id) {
+    @IsAdmin
+    public ResponseEntity<MessageResponse<UserResponse>> updateUserRole(@PathVariable UUID id, @RequestBody @Valid RoleOfUpdate request) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(MessageResponse.<UserResponse>builder()
-                        .result(userService.updateRoleOfUser(id,roles))
+                        .result(userService.updateUserRole(id, request))
                         .build()
                 );
     }

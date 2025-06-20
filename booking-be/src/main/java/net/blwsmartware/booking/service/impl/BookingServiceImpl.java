@@ -767,8 +767,7 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = null;
         
         // Check if user is admin or host
-        boolean isAdmin = currentUser.getRoles().stream()
-                .anyMatch(role -> "ADMIN".equals(role.getName()));
+        boolean isAdmin = currentUser.getRole() != null && "ADMIN".equals(currentUser.getRole().getName());
         
         if (isAdmin) {
             // Admin can confirm payment for any booking

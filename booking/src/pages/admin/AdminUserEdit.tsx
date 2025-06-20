@@ -519,31 +519,31 @@ const AdminUserEdit: React.FC = () => {
             )}
           </div>
 
-          {/* Current Roles Display */}
+          {/* Current Role Display */}
           <div className="border-t border-gray-200 pt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <Shield className="h-5 w-5 mr-2" />
-              Current Roles
+              Current Role
             </h3>
             <div className="flex flex-wrap gap-2">
-              {user.roles.map((role, index) => (
-                <span 
-                  key={index} 
-                  className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${
-                    role.name === 'ADMIN' 
-                      ? 'bg-purple-100 text-purple-800' 
-                      : role.name === 'HOST'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
+              {user.roles.length > 0 ? (
+                <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${
+                  user.roles[0].name === 'ADMIN' 
+                    ? 'bg-purple-100 text-purple-800' 
+                    : user.roles[0].name === 'HOST'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-gray-100 text-gray-800'
+                }`}>
                   <Shield className="h-4 w-4 mr-1" />
-                  {role.name === 'ADMIN' ? 'Administrator' : role.name === 'HOST' ? 'Hotel Owner' : 'User'}
+                  {user.roles[0].name === 'ADMIN' ? 'Administrator' : 
+                   user.roles[0].name === 'HOST' ? 'Hotel Owner' : 'User'}
                 </span>
-              ))}
+              ) : (
+                <span className="text-gray-500 text-sm">No role assigned</span>
+              )}
             </div>
             <p className="text-sm text-gray-500 mt-2">
-              To change roles, please contact a higher-level administrator.
+              To change role, please contact a higher-level administrator.
             </p>
           </div>
 

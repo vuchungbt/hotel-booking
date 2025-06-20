@@ -32,7 +32,7 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
   onSuccess
 }) => {
   const { showToast } = useToast();
-  const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
+  const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
@@ -78,58 +78,49 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
       // Fetch available roles first
       fetchAvailableRoles();
       
-      // Set current user role IDs
-      const currentRoleIds = user.roles.map(role => role.id);
-      console.log('Current user role IDs:', currentRoleIds);
-      setSelectedRoleIds(currentRoleIds);
+      // Set current user role ID (take the first role since now it's single role)
+      const currentRoleId = user.roles.length > 0 ? user.roles[0].id : null;
+      console.log('Current user role ID:', currentRoleId);
+      setSelectedRoleId(currentRoleId);
     }
   }, [isOpen, user]);
 
-  const handleRoleToggle = (roleId: number) => {
-    console.log('Toggling role:', roleId);
-    setSelectedRoleIds(prev => {
-      const newRoleIds = prev.includes(roleId)
-        ? prev.filter(id => id !== roleId)
-        : [...prev, roleId];
-      console.log('New selected role IDs:', newRoleIds);
-      return newRoleIds;
-    });
+  const handleRoleSelect = (roleId: number) => {
+    console.log('Selecting role:', roleId);
+    setSelectedRoleId(roleId);
   };
 
   const handleSave = async () => {
-    if (selectedRoleIds.length === 0) {
-      showToast('warning', 'Warning', 'Please select at least one role');
+    if (selectedRoleId === null) {
+      showToast('warning', 'Warning', 'Please select a role');
       return;
     }
 
     try {
       setSaving(true);
       
-      // Ensure unique role IDs
-      const uniqueRoleIds = [...new Set(selectedRoleIds)];
-      
       const updateData: RoleUpdateRequest = {
-        roleIds: uniqueRoleIds
+        roleId: selectedRoleId
       };
 
       console.log('=== ROLE UPDATE DEBUG ===');
       console.log('User ID:', user.id);
-      console.log('Current Role IDs:', user.roles.map(r => r.id));
-      console.log('Selected Role IDs:', uniqueRoleIds);
+      console.log('Current Role ID:', user.roles.length > 0 ? user.roles[0].id : null);
+      console.log('Selected Role ID:', selectedRoleId);
       console.log('Request Data:', updateData);
       
       const response = await userAPI.updateUserRoles(user.id, updateData);
       console.log('Update response:', response.data);
       
-      showToast('success', 'Success', 'User roles updated successfully');
+      showToast('success', 'Success', 'User role updated successfully');
       onSuccess();
       onClose();
     } catch (error: any) {
-      console.error('=== ERROR UPDATING ROLES ===');
+      console.error('=== ERROR UPDATING ROLE ===');
       console.error('Error:', error);
       console.error('Response:', error.response?.data);
       
-      let errorMessage = 'An error occurred while updating roles';
+      let errorMessage = 'An error occurred while updating role';
       
       if (error.response?.status === 403) {
         errorMessage = 'You do not have permission to update user roles';
@@ -174,10 +165,8 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
   };
 
   const hasChanges = () => {
-    const currentRoleIds = user.roles.map(role => role.id).sort((a, b) => a - b);
-    const newRoleIds = [...selectedRoleIds].sort((a, b) => a - b);
-    
-    return JSON.stringify(currentRoleIds) !== JSON.stringify(newRoleIds);
+    const currentRoleId = user.roles.length > 0 ? user.roles[0].id : null;
+    return currentRoleId !== selectedRoleId;
   };
 
   if (!isOpen) return null;
@@ -210,10 +199,10 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
             <div className="mb-6">
               <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
                 <Shield className="h-5 w-5 mr-2" />
-                Select roles for user
+                Select role for user
               </h3>
               <p className="text-sm text-gray-600">
-                Select one or more roles to assign to this user. Each role provides different permissions in the system.
+                Select one role to assign to this user. Each role provides different permissions in the system.
               </p>
             </div>
 
@@ -231,7 +220,7 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
               <div className="space-y-3">
                 <h4 className="text-sm font-medium text-gray-700">All available roles:</h4>
                 {availableRoles.map((role) => {
-                  const isSelected = selectedRoleIds.includes(role.id);
+                  const isSelected = selectedRoleId === role.id;
                   const isCurrentRole = user.roles.some(userRole => userRole.id === role.id);
                   return (
                     <div
@@ -241,7 +230,7 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }`}
-                      onClick={() => handleRoleToggle(role.id)}
+                      onClick={() => handleRoleSelect(role.id)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -275,7 +264,7 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
             )}
 
             {/* Warning for no roles selected */}
-            {selectedRoleIds.length === 0 && (
+            {selectedRoleId === null && (
               <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <div className="flex">
                   <div className="flex-shrink-0">
@@ -295,9 +284,8 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
             <div className="mt-4 p-3 bg-gray-100 rounded-lg text-xs text-gray-600">
               <p><strong>Debug Info:</strong></p>
               <p>User ID: {user.id}</p>
-              <p>Current Role IDs: [{user.roles.map(r => r.id).join(', ')}]</p>
-              <p>Current Role Names: [{user.roles.map(r => r.name).join(', ')}]</p>
-              <p>Selected Role IDs: [{selectedRoleIds.join(', ')}]</p>
+              <p>Current Role ID: {user.roles.length > 0 ? user.roles[0].id : null}</p>
+              <p>Selected Role ID: {selectedRoleId}</p>
               <p>Available Roles: [{availableRoles.map(r => `${r.id}:${r.name}`).join(', ')}]</p>
               <p>Has Changes: {hasChanges() ? 'Yes' : 'No'}</p>
             </div>
@@ -312,7 +300,7 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
                   <div className="ml-3">
                     <h3 className="text-sm font-medium text-blue-800">Changes Made</h3>
                     <div className="mt-2 text-sm text-blue-700">
-                      <p>You have changed the user's roles. Click "Save Changes" to apply.</p>
+                      <p>You have changed the user's role. Click "Save Changes" to apply.</p>
                     </div>
                   </div>
                 </div>
@@ -332,7 +320,7 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || !hasChanges() || selectedRoleIds.length === 0}
+            disabled={saving || !hasChanges() || selectedRoleId === null}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center"
           >
             {saving ? (

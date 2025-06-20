@@ -124,6 +124,17 @@ const Navbar: React.FC = () => {
                       <div className="px-4 py-3 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900">{user.name}</p>
                         <p className="text-sm text-gray-500">{user.email}</p>
+                        {user.roles && user.roles.length > 0 && (
+                          <div className="flex items-center mt-2">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              user.roles[0].name === 'ADMIN' ? 'bg-red-100 text-red-800' :
+                              user.roles[0].name === 'HOST' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {user.roles[0].name === 'ADMIN' ? 'Administrator' :
+                               user.roles[0].name === 'HOST' ? 'Hotel Owner' : 'User'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       
                       <Link
@@ -294,6 +305,17 @@ const Navbar: React.FC = () => {
                 <div className="ml-3">
                   <div className="text-base font-medium text-gray-800">{user.name}</div>
                   <div className="text-sm font-medium text-gray-500">{user.email}</div>
+                  {user.roles && user.roles.length > 0 && (
+                    <div className="flex items-center mt-1">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                        user.roles[0].name === 'ADMIN' ? 'bg-red-100 text-red-800' :
+                        user.roles[0].name === 'HOST' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {user.roles[0].name === 'ADMIN' ? 'Admin' :
+                         user.roles[0].name === 'HOST' ? 'Host' : 'User'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="mt-3 space-y-1">
