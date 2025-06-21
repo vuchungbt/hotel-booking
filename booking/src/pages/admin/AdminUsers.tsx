@@ -120,12 +120,20 @@ const AdminUsers: React.FC = () => {
     if (isSelectAll) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(filteredUsers.map(user => user.id));
+      // Chỉ chọn những user không phải là tài khoản admin chính
+      const selectableUsers = filteredUsers.filter(user => user.username !== 'adminadmin');
+      setSelectedUsers(selectableUsers.map(user => user.id));
     }
     setIsSelectAll(!isSelectAll);
   };
 
   const handleSelectUser = (userId: string) => {
+    // Không cho phép chọn tài khoản admin để xóa
+    const user = users.find(u => u.id === userId);
+    if (user && user.username === 'adminadmin') {
+      return;
+    }
+    
     if (selectedUsers.includes(userId)) {
       setSelectedUsers(selectedUsers.filter(id => id !== userId));
     } else {
@@ -208,6 +216,12 @@ const AdminUsers: React.FC = () => {
   };
 
   const handleManageRoles = (user: User) => {
+    // Không cho phép thay đổi role của tài khoản admin chính
+    if (user.username === 'adminadmin') {
+      showToast('warning', 'Protected Account', 'Cannot modify roles for the main admin account');
+      return;
+    }
+    
     setSelectedUserForRole(user);
     setIsRoleModalOpen(true);
   };
@@ -384,7 +398,11 @@ const AdminUsers: React.FC = () => {
                         type="checkbox"
                         checked={selectedUsers.includes(user.id)}
                         onChange={() => handleSelectUser(user.id)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        disabled={user.username === 'adminadmin'}
+                        className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${
+                          user.username === 'adminadmin' ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                        title={user.username === 'adminadmin' ? 'Admin account cannot be deleted' : ''}
                       />
                     </div>
                   </td>
@@ -450,8 +468,17 @@ const AdminUsers: React.FC = () => {
                       </button>
                       <button
                         onClick={() => handleManageRoles(user)}
-                        className="text-purple-600 hover:text-purple-900"
-                        title="Manage Roles"
+                        disabled={user.username === 'adminadmin'}
+                        className={`${
+                          user.username === 'adminadmin' 
+                            ? 'text-gray-400 cursor-not-allowed opacity-50' 
+                            : 'text-purple-600 hover:text-purple-900'
+                        }`}
+                        title={
+                          user.username === 'adminadmin' 
+                            ? 'Cannot modify roles for main admin account' 
+                            : 'Manage Roles'
+                        }
                       >
                         <Settings size={18} />
                       </button>
@@ -462,18 +489,21 @@ const AdminUsers: React.FC = () => {
                       >
                         <Edit size={18} />
                       </button>
-                      <button
-                        onClick={() => handleDeleteUser(user.id)}
-                        disabled={actionLoading === user.id}
-                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                        title="Delete"
-                      >
-                        {actionLoading === user.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
-                        ) : (
-                          <Trash size={18} />
-                        )}
-                      </button>
+                      {/* Ẩn button delete cho tài khoản admin chính */}
+                      {user.username !== 'adminadmin' && (
+                        <button
+                          onClick={() => handleDeleteUser(user.id)}
+                          disabled={actionLoading === user.id}
+                          className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                          title="Delete"
+                        >
+                          {actionLoading === user.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                          ) : (
+                            <Trash size={18} />
+                          )}
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

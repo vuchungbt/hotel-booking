@@ -59,9 +59,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, type }) => 
     { path: '/host/hotels', label: 'Hotels', icon: <Hotel size={20} /> },
     { path: '/host/room-types', label: 'Room Types', icon: <BedDouble size={20} /> },
     { path: '/host/bookings', label: 'Bookings', icon: <BookOpen size={20} /> },
-    { path: '/host/calendar', label: 'Booking Calendar', icon: <Calendar size={20} /> },
+    { path: '/host/vouchers', label: 'Vouchers', icon: <Tag size={20} /> },
     { path: '/host/reviews', label: 'Reviews', icon: <Star size={20} /> },
-    { path: '/host/messages', label: 'Messages', icon: <MessageSquare size={20} /> },
     { path: '/host/analytics', label: 'Analytics', icon: <BarChart2 size={20} /> },
     { path: '/host/settings', label: 'Settings', icon: <Settings size={20} /> },
   ];

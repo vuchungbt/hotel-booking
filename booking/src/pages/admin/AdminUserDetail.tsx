@@ -77,6 +77,12 @@ const AdminUserDetail: React.FC = () => {
 
   const handleDelete = async () => {
     if (!user) return;
+    
+    // Bảo vệ tài khoản admin chính
+    if (user.username === 'adminadmin') {
+      showToast('warning', 'Protected Account', 'Cannot delete the main admin account');
+      return;
+    }
 
           if (window.confirm(`Are you sure you want to delete user "${user.name}"?`)) {
       try {
@@ -134,6 +140,15 @@ const AdminUserDetail: React.FC = () => {
       fetchUser(id);
     }
   };
+  
+  const handleOpenRoleModal = () => {
+    // Bảo vệ tài khoản admin chính
+    if (user && user.username === 'adminadmin') {
+      showToast('warning', 'Protected Account', 'Cannot modify roles for the main admin account');
+      return;
+    }
+    setIsRoleModalOpen(true);
+  };
 
   if (loading) {
     return (
@@ -186,8 +201,14 @@ const AdminUserDetail: React.FC = () => {
           </button>
           
           <button
-            onClick={() => setIsRoleModalOpen(true)}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center"
+            onClick={handleOpenRoleModal}
+            disabled={user.username === 'adminadmin'}
+            className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
+              user.username === 'adminadmin'
+                ? 'bg-gray-400 text-gray-200 cursor-not-allowed opacity-50'
+                : 'bg-purple-600 text-white hover:bg-purple-700'
+            }`}
+            title={user.username === 'adminadmin' ? 'Cannot modify roles for main admin account' : ''}
           >
             <Settings size={20} className="mr-2" />
                           Role Management
@@ -201,18 +222,21 @@ const AdminUserDetail: React.FC = () => {
             Edit
           </button>
           
-          <button
-            onClick={handleDelete}
-            disabled={actionLoading}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center disabled:opacity-50"
-          >
-            {actionLoading ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-            ) : (
-              <Trash size={20} className="mr-2" />
-            )}
-            Delete
-          </button>
+          {/* Ẩn button delete cho tài khoản admin chính */}
+          {user.username !== 'adminadmin' && (
+            <button
+              onClick={handleDelete}
+              disabled={actionLoading}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center disabled:opacity-50"
+            >
+              {actionLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              ) : (
+                <Trash size={20} className="mr-2" />
+              )}
+              Delete
+            </button>
+          )}
         </div>
       </div>
 
@@ -327,11 +351,17 @@ const AdminUserDetail: React.FC = () => {
                 Roles & Permissions
               </h3>
               <button
-                onClick={() => setIsRoleModalOpen(true)}
-                className="text-purple-600 hover:text-purple-800 text-sm font-medium flex items-center"
+                onClick={handleOpenRoleModal}
+                disabled={user.username === 'adminadmin'}
+                className={`text-sm font-medium flex items-center ${
+                  user.username === 'adminadmin'
+                    ? 'text-gray-400 cursor-not-allowed opacity-50'
+                    : 'text-purple-600 hover:text-purple-800'
+                }`}
+                title={user.username === 'adminadmin' ? 'Cannot modify roles for main admin account' : ''}
               >
                 <Settings className="h-4 w-4 mr-1" />
-                Edit
+                {user.username === 'adminadmin' ? 'Protected' : 'Edit'}
               </button>
             </div>
             

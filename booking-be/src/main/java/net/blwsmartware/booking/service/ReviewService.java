@@ -41,4 +41,18 @@ public interface ReviewService {
     // Validation methods
     boolean hasUserReviewedHotel(UUID userId, UUID hotelId);
     boolean canUserReviewHotel(UUID userId, UUID hotelId);
+    
+    // Host operations
+    DataResponse<ReviewResponse> getHostReviews(UUID hostId, Integer pageNumber, Integer pageSize, String sortBy);
+    DataResponse<ReviewResponse> getHostReviewsWithFilters(
+            UUID hostId, UUID hotelId, Integer rating,
+            Integer pageNumber, Integer pageSize, String sortBy);
+    DataResponse<ReviewResponse> getHostReviewsByHotel(UUID hostId, UUID hotelId, Integer pageNumber, Integer pageSize, String sortBy);
+    DataResponse<ReviewResponse> searchHostReviews(UUID hostId, String keyword, Integer pageNumber, Integer pageSize, String sortBy);
+    
+    // Host statistics
+    Long getHostReviewsCount(UUID hostId);
+    Long getHostReviewsCountByHotel(UUID hostId, UUID hotelId);
+    Double getHostAverageRating(UUID hostId);
+    Double getHostAverageRatingByHotel(UUID hostId, UUID hotelId);
 } 

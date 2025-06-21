@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Edit, Trash, Calendar, Percent, Tag, Filter, Clock, Check, X, AlertCircle } from 'lucide-react';
+import { Search, Plus, Edit, Trash, Calendar, Percent, Tag, Filter, Clock, Check, X, AlertCircle, Hotel } from 'lucide-react';
 import { voucherAPI, hotelAPI } from '../../services/api';
 import { VoucherResponse, VoucherStatus, DiscountType, ApplicableScope, VoucherFilterParams } from '../../types/voucher';
 import VoucherForm from '../../components/VoucherForm';
@@ -12,10 +12,11 @@ interface AlertState {
   message: string;
 }
 
-const AdminPromotions: React.FC = () => {
+const HostVouchers: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<VoucherStatus | 'all'>('all');
+  const [hotelFilter, setHotelFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedVouchers, setSelectedVouchers] = useState<string[]>([]);
   const [isSelectAll, setIsSelectAll] = useState(false);
@@ -40,7 +41,7 @@ const AdminPromotions: React.FC = () => {
   useEffect(() => {
     loadVouchers();
     loadHotels();
-  }, [currentPage, statusFilter, searchTerm]);
+  }, [currentPage, statusFilter, searchTerm, hotelFilter]);
 
   const loadVouchers = async () => {
     setLoading(true);
@@ -60,10 +61,14 @@ const AdminPromotions: React.FC = () => {
       }
 
       let response;
-      if (searchTerm) {
-        response = await voucherAPI.searchVouchers(searchTerm, params);
+      if (hotelFilter === 'all') {
+        if (searchTerm) {
+          response = await voucherAPI.searchHostVouchers(searchTerm, params);
+        } else {
+          response = await voucherAPI.getHostVouchers(params);
+        }
       } else {
-        response = await voucherAPI.getAllVouchers(params);
+        response = await voucherAPI.getHostVouchersByHotel(hotelFilter, params);
       }
 
       if (response.data.success) {
@@ -80,13 +85,22 @@ const AdminPromotions: React.FC = () => {
   };
 
   const loadHotels = async () => {
+    console.log('Loading hotels for host...');
     try {
-      const response = await hotelAPI.getAllHotels(0, 1000);
+      const response = await hotelAPI.getMyHotels(0, 100);
+      console.log('Hotels response:', response);
       if (response.data.success) {
+        console.log('Hotels loaded:', response.data.result.content);
         setHotels(response.data.result.content);
+      } else {
+        console.error('Failed to load hotels:', response.data.message);
+        showAlert('error', response.data.message || 'Không thể tải danh sách khách sạn');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading hotels:', error);
+      console.error('Error response:', error.response?.data);
+      const errorMessage = error.response?.data?.message || 'Không thể tải danh sách khách sạn';
+      showAlert('error', errorMessage);
     }
   };
 
@@ -98,7 +112,7 @@ const AdminPromotions: React.FC = () => {
   const handleCreateVoucher = async (data: any) => {
     setLoading(true);
     try {
-      const response = await voucherAPI.createVoucher(data);
+      const response = await voucherAPI.createHostVoucher(data);
       if (response.data.success) {
         showAlert('success', 'Tạo voucher thành công');
         setShowForm(false);
@@ -116,7 +130,7 @@ const AdminPromotions: React.FC = () => {
     
     setLoading(true);
     try {
-      const response = await voucherAPI.updateVoucher(editingVoucher.id, data);
+      const response = await voucherAPI.updateHostVoucher(editingVoucher.id, data);
       if (response.data.success) {
         showAlert('success', 'Cập nhật voucher thành công');
         setShowForm(false);
@@ -142,7 +156,7 @@ const AdminPromotions: React.FC = () => {
     if (!deleteModal.voucher) return;
 
     try {
-      const response = await voucherAPI.deleteVoucher(deleteModal.voucher.id);
+      const response = await voucherAPI.deleteHostVoucher(deleteModal.voucher.id);
       if (response.data.success) {
         showAlert('success', 'Xóa voucher thành công');
         loadVouchers();
@@ -165,7 +179,7 @@ const AdminPromotions: React.FC = () => {
     try {
       // Toggle to inactive if currently active
       if (deleteModal.voucher.status === VoucherStatus.ACTIVE) {
-        const response = await voucherAPI.toggleVoucherStatus(deleteModal.voucher.id);
+        const response = await voucherAPI.toggleHostVoucherStatus(deleteModal.voucher.id);
         if (response.data.success) {
           showAlert('success', 'Đã tắt voucher thành công');
           loadVouchers();
@@ -182,7 +196,7 @@ const AdminPromotions: React.FC = () => {
 
   const handleToggleStatus = async (voucherId: string) => {
     try {
-      const response = await voucherAPI.toggleVoucherStatus(voucherId);
+      const response = await voucherAPI.toggleHostVoucherStatus(voucherId);
       if (response.data.success) {
         showAlert('success', 'Cập nhật trạng thái thành công');
         loadVouchers();
@@ -276,7 +290,8 @@ const AdminPromotions: React.FC = () => {
             setEditingVoucher(null);
           }}
           isLoading={loading}
-          hotels={hotels}
+          isHostMode={true}
+          hostHotels={hotels}
         />
       </div>
     );
@@ -290,15 +305,17 @@ const AdminPromotions: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Quản lý Voucher</h1>
-              <p className="text-gray-600 mt-1">Tạo và quản lý các voucher giảm giá</p>
+              <p className="text-gray-600 mt-1">Tạo và quản lý voucher cho khách sạn của bạn</p>
             </div>
-          <button
-              onClick={handleAddVoucher}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
-          >
-            <Plus size={20} className="mr-2" />
-              Tạo voucher mới
-          </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleAddVoucher}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
+              >
+                <Plus size={20} className="mr-2" />
+                Tạo voucher mới
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -320,13 +337,13 @@ const AdminPromotions: React.FC = () => {
             <div className="flex-1">
               <div className="relative">
                 <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
+                <input
+                  type="text"
                   placeholder="Tìm kiếm theo tên hoặc mã voucher..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+                />
               </div>
             </div>
             <div className="flex gap-2">
@@ -341,10 +358,22 @@ const AdminPromotions: React.FC = () => {
                 <option value={VoucherStatus.EXPIRED}>Hết hạn</option>
                 <option value={VoucherStatus.USED_UP}>Hết lượt</option>
               </select>
+              <select
+                value={hotelFilter}
+                onChange={(e) => setHotelFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">Tất cả khách sạn</option>
+                {hotels.map((hotel) => (
+                  <option key={hotel.id} value={hotel.id}>
+                    {hotel.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-            </div>
-          </div>
+        </div>
+      </div>
 
       {/* Content */}
       <div className="px-6 pb-6">
@@ -353,193 +382,204 @@ const AdminPromotions: React.FC = () => {
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                      <input
-                        type="checkbox"
+                <input
+                  type="checkbox"
                   checked={isSelectAll}
                   onChange={handleSelectAll}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <span className="ml-3 text-sm text-gray-700">
                   Đã chọn {selectedVouchers.length} voucher
-                      </span>
-                    </div>
+                </span>
+              </div>
               <div className="text-sm text-gray-500">
                 Tổng: {totalElements} voucher
-                  </div>
-                  </div>
-                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Table Content */}
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          ) : vouchers.length === 0 ? (
-            <div className="text-center py-12">
-              <Tag size={48} className="mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500">Chưa có voucher nào</p>
-                  </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Voucher
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Giảm giá
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Thời gian
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Sử dụng
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Trạng thái
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Thao tác
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {vouchers.map((voucher) => (
-                      <tr key={voucher.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Voucher
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Giảm giá
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Thời gian
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Sử dụng
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Phạm vi
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Trạng thái
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Hành động
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {vouchers.map((voucher) => (
+                  <tr key={voucher.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedVouchers.includes(voucher.id)}
+                          onChange={() => handleSelectVoucher(voucher.id)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-4"
+                        />
+                        <div>
                           <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={selectedVouchers.includes(voucher.id)}
-                              onChange={() => handleSelectVoucher(voucher.id)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-4"
-                            />
-                            <div>
-                              <div className="flex items-center">
-                                <Tag size={16} className="text-blue-600 mr-2" />
-                                <span className="font-semibold text-blue-600">{voucher.code}</span>
-                              </div>
-                              <div className="text-sm font-medium text-gray-900 mt-1">{voucher.name}</div>
-                              {voucher.description && (
-                                <div className="text-sm text-gray-500 mt-1">{voucher.description}</div>
-                      )}
-                    </div>
-                  </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <Percent size={16} className="text-green-600 mr-2" />
-                            <span className="text-sm font-medium text-green-600">
-                              {getDiscountText(voucher)}
-                            </span>
+                            <Tag size={16} className="text-blue-600 mr-2" />
+                            <span className="font-semibold text-blue-600">{voucher.code}</span>
                           </div>
-                          {voucher.minBookingValue && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              Tối thiểu: {formatCurrency(voucher.minBookingValue)}
-                            </div>
+                          <div className="text-sm font-medium text-gray-900 mt-1">{voucher.name}</div>
+                          {voucher.description && (
+                            <div className="text-sm text-gray-500 mt-1">{voucher.description}</div>
                           )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Calendar size={16} className="mr-2" />
-                            <div>
-                              <div>{formatDate(voucher.startDate)}</div>
-                              <div className="text-xs">đến {formatDate(voucher.endDate)}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {voucher.usageCount} / {voucher.usageLimit || '∞'}
-                          </div>
-                          {voucher.usageLimit && (
-                            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                              <div
-                                className="bg-blue-600 h-2 rounded-full"
-                                style={{ width: `${getProgressBarWidth(voucher.usageCount, voucher.usageLimit)}%` }}
-                        ></div>
+                        </div>
                       </div>
-                    )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {getStatusBadge(voucher.status)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => handleEditVoucher(voucher)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleToggleStatus(voucher.id)}
-                              className="text-yellow-600 hover:text-yellow-900"
-                            >
-                              {voucher.status === VoucherStatus.ACTIVE ? <X size={16} /> : <Check size={16} />}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteVoucher(voucher)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              <Trash size={16} />
-                            </button>
-                  </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        <div className="flex items-center">
+                          <Percent size={14} className="text-green-600 mr-1" />
+                          <span className="font-medium">{getDiscountText(voucher)}</span>
+                        </div>
+                        {voucher.minBookingValue && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Tối thiểu: {formatCurrency(voucher.minBookingValue)}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        <div className="flex items-center">
+                          <Calendar size={14} className="text-gray-400 mr-1" />
+                          <span>{formatDate(voucher.startDate)}</span>
+                        </div>
+                        <div className="flex items-center mt-1">
+                          <span className="text-xs text-gray-500">đến</span>
+                          <span className="ml-1 text-xs">{formatDate(voucher.endDate)}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        <div className="flex items-center justify-between">
+                          <span>{voucher.usageCount}</span>
+                          <span className="text-gray-500">
+                            {voucher.usageLimit ? `/${voucher.usageLimit}` : '/∞'}
+                          </span>
+                        </div>
+                        {voucher.usageLimit && (
+                          <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${getProgressBarWidth(voucher.usageCount, voucher.usageLimit)}%` }}
+                            ></div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {voucher.applicableScope === ApplicableScope.ALL_HOTELS ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <Hotel size={12} className="mr-1" />
+                            Tất cả khách sạn
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            <Hotel size={12} className="mr-1" />
+                            Khách sạn cụ thể
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getStatusBadge(voucher.status)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleEditVoucher(voucher)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleToggleStatus(voucher.id)}
+                          className="text-yellow-600 hover:text-yellow-900"
+                        >
+                          {voucher.status === VoucherStatus.ACTIVE ? <X size={16} /> : <Check size={16} />}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteVoucher(voucher)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <Trash size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-                <div className="px-6 py-4 border-t border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-700">
-                      Hiển thị {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, totalElements)} của {totalElements} voucher
-                    </div>
-                    <div className="flex items-center space-x-2">
+          <div className="px-6 py-4 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Hiển thị {Math.min((currentPage - 1) * itemsPerPage + 1, totalElements)} đến{' '}
+                {Math.min(currentPage * itemsPerPage, totalElements)} của {totalElements} voucher
+              </div>
+              <div className="flex items-center space-x-2">
                 <button
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                        className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Trước
                 </button>
-                      <span className="text-sm text-gray-700">
-                        {currentPage} / {totalPages}
-                      </span>
-                      <button
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Tiếp
-                      </button>
-                </div>
+                <span className="px-3 py-1 text-sm font-medium text-gray-700">
+                  Trang {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Sau
+                </button>
               </div>
             </div>
-          )}
-            </>
-          )}
+          </div>
         </div>
       </div>
 
       {/* Delete Confirmation Modal */}
       <VoucherDeleteConfirmModal
         isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, voucher: null, hasUsageRecords: false })}
-        onConfirmDelete={handleConfirmDelete}
-        onDisableInstead={handleDisableInstead}
         voucherCode={deleteModal.voucher?.code || ''}
         hasUsageRecords={deleteModal.hasUsageRecords}
+        onConfirmDelete={handleConfirmDelete}
+        onDisableInstead={handleDisableInstead}
+        onClose={() => setDeleteModal({ isOpen: false, voucher: null, hasUsageRecords: false })}
       />
     </div>
   );
 };
 
-export default AdminPromotions;
-
+export default HostVouchers; 

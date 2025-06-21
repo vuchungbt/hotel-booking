@@ -14,12 +14,14 @@ import net.blwsmartware.booking.entity.User;
 import net.blwsmartware.booking.exception.AppRuntimeException;
 import net.blwsmartware.booking.enums.ErrorResponse;
 import net.blwsmartware.booking.mapper.ReviewMapper;
+import net.blwsmartware.booking.repository.BookingRepository;
 import net.blwsmartware.booking.repository.HotelRepository;
 import net.blwsmartware.booking.repository.ReviewRepository;
 import net.blwsmartware.booking.repository.UserRepository;
 import net.blwsmartware.booking.service.ReviewService;
 import net.blwsmartware.booking.util.DataResponseUtils;
 import net.blwsmartware.booking.validator.IsAdmin;
+import net.blwsmartware.booking.validator.IsHost;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,8 +41,9 @@ import java.util.UUID;
 public class ReviewServiceImpl implements ReviewService {
     
     ReviewRepository reviewRepository;
-    HotelRepository hotelRepository;
     UserRepository userRepository;
+    HotelRepository hotelRepository;
+    BookingRepository bookingRepository;
     ReviewMapper reviewMapper;
     
     @Override
@@ -142,6 +145,12 @@ public class ReviewServiceImpl implements ReviewService {
         // Check if user has already reviewed this hotel
         if (reviewRepository.existsByUserAndHotel(user, hotel)) {
             throw new AppRuntimeException(ErrorResponse.REVIEW_ALREADY_EXISTS);
+        }
+        
+        // NEW: Check if user has completed booking for this hotel
+        if (!bookingRepository.existsCompletedBookingByUserAndHotel(user.getId(), hotel.getId())) {
+            log.warn("User {} attempted to review hotel {} without completed booking", user.getId(), hotel.getId());
+            throw new AppRuntimeException(ErrorResponse.REVIEW_NOT_ALLOWED);
         }
         
         // Create review
@@ -304,9 +313,23 @@ public class ReviewServiceImpl implements ReviewService {
     
     @Override
     public boolean canUserReviewHotel(UUID userId, UUID hotelId) {
-        // TODO: Implement logic to check if user has booking for this hotel
-        // For now, return true if user hasn't reviewed yet
-        return !hasUserReviewedHotel(userId, hotelId);
+        log.info("Checking if user {} can review hotel {}", userId, hotelId);
+        
+        // Check if user has completed booking for this hotel
+        boolean hasCompletedBooking = bookingRepository.existsCompletedBookingByUserAndHotel(userId, hotelId);
+        if (!hasCompletedBooking) {
+            log.info("User {} has no completed booking for hotel {}", userId, hotelId);
+            return false;
+        }
+        
+        // Check if user has already reviewed this hotel
+        boolean hasReviewed = reviewRepository.existsByUserIdAndHotelId(userId, hotelId);
+        if (hasReviewed) {
+            log.info("User {} has already reviewed hotel {}", userId, hotelId);
+            return false;
+        }
+        
+        return true;
     }
     
     // Helper methods
@@ -320,5 +343,134 @@ public class ReviewServiceImpl implements ReviewService {
     private UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return UUID.fromString(authentication.getName()); // Direct conversion to UUID
+    }
+    
+    // ===== HOST OPERATIONS =====
+    
+    @Override
+    @IsHost
+    public DataResponse<ReviewResponse> getHostReviews(UUID hostId, Integer pageNumber, Integer pageSize, String sortBy) {
+        log.info("Getting reviews for host: {}", hostId);
+        
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
+        Page<Review> reviewPage = reviewRepository.findByHostId(hostId, pageable);
+        
+        List<ReviewResponse> reviewResponses = reviewPage.getContent().stream()
+                .map(reviewMapper::toResponse)
+                .toList();
+        
+        return DataResponseUtils.convertPageInfo(reviewPage, reviewResponses);
+    }
+    
+    @Override
+    @IsHost
+    public DataResponse<ReviewResponse> getHostReviewsWithFilters(UUID hostId, UUID hotelId, Integer rating, 
+                                                                 Integer pageNumber, Integer pageSize, String sortBy) {
+        log.info("Getting filtered reviews for host: {} with hotelId: {}, rating: {}", hostId, hotelId, rating);
+        
+        // Validate hotel ownership if hotelId is provided
+        if (hotelId != null) {
+            Hotel hotel = hotelRepository.findById(hotelId)
+                    .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
+            
+            if (!hotel.getOwner().getId().equals(hostId)) {
+                throw new AppRuntimeException(ErrorResponse.HOTEL_ACCESS_DENIED);
+            }
+        }
+        
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
+        Page<Review> reviewPage = reviewRepository.findHostReviewsWithFilters(hostId, hotelId, rating, pageable);
+        
+        List<ReviewResponse> reviewResponses = reviewPage.getContent().stream()
+                .map(reviewMapper::toResponse)
+                .toList();
+        
+        return DataResponseUtils.convertPageInfo(reviewPage, reviewResponses);
+    }
+    
+    @Override
+    @IsHost
+    public DataResponse<ReviewResponse> getHostReviewsByHotel(UUID hostId, UUID hotelId, 
+                                                             Integer pageNumber, Integer pageSize, String sortBy) {
+        log.info("Getting reviews for host: {} and hotel: {}", hostId, hotelId);
+        
+        // Validate hotel ownership
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
+        
+        if (!hotel.getOwner().getId().equals(hostId)) {
+            throw new AppRuntimeException(ErrorResponse.HOTEL_ACCESS_DENIED);
+        }
+        
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
+        Page<Review> reviewPage = reviewRepository.findByHostIdAndHotelId(hostId, hotelId, pageable);
+        
+        List<ReviewResponse> reviewResponses = reviewPage.getContent().stream()
+                .map(reviewMapper::toResponse)
+                .toList();
+        
+        return DataResponseUtils.convertPageInfo(reviewPage, reviewResponses);
+    }
+    
+    @Override
+    @IsHost
+    public DataResponse<ReviewResponse> searchHostReviews(UUID hostId, String keyword, 
+                                                         Integer pageNumber, Integer pageSize, String sortBy) {
+        log.info("Searching reviews for host: {} with keyword: {}", hostId, keyword);
+        
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
+        Page<Review> reviewPage = reviewRepository.searchHostReviewsByComment(hostId, keyword, pageable);
+        
+        List<ReviewResponse> reviewResponses = reviewPage.getContent().stream()
+                .map(reviewMapper::toResponse)
+                .toList();
+        
+        return DataResponseUtils.convertPageInfo(reviewPage, reviewResponses);
+    }
+    
+    @Override
+    @IsHost
+    public Long getHostReviewsCount(UUID hostId) {
+        log.info("Getting reviews count for host: {}", hostId);
+        return reviewRepository.countByHostId(hostId);
+    }
+    
+    @Override
+    @IsHost
+    public Long getHostReviewsCountByHotel(UUID hostId, UUID hotelId) {
+        log.info("Getting reviews count for host: {} and hotel: {}", hostId, hotelId);
+        
+        // Validate hotel ownership
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
+        
+        if (!hotel.getOwner().getId().equals(hostId)) {
+            throw new AppRuntimeException(ErrorResponse.HOTEL_ACCESS_DENIED);
+        }
+        
+        return reviewRepository.countByHostIdAndHotelId(hostId, hotelId);
+    }
+    
+    @Override
+    @IsHost
+    public Double getHostAverageRating(UUID hostId) {
+        log.info("Getting average rating for host: {}", hostId);
+        return reviewRepository.getAverageRatingByHostId(hostId).orElse(0.0);
+    }
+    
+    @Override
+    @IsHost
+    public Double getHostAverageRatingByHotel(UUID hostId, UUID hotelId) {
+        log.info("Getting average rating for host: {} and hotel: {}", hostId, hotelId);
+        
+        // Validate hotel ownership
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
+        
+        if (!hotel.getOwner().getId().equals(hostId)) {
+            throw new AppRuntimeException(ErrorResponse.HOTEL_ACCESS_DENIED);
+        }
+        
+        return reviewRepository.getAverageRatingByHostIdAndHotelId(hostId, hotelId).orElse(0.0);
     }
 } 

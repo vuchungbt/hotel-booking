@@ -8,7 +8,8 @@ import {
   VoucherFilterParams,
   VoucherStatsResponse,
   VoucherApiResponse,
-  VoucherListResponse
+  VoucherListResponse,
+  VoucherStatus
 } from '../types/voucher';
 import {
   VNPayPaymentRequest,
@@ -819,6 +820,9 @@ export const reviewAPI = {
   getHotelAverageRating: (hotelId: string) =>
     api.get(`/reviews/hotel/${hotelId}/average-rating`),
   
+  canReviewHotel: (hotelId: string) =>
+    api.get(`/reviews/hotel/${hotelId}/can-review`),
+  
   getReviewsByRating: (rating: number, pageNumber = 0, pageSize = 10, sortBy = 'createdAt') =>
     api.get(`/reviews/rating/${rating}`, { params: { pageNumber, pageSize, sortBy } }),
   
@@ -843,7 +847,31 @@ export const reviewAPI = {
   getApprovedReviewsCount: () => api.get('/reviews/admin/stats/approved'),
   getVerifiedReviewsCount: () => api.get('/reviews/admin/stats/verified'),
   getReviewsCountByHotel: (hotelId: string) => api.get(`/reviews/admin/stats/hotel/${hotelId}`),
-  getReviewsCountByUser: (userId: string) => api.get(`/reviews/admin/stats/user/${userId}`)
+  getReviewsCountByUser: (userId: string) => api.get(`/reviews/admin/stats/user/${userId}`),
+  
+  // Host operations
+  getHostReviews: (pageNumber = 0, pageSize = 10, sortBy = 'createdAt') =>
+    api.get('/reviews/host', { params: { pageNumber, pageSize, sortBy } }),
+  
+  getHostReviewsWithFilters: (params: {
+    hotelId?: string;
+    rating?: number;
+    pageNumber?: number;
+    pageSize?: number;
+    sortBy?: string;
+  }) => api.get('/reviews/host/filter', { params }),
+  
+  getHostReviewsByHotel: (hotelId: string, pageNumber = 0, pageSize = 10, sortBy = 'createdAt') =>
+    api.get(`/reviews/host/hotel/${hotelId}`, { params: { pageNumber, pageSize, sortBy } }),
+  
+  searchHostReviews: (keyword: string, pageNumber = 0, pageSize = 10, sortBy = 'createdAt') =>
+    api.get('/reviews/host/search', { params: { keyword, pageNumber, pageSize, sortBy } }),
+  
+  // Host statistics
+  getHostReviewsCount: () => api.get('/reviews/host/stats/total'),
+  getHostReviewsCountByHotel: (hotelId: string) => api.get(`/reviews/host/stats/hotel/${hotelId}`),
+  getHostAverageRating: () => api.get('/reviews/host/stats/average-rating'),
+  getHostAverageRatingByHotel: (hotelId: string) => api.get(`/reviews/host/stats/hotel/${hotelId}/average-rating`)
 };
 
 // Admin Dashboard APIs
@@ -1026,7 +1054,53 @@ export const voucherAPI = {
   
   // Apply voucher to booking
   applyVoucherToBooking: (data: { voucherCode: string; bookingId: string }) =>
-    api.post<VoucherApiResponse<{ discountAmount: number; finalAmount: number }>>('/vouchers/apply', data)
+    api.post<VoucherApiResponse<{ discountAmount: number; finalAmount: number }>>('/vouchers/apply', data),
+  
+  // Host operations
+  getHostVouchers: (params?: VoucherFilterParams) =>
+    api.get<VoucherApiResponse<VoucherListResponse>>('/vouchers/host', { params }),
+  
+  getHostVouchersByStatus: (status: VoucherStatus, params?: VoucherFilterParams) =>
+    api.get<VoucherApiResponse<VoucherListResponse>>(`/vouchers/host/status/${status}`, { params }),
+  
+  createHostVoucher: (data: VoucherRequest) =>
+    api.post<VoucherApiResponse<VoucherResponse>>('/vouchers/host', data),
+  
+  updateHostVoucher: (id: string, data: VoucherUpdateRequest) =>
+    api.put<VoucherApiResponse<VoucherResponse>>(`/vouchers/host/${id}`, data),
+  
+  deleteHostVoucher: (id: string) =>
+    api.delete<VoucherApiResponse<void>>(`/vouchers/host/${id}`),
+  
+  getHostVoucherById: (id: string) =>
+    api.get<VoucherApiResponse<VoucherResponse>>(`/vouchers/host/${id}`),
+  
+  toggleHostVoucherStatus: (id: string) =>
+    api.patch<VoucherApiResponse<VoucherResponse>>(`/vouchers/host/${id}/toggle-status`),
+  
+  searchHostVouchers: (keyword: string, params?: VoucherFilterParams) =>
+    api.get<VoucherApiResponse<VoucherListResponse>>('/vouchers/host/search', { 
+      params: { ...params, keyword } 
+    }),
+  
+  getHostVouchersByHotel: (hotelId: string, params?: VoucherFilterParams) =>
+    api.get<VoucherApiResponse<VoucherListResponse>>(`/vouchers/host/hotel/${hotelId}`, { params }),
+  
+  // Host Statistics
+  getHostVoucherStats: () =>
+    api.get<VoucherApiResponse<VoucherStatsResponse>>('/vouchers/host/stats'),
+  
+  getHostVouchersCount: () =>
+    api.get<VoucherApiResponse<number>>('/vouchers/host/stats/total'),
+  
+  getHostActiveVouchersCount: () =>
+    api.get<VoucherApiResponse<number>>('/vouchers/host/stats/active'),
+  
+  getHostExpiredVouchersCount: () =>
+    api.get<VoucherApiResponse<number>>('/vouchers/host/stats/expired'),
+  
+  getHostUsedUpVouchersCount: () =>
+    api.get<VoucherApiResponse<number>>('/vouchers/host/stats/used-up'),
 };
 
 // Upload Types

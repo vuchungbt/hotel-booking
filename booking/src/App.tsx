@@ -68,6 +68,8 @@ import HostRoomTypes from './pages/host/HostRoomTypes';
 import HostRoomTypeAdd from './pages/host/HostRoomTypeAdd';
 import HostRoomTypeDetail from './pages/host/HostRoomTypeDetail';
 import HostRoomTypeEdit from './pages/host/HostRoomTypeEdit';
+import HostVouchers from './pages/host/HostVouchers';
+import HostReviews from './pages/host/HostReviews';
 
 // Layout component for public pages
 const PublicLayout = ({ children }: { children: React.ReactNode }) => (
@@ -102,6 +104,8 @@ const hostRoutes = [
   { path: '/host/hotels/edit/:id', element: <HostHotelEdit /> },
   { path: '/host/bookings', element: <HostBookings /> },
   { path: '/host/bookings/:id', element: <HostBookingDetail /> },
+  { path: '/host/vouchers', element: <HostVouchers /> },
+  { path: '/host/reviews', element: <HostReviews /> },
   { path: '/host/analytics', element: <HostAnalytics /> }
 ];
 
@@ -366,6 +370,16 @@ function App() {
             <Route path="/host/analytics" element={
               <ProtectedRoute requiredRole="HOST">
                 <DashboardLayout type="host"><HostAnalytics /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/host/vouchers" element={
+              <ProtectedRoute requiredRole="HOST">
+                <DashboardLayout type="host"><HostVouchers /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/host/reviews" element={
+              <ProtectedRoute requiredRole="HOST">
+                <DashboardLayout type="host"><HostReviews /></DashboardLayout>
               </ProtectedRoute>
             } />
 

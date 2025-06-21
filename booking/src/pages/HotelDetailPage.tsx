@@ -33,6 +33,8 @@ const HotelDetailPage: React.FC = () => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [userExistingReview, setUserExistingReview] = useState<any | null>(null);
   const [checkingUserReview, setCheckingUserReview] = useState(false);
+  const [canReview, setCanReview] = useState<boolean>(false);
+  const [checkingCanReview, setCheckingCanReview] = useState(false);
 
   // Calculate number of nights
   const numberOfNights = Math.max(1, Math.ceil(
@@ -82,8 +84,10 @@ const HotelDetailPage: React.FC = () => {
   useEffect(() => {
     if (user && id) {
       checkUserExistingReview();
+      checkCanReviewHotel();
     } else {
       setUserExistingReview(null);
+      setCanReview(false);
     }
   }, [user, id]);
 
@@ -148,7 +152,7 @@ const HotelDetailPage: React.FC = () => {
     setShowReviewForm(false);
     setUserExistingReview(null); // Reset so we can fetch updated review
     // Refresh reviews and check user review again
-    Promise.all([fetchHotelDetails(), checkUserExistingReview()]);
+    Promise.all([fetchHotelDetails(), checkUserExistingReview(), checkCanReviewHotel()]);
     alert('Your review has been submitted successfully!');
   };
 
@@ -156,7 +160,7 @@ const HotelDetailPage: React.FC = () => {
   const handleReviewUpdateSuccess = () => {
     setShowReviewForm(false);
     // Refresh reviews and user review
-    Promise.all([fetchHotelDetails(), checkUserExistingReview()]);
+    Promise.all([fetchHotelDetails(), checkUserExistingReview(), checkCanReviewHotel()]);
     alert('Your review has been updated!');
   };
 
@@ -164,9 +168,27 @@ const HotelDetailPage: React.FC = () => {
   const handleReviewDeleteSuccess = () => {
     setShowReviewForm(false);
     setUserExistingReview(null); // Clear existing review
-    // Refresh reviews
-    fetchHotelDetails();
+    // Refresh reviews and can review status
+    Promise.all([fetchHotelDetails(), checkCanReviewHotel()]);
     alert('Your review has been deleted!');
+  };
+
+  // Check if user can review this hotel (has completed booking)
+  const checkCanReviewHotel = async () => {
+    if (!user || !id) return;
+    
+    try {
+      setCheckingCanReview(true);
+      const response = await reviewAPI.canReviewHotel(id);
+      if (response.data.success) {
+        setCanReview(response.data.result);
+      }
+    } catch (error) {
+      console.error('Error checking review eligibility:', error);
+      setCanReview(false);
+    } finally {
+      setCheckingCanReview(false);
+    }
   };
 
   if (loading) {
@@ -542,11 +564,11 @@ const HotelDetailPage: React.FC = () => {
               <div className="space-y-6">
                 {/* Review Form Section */}
                 {user ? (
-                  <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    {checkingUserReview ? (
+                  <div className="mb-8">
+                    {checkingUserReview || checkingCanReview ? (
                       <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                        <p className="text-gray-600">Checking your review...</p>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="text-gray-600 mt-2">Checking review status...</p>
                       </div>
                     ) : userExistingReview ? (
                       // User has existing review - show edit option
@@ -595,8 +617,8 @@ const HotelDetailPage: React.FC = () => {
                           onDelete={handleReviewDeleteSuccess}
                         />
                       )
-                    ) : (
-                      // User doesn't have review - show create option
+                    ) : canReview ? (
+                      // User can review - show create option
                       !showReviewForm ? (
                         <div className="text-center">
                           <h4 className="text-lg font-medium text-gray-900 mb-2">
@@ -620,6 +642,22 @@ const HotelDetailPage: React.FC = () => {
                           onCancel={() => setShowReviewForm(false)}
                         />
                       )
+                    ) : (
+                      // User cannot review - show message
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                        <h4 className="text-lg font-medium text-gray-900 mb-2">
+                          Review not available
+                        </h4>
+                        <p className="text-gray-600 mb-4">
+                          You can only review hotels where you have completed a stay. Please book and complete your stay to leave a review.
+                        </p>
+                        <Link
+                          to={`/hotels/${id}?checkIn=${checkInDate}&checkOut=${checkOutDate}&guests=${guestCount}#rooms`}
+                          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-block"
+                        >
+                          Book this hotel
+                        </Link>
+                      </div>
                     )}
                   </div>
                 ) : (

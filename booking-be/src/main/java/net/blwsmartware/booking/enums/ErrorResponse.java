@@ -105,6 +105,7 @@ public enum ErrorResponse {
     VOUCHER_MIN_BOOKING_VALUE_NOT_MET(6007, "Minimum booking value requirement not met!", HttpStatus.BAD_REQUEST),
     VOUCHER_ALREADY_USED_BY_USER(6008, "Voucher has already been used by this user!", HttpStatus.BAD_REQUEST),
     VOUCHER_HAS_USAGE_RECORDS(6009, "Voucher has been used in bookings. Please disable instead of deleting to preserve data integrity!", HttpStatus.CONFLICT),
+    HOTEL_SELECTION_REQUIRED(6010, "Host must select at least one hotel for voucher!", HttpStatus.BAD_REQUEST),
 
     // File upload-related errors
     FILE_UPLOAD_ERROR(7001, "File upload failed!", HttpStatus.BAD_REQUEST),

@@ -66,4 +66,35 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
     // Get recent reviews by hotel (limit 5)
     @Query("SELECT r FROM Review r WHERE r.hotel.id = :hotelId ORDER BY r.createdAt DESC")
     List<Review> findRecentReviewsByHotel(@Param("hotelId") UUID hotelId, Pageable pageable);
+    
+    // Host-related queries
+    @Query("SELECT r FROM Review r WHERE r.hotel.owner.id = :hostId")
+    Page<Review> findByHostId(@Param("hostId") UUID hostId, Pageable pageable);
+    
+    @Query("SELECT r FROM Review r WHERE r.hotel.owner.id = :hostId AND " +
+           "(:hotelId IS NULL OR r.hotel.id = :hotelId) AND " +
+           "(:rating IS NULL OR r.rating = :rating)")
+    Page<Review> findHostReviewsWithFilters(@Param("hostId") UUID hostId,
+                                          @Param("hotelId") UUID hotelId,
+                                          @Param("rating") Integer rating,
+                                          Pageable pageable);
+    
+    @Query("SELECT r FROM Review r WHERE r.hotel.owner.id = :hostId AND r.hotel.id = :hotelId")
+    Page<Review> findByHostIdAndHotelId(@Param("hostId") UUID hostId, @Param("hotelId") UUID hotelId, Pageable pageable);
+    
+    @Query("SELECT r FROM Review r WHERE r.hotel.owner.id = :hostId AND " +
+           "LOWER(r.comment) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<Review> searchHostReviewsByComment(@Param("hostId") UUID hostId, @Param("keyword") String keyword, Pageable pageable);
+    
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.hotel.owner.id = :hostId")
+    Long countByHostId(@Param("hostId") UUID hostId);
+    
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.hotel.owner.id = :hostId AND r.hotel.id = :hotelId")
+    Long countByHostIdAndHotelId(@Param("hostId") UUID hostId, @Param("hotelId") UUID hotelId);
+    
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.hotel.owner.id = :hostId")
+    Optional<Double> getAverageRatingByHostId(@Param("hostId") UUID hostId);
+    
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.hotel.owner.id = :hostId AND r.hotel.id = :hotelId")
+    Optional<Double> getAverageRatingByHostIdAndHotelId(@Param("hostId") UUID hostId, @Param("hotelId") UUID hotelId);
 } 

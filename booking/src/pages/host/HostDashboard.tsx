@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Hotel, BookOpen, DollarSign, Star, RefreshCw, TrendingUp } from 'lucide-react';
+import { Hotel, BookOpen, DollarSign, Star, RefreshCw, TrendingUp, Ticket } from 'lucide-react';
 import { hostAPI, hotelAPI, HostDashboardResponse } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 
@@ -251,6 +251,13 @@ const HostDashboard: React.FC = () => {
             icon={<BookOpen className="h-6 w-6" />}
             onClick={() => navigate('/host/bookings')}
             stats={`${dashboardData.totalBookings} đặt phòng`}
+          />
+          <ManagementCard
+            title="Quản lý voucher"
+            description="Tạo và quản lý voucher giảm giá cho khách sạn"
+            icon={<Ticket className="h-6 w-6" />}
+            onClick={() => navigate('/host/vouchers')}
+            stats="Khuyến mãi"
           />
           <ManagementCard
             title="Thống kê doanh thu"

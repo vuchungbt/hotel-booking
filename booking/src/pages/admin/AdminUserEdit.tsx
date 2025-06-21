@@ -190,8 +190,9 @@ const AdminUserEdit: React.FC = () => {
         tel: formData.tel || undefined,
         address: formData.address || undefined,
         dob: formData.dob || undefined,
-        active: formData.active,
-        emailVerified: formData.emailVerified
+        // Bảo vệ tài khoản admin - không cho phép thay đổi status
+        active: formData.username === 'adminadmin' ? user.active : formData.active,
+        emailVerified: formData.username === 'adminadmin' ? user.emailVerified : formData.emailVerified
       };
 
       await userAPI.updateUser(user.id, updateData);
@@ -214,13 +215,16 @@ const AdminUserEdit: React.FC = () => {
       }
       
               let successMessage = 'User information has been updated successfully!';
-      if (updateData.active !== user.active) {
-                  const statusText = updateData.active ? 'activated' : 'deactivated';
-          successMessage += ` Account status has been ${statusText}.`;
-      }
-      if (updateData.emailVerified !== user.emailVerified) {
-                  const verificationText = updateData.emailVerified ? 'has been verified' : 'has been unverified';
-        successMessage += ` Email ${verificationText}.`;
+      // Chỉ hiển thị thông báo thay đổi status cho non-admin users
+      if (formData.username !== 'adminadmin') {
+        if (updateData.active !== user.active) {
+                    const statusText = updateData.active ? 'activated' : 'deactivated';
+            successMessage += ` Account status has been ${statusText}.`;
+        }
+        if (updateData.emailVerified !== user.emailVerified) {
+                    const verificationText = updateData.emailVerified ? 'has been verified' : 'has been unverified';
+          successMessage += ` Email ${verificationText}.`;
+        }
       }
       if (formData.changePassword && formData.password) {
                   successMessage += ' Password has been changed.';
@@ -569,9 +573,13 @@ const AdminUserEdit: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, active: !prev.active }))}
-                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                    formData.active ? 'bg-green-600' : 'bg-gray-200'
+                  disabled={formData.username === 'adminadmin'}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    formData.username === 'adminadmin' 
+                      ? 'cursor-not-allowed opacity-50 bg-gray-300' 
+                      : `cursor-pointer ${formData.active ? 'bg-green-600' : 'bg-gray-200'}`
                   }`}
+                  title={formData.username === 'adminadmin' ? 'Cannot change admin account status' : ''}
                 >
                   <span
                     className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
@@ -579,13 +587,19 @@ const AdminUserEdit: React.FC = () => {
                     }`}
                   />
                 </button>
-                <span className={`ml-3 text-sm font-medium ${formData.active ? 'text-green-600' : 'text-gray-400'}`}>
+                <span className={`ml-3 text-sm font-medium ${
+                  formData.username === 'adminadmin' ? 'text-gray-400' : 
+                  formData.active ? 'text-green-600' : 'text-gray-400'
+                }`}>
                   {formData.active ? 'Active' : 'Inactive'}
+                  {formData.username === 'adminadmin' && (
+                    <span className="text-xs text-gray-500 block">Protected</span>
+                  )}
                 </span>
               </div>
             </div>
 
-            {!formData.active && (
+            {!formData.active && formData.username !== 'adminadmin' && (
               <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <div className="flex">
                   <div className="flex-shrink-0">
@@ -597,6 +611,25 @@ const AdminUserEdit: React.FC = () => {
                     <h3 className="text-sm font-medium text-yellow-800">Warning</h3>
                     <div className="mt-2 text-sm text-yellow-700">
                       <p>Disabling the account will prevent users from logging into the system. They will not be able to access any features until the account is reactivated.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Admin Protection Notice */}
+            {formData.username === 'adminadmin' && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5v3a.75.75 0 001.5 0v-3A.75.75 0 009 9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">Admin Account Protection</h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <p>This is the main admin account and its status cannot be changed for security reasons.</p>
                     </div>
                   </div>
                 </div>
@@ -626,9 +659,13 @@ const AdminUserEdit: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, emailVerified: !prev.emailVerified }))}
-                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                    formData.emailVerified ? 'bg-green-600' : 'bg-gray-200'
+                  disabled={formData.username === 'adminadmin'}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    formData.username === 'adminadmin' 
+                      ? 'cursor-not-allowed opacity-50 bg-gray-300' 
+                      : `cursor-pointer ${formData.emailVerified ? 'bg-green-600' : 'bg-gray-200'}`
                   }`}
+                  title={formData.username === 'adminadmin' ? 'Cannot change admin email verification status' : ''}
                 >
                   <span
                     className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
@@ -636,13 +673,19 @@ const AdminUserEdit: React.FC = () => {
                     }`}
                   />
                 </button>
-                <span className={`ml-3 text-sm font-medium ${formData.emailVerified ? 'text-green-600' : 'text-gray-400'}`}>
+                <span className={`ml-3 text-sm font-medium ${
+                  formData.username === 'adminadmin' ? 'text-gray-400' : 
+                  formData.emailVerified ? 'text-green-600' : 'text-gray-400'
+                }`}>
                   {formData.emailVerified ? 'Verified' : 'Unverified'}
+                  {formData.username === 'adminadmin' && (
+                    <span className="text-xs text-gray-500 block">Protected</span>
+                  )}
                 </span>
               </div>
             </div>
 
-            {formData.emailVerified !== user?.emailVerified && (
+            {formData.emailVerified !== user?.emailVerified && formData.username !== 'adminadmin' && (
               <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex">
                   <div className="flex-shrink-0">
@@ -657,6 +700,25 @@ const AdminUserEdit: React.FC = () => {
                                         You are {formData.emailVerified ? 'marking email as verified' : 'unverifying email'}.
                 This change will take effect after saving.
                       </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Admin Email Verification Protection Notice */}
+            {formData.username === 'adminadmin' && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5v3a.75.75 0 001.5 0v-3A.75.75 0 009 9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">Admin Email Protection</h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <p>Admin email verification status is protected and cannot be modified.</p>
                     </div>
                   </div>
                 </div>

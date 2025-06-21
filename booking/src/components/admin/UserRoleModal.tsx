@@ -86,11 +86,23 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
   }, [isOpen, user]);
 
   const handleRoleSelect = (roleId: number) => {
+    // Không cho phép thay đổi role của tài khoản admin chính
+    if (user.username === 'adminadmin') {
+      showToast('warning', 'Protected Account', 'Cannot modify roles for the main admin account');
+      return;
+    }
+    
     console.log('Selecting role:', roleId);
     setSelectedRoleId(roleId);
   };
 
   const handleSave = async () => {
+    // Bảo vệ tài khoản admin chính
+    if (user.username === 'adminadmin') {
+      showToast('error', 'Protected Account', 'Cannot modify roles for the main admin account');
+      return;
+    }
+    
     if (selectedRoleId === null) {
       showToast('warning', 'Warning', 'Please select a role');
       return;
@@ -196,13 +208,33 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
         {/* Content */}
         <div className="p-6 max-h-[60vh] overflow-y-auto">
           <div className="space-y-4">
+            {/* Admin Protection Notice */}
+            {user.username === 'adminadmin' && (
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <Shield className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">Admin Account Protection</h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <p>This is the main administrator account. Its role cannot be modified for security reasons.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="mb-6">
               <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
                 <Shield className="h-5 w-5 mr-2" />
-                Select role for user
+                {user.username === 'adminadmin' ? 'Current role (Protected)' : 'Select role for user'}
               </h3>
               <p className="text-sm text-gray-600">
-                Select one role to assign to this user. Each role provides different permissions in the system.
+                {user.username === 'adminadmin' 
+                  ? 'The main admin role is protected and cannot be changed.'
+                  : 'Select one role to assign to this user. Each role provides different permissions in the system.'
+                }
               </p>
             </div>
 
@@ -225,12 +257,17 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
                   return (
                     <div
                       key={role.id}
-                      className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${
+                      className={`border rounded-lg p-4 transition-all duration-200 ${
+                        user.username === 'adminadmin' 
+                          ? 'cursor-not-allowed opacity-60 bg-gray-50' 
+                          : 'cursor-pointer'
+                      } ${
                         isSelected
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }`}
                       onClick={() => handleRoleSelect(role.id)}
+                      title={user.username === 'adminadmin' ? 'Cannot modify roles for main admin account' : ''}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -320,8 +357,9 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || !hasChanges() || selectedRoleId === null}
+            disabled={saving || !hasChanges() || selectedRoleId === null || user.username === 'adminadmin'}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center"
+            title={user.username === 'adminadmin' ? 'Cannot modify roles for main admin account' : ''}
           >
             {saving ? (
               <>
@@ -331,7 +369,7 @@ const UserRoleModal: React.FC<UserRoleModalProps> = ({
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Save Changes
+                {user.username === 'adminadmin' ? 'Protected Account' : 'Save Changes'}
               </>
             )}
           </button>

@@ -9,13 +9,19 @@ interface VoucherFormProps {
   onSubmit: (data: VoucherRequest) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  isHostMode?: boolean;
+  hostHotels?: any[];
+  hotels?: any[];
 }
 
 const VoucherForm: React.FC<VoucherFormProps> = ({
   voucher,
   onSubmit,
   onCancel,
-  isLoading = false
+  isLoading = false,
+  isHostMode = false,
+  hostHotels = [],
+  hotels = []
 }) => {
   const [formData, setFormData] = useState<VoucherRequest>({
     code: voucher?.code || '',
@@ -28,7 +34,7 @@ const VoucherForm: React.FC<VoucherFormProps> = ({
     startDate: voucher?.startDate ? voucher.startDate.substring(0, 16) : '',
     endDate: voucher?.endDate ? voucher.endDate.substring(0, 16) : '',
     usageLimit: voucher?.usageLimit || undefined,
-    applicableScope: voucher?.applicableScope || ApplicableScope.ALL_HOTELS,
+    applicableScope: isHostMode ? ApplicableScope.SPECIFIC_HOTELS : (voucher?.applicableScope || ApplicableScope.ALL_HOTELS),
     hotelIds: voucher?.hotelIds || []
   });
 
@@ -91,8 +97,6 @@ const VoucherForm: React.FC<VoucherFormProps> = ({
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
-
-
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -310,23 +314,67 @@ const VoucherForm: React.FC<VoucherFormProps> = ({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Phạm vi áp dụng *
           </label>
-          <select
-            value={formData.applicableScope}
-            onChange={(e) => handleInputChange('applicableScope', e.target.value as ApplicableScope)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value={ApplicableScope.ALL_HOTELS}>Tất cả khách sạn</option>
-            <option value={ApplicableScope.SPECIFIC_HOTELS}>Khách sạn cụ thể</option>
-          </select>
+          {isHostMode ? (
+            <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+              <span>Khách sạn cụ thể</span>
+              <p className="text-xs text-gray-500 mt-1">
+                Host chỉ có thể tạo voucher cho khách sạn của mình
+              </p>
+            </div>
+          ) : (
+            <select
+              value={formData.applicableScope}
+              onChange={(e) => handleInputChange('applicableScope', e.target.value as ApplicableScope)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={ApplicableScope.ALL_HOTELS}>Tất cả khách sạn</option>
+              <option value={ApplicableScope.SPECIFIC_HOTELS}>Khách sạn cụ thể</option>
+            </select>
+          )}
         </div>
 
-        {/* Hotel Selection */}
+        {/* Hotel Selection - chỉ hiển thị khi scope là SPECIFIC_HOTELS */}
         {formData.applicableScope === ApplicableScope.SPECIFIC_HOTELS && (
-          <HotelSelector
-            selectedHotelIds={formData.hotelIds || []}
-            onHotelSelectionChange={(hotelIds) => handleInputChange('hotelIds', hotelIds)}
-            error={errors.hotelIds}
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Chọn khách sạn *
+            </label>
+            <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3">
+              {(isHostMode ? hostHotels : hotels).map((hotel) => (
+                <label key={hotel.id} className="flex items-center space-x-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={(formData.hotelIds || []).includes(hotel.id)}
+                    onChange={(e) => {
+                      const currentHotelIds = formData.hotelIds || [];
+                      const newHotelIds = e.target.checked
+                        ? [...currentHotelIds, hotel.id]
+                        : currentHotelIds.filter(id => id !== hotel.id);
+                      handleInputChange('hotelIds', newHotelIds);
+                    }}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">{hotel.name}</span>
+                  {isHostMode && (
+                    <span className="text-xs text-gray-500">
+                      ({hotel.address || 'Không có địa chỉ'})
+                    </span>
+                  )}
+                </label>
+              ))}
+              {(isHostMode ? hostHotels : hotels).length === 0 && (
+                <p className="text-sm text-gray-500">
+                  {isHostMode ? 'Bạn chưa có khách sạn nào.' : 'Không có khách sạn nào.'}
+                </p>
+              )}
+            </div>
+            {errors.hotelIds && (
+              <p className="mt-1 text-sm text-red-600 flex items-center">
+                <AlertCircle size={16} className="mr-1" />
+                {errors.hotelIds}
+              </p>
+            )}
+          </div>
         )}
 
         {/* Submit Buttons */}

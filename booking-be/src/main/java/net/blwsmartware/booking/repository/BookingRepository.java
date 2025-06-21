@@ -119,4 +119,14 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     
     // ===== VALIDATION QUERIES =====
     boolean existsByBookingReference(String bookingReference);
+    
+    // ===== REVIEW VALIDATION QUERIES =====
+    @Query("SELECT COUNT(b) > 0 FROM Booking b WHERE b.user.id = :userId " +
+           "AND b.hotel.id = :hotelId AND b.status = 'COMPLETED'")
+    boolean existsCompletedBookingByUserAndHotel(@Param("userId") UUID userId, @Param("hotelId") UUID hotelId);
+    
+    @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
+           "AND b.hotel.id = :hotelId AND b.status = 'COMPLETED' " +
+           "ORDER BY b.checkOutDate DESC")
+    List<Booking> findCompletedBookingsByUserAndHotel(@Param("userId") UUID userId, @Param("hotelId") UUID hotelId);
 } 
