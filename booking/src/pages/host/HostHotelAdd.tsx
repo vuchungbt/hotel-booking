@@ -26,7 +26,8 @@ const HostHotelAdd: React.FC = () => {
     pricePerNight: 0,
     amenities: '',
     cancellationPolicy: '',
-    petPolicy: ''
+    petPolicy: '',
+    commissionRate: 15.00 // Default commission rate - only admin can modify
   });
 
   const validateForm = () => {

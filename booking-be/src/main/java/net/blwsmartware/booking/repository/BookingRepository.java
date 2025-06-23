@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -129,4 +130,34 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
            "AND b.hotel.id = :hotelId AND b.status = 'COMPLETED' " +
            "ORDER BY b.checkOutDate DESC")
     List<Booking> findCompletedBookingsByUserAndHotel(@Param("userId") UUID userId, @Param("hotelId") UUID hotelId);
+
+    // ===== REVENUE ANALYSIS QUERIES =====
+    @Query("SELECT COALESCE(SUM(b.totalAmount), 0) FROM Booking b WHERE b.paymentStatus = 'PAID' " +
+           "AND b.createdAt >= :startDate AND b.createdAt < :endDate")
+    BigDecimal getTotalRevenueByDateRange(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.paymentStatus = 'PAID' " +
+           "AND b.createdAt >= :startDate AND b.createdAt < :endDate")
+    Long countPaidBookingsByDateRange(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.hotel.id = :hotelId AND b.paymentStatus = 'PAID' " +
+           "AND b.createdAt >= :startDate AND b.createdAt < :endDate")
+    Long countPaidBookingsByHotelAndDateRange(@Param("hotelId") UUID hotelId, 
+                                              @Param("startDate") LocalDateTime startDate, 
+                                              @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT COALESCE(SUM(b.totalAmount), 0) FROM Booking b WHERE b.hotel.id = :hotelId " +
+           "AND b.paymentStatus = 'PAID' AND b.createdAt >= :startDate AND b.createdAt < :endDate")
+    BigDecimal getTotalRevenueByHotelAndDateRange(@Param("hotelId") UUID hotelId, 
+                                                  @Param("startDate") LocalDateTime startDate, 
+                                                  @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT MAX(b.createdAt) FROM Booking b WHERE b.hotel.id = :hotelId AND b.paymentStatus = 'PAID'")
+    Optional<LocalDateTime> findLastBookingDateByHotel(@Param("hotelId") UUID hotelId);
+    
+    @Query("SELECT COALESCE(SUM(b.totalAmount), 0) FROM Booking b WHERE b.hotel.id = :hotelId AND b.paymentStatus = 'PAID'")
+    BigDecimal getTotalRevenueByHotel(@Param("hotelId") UUID hotelId);
+    
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.hotel.id = :hotelId AND b.paymentStatus = 'PAID'")
+    Long countPaidBookingsByHotel(@Param("hotelId") UUID hotelId);
 } 

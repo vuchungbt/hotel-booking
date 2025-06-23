@@ -34,6 +34,7 @@ public class HotelResponse {
     String amenities;
     String cancellationPolicy;
     String petPolicy;
+    BigDecimal commissionRate;
     
     // Owner information
     UUID ownerId;

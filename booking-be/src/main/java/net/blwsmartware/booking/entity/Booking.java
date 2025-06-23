@@ -81,6 +81,9 @@ public class Booking {
     @Column(name = "refund_amount", precision = 10, scale = 2)
     BigDecimal refundAmount;
 
+    @Column(name = "commission_rate_at_booking", precision = 5, scale = 2)
+    BigDecimal commissionRateAtBooking;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     LocalDateTime createdAt;

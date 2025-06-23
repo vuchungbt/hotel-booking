@@ -28,13 +28,10 @@ import MyBookingsPage from './pages/MyBookingsPage';
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminCommissions from './pages/admin/AdminCommissions';
-import AdminInvoices from './pages/admin/AdminInvoices';
-import AdminInvoiceDetail from './pages/admin/AdminInvoiceDetail';
+import AdminRevenue from './pages/admin/AdminRevenue';
 import AdminPromotions from './pages/admin/AdminPromotions';
 import AdminAnalytics from './pages/admin/AdminAnalytics'; 
-import AdminCommissionPayments from './pages/admin/AdminCommissionPayments';
-import AdminCommissionPaymentDetail from './pages/admin/AdminCommissionPaymentDetail';
-import AdminCommissionPaymentCreate from './pages/admin/AdminCommissionPaymentCreate';
+
 import AdminBookings from './pages/admin/AdminBookings';
 import AdminBookingDetail from './pages/admin/AdminBookingDetail';
 import AdminHotels from './pages/admin/AdminHotels';
@@ -180,14 +177,9 @@ function App() {
                 <DashboardLayout type="admin"><AdminCommissions /></DashboardLayout>
               </ProtectedRoute>
             } />
-            <Route path="/admin/invoices" element={
+            <Route path="/admin/revenue" element={
               <ProtectedRoute requiredRole="ADMIN">
-                <DashboardLayout type="admin"><AdminInvoices /></DashboardLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/invoices/:id" element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <DashboardLayout type="admin"><AdminInvoiceDetail /></DashboardLayout>
+                <DashboardLayout type="admin"><AdminRevenue /></DashboardLayout>
               </ProtectedRoute>
             } />
             <Route path="/admin/promotions" element={
@@ -200,21 +192,7 @@ function App() {
                 <DashboardLayout type="admin"><AdminAnalytics /></DashboardLayout>
               </ProtectedRoute>
             } />
-            <Route path="/admin/commission-payments" element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <DashboardLayout type="admin"><AdminCommissionPayments /></DashboardLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/commission-payments/:id" element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <DashboardLayout type="admin"><AdminCommissionPaymentDetail /></DashboardLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/commission-payments/create" element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <DashboardLayout type="admin"><AdminCommissionPaymentCreate /></DashboardLayout>
-              </ProtectedRoute>
-            } />
+
             <Route path="/admin/bookings" element={
               <ProtectedRoute requiredRole="ADMIN">
                 <DashboardLayout type="admin"><AdminBookings /></DashboardLayout>

@@ -13,6 +13,7 @@ import net.blwsmartware.booking.exception.AppRuntimeException;
 import net.blwsmartware.booking.enums.ErrorResponse;
 import net.blwsmartware.booking.repository.BookingRepository;
 import net.blwsmartware.booking.repository.VNPayTransactionRepository;
+import net.blwsmartware.booking.service.RevenueService;
 import net.blwsmartware.booking.service.VNPayService;
 import net.blwsmartware.booking.util.VNPayUtil;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class VNPayServiceImpl implements VNPayService {
     private final VNPayConfig vnPayConfig;
     private final BookingRepository bookingRepository;
     private final VNPayTransactionRepository vnPayTransactionRepository;
+    private final RevenueService revenueService;
     
     @Override
     @Transactional
@@ -193,9 +195,21 @@ public class VNPayServiceImpl implements VNPayService {
             // Update payment status based on response
             Booking booking = transaction.getBooking();
             if ("00".equals(responseCode) && "00".equals(transactionStatus)) {
-                transaction.setPaymentStatus(PaymentStatus.PAID);
-                booking.setPaymentStatus(PaymentStatus.PAID);
-                log.info("Payment successful for booking: {}", booking.getId());
+                // Chỉ cập nhật nếu booking chưa được thanh toán trước đó
+                if (booking.getPaymentStatus() != PaymentStatus.PAID) {
+                    transaction.setPaymentStatus(PaymentStatus.PAID);
+                    booking.setPaymentStatus(PaymentStatus.PAID);
+                    log.info("Payment successful for booking: {}", booking.getId());
+                    
+                    // Cập nhật revenue cho hotel khi thanh toán thành công (chỉ 1 lần)
+                    try {
+                        revenueService.updateHotelRevenue(booking.getId());
+                    } catch (Exception e) {
+                        log.error("Error updating hotel revenue for booking: {}", booking.getId(), e);
+                    }
+                } else {
+                    log.info("Booking {} already paid, skipping revenue update", booking.getId());
+                }
             } else {
                 transaction.setPaymentStatus(PaymentStatus.FAILED);
                 booking.setPaymentStatus(PaymentStatus.FAILED);
@@ -256,9 +270,21 @@ public class VNPayServiceImpl implements VNPayService {
                             // Update payment status for both transaction and booking
                             Booking booking = transaction.getBooking();
                             if ("00".equals(responseCode) && "00".equals(transactionStatus)) {
-                                transaction.setPaymentStatus(PaymentStatus.PAID);
-                                booking.setPaymentStatus(PaymentStatus.PAID);
-                                log.info("Payment successful via return URL for booking: {}", booking.getId());
+                                // Chỉ cập nhật nếu booking chưa được thanh toán trước đó
+                                if (booking.getPaymentStatus() != PaymentStatus.PAID) {
+                                    transaction.setPaymentStatus(PaymentStatus.PAID);
+                                    booking.setPaymentStatus(PaymentStatus.PAID);
+                                    log.info("Payment successful via return URL for booking: {}", booking.getId());
+                                    
+                                    // Cập nhật revenue cho hotel khi thanh toán thành công (chỉ 1 lần)
+                                    try {
+                                        revenueService.updateHotelRevenue(booking.getId());
+                                    } catch (Exception e) {
+                                        log.error("Error updating hotel revenue for booking: {}", booking.getId(), e);
+                                    }
+                                } else {
+                                    log.info("Booking {} already paid via return URL, skipping revenue update", booking.getId());
+                                }
                             } else {
                                 transaction.setPaymentStatus(PaymentStatus.FAILED);
                                 booking.setPaymentStatus(PaymentStatus.FAILED);

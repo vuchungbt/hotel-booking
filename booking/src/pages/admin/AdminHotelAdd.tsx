@@ -25,6 +25,7 @@ const AdminHotelAdd: React.FC = () => {
     amenities: '',
     cancellationPolicy: '',
     petPolicy: '',
+    commissionRate: 15.00,
     imageUrl: ''
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -75,6 +76,11 @@ const AdminHotelAdd: React.FC = () => {
       newErrors.starRating = 'Star rating must be from 1 to 5';
     }
 
+    // Commission rate validation
+    if (!formData.commissionRate || formData.commissionRate < 0 || formData.commissionRate > 100) {
+      newErrors.commissionRate = 'Commission rate must be between 0% and 100%';
+    }
+
     // Website validation
     if (formData.website && !/^https?:\/\/.+/.test(formData.website)) {
       newErrors.website = 'Website must start with http:// or https://';
@@ -88,7 +94,7 @@ const AdminHotelAdd: React.FC = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'starRating' || name === 'pricePerNight' ? Number(value) : value
+      [name]: name === 'starRating' || name === 'pricePerNight' || name === 'commissionRate' ? Number(value) : value
     }));
     
     // Clear error when user starts typing
@@ -278,6 +284,29 @@ const AdminHotelAdd: React.FC = () => {
                 placeholder="Enter room price"
               />
               {errors.pricePerNight && <p className="mt-1 text-sm text-red-600">{errors.pricePerNight}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Commission Rate (%) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="commissionRate"
+                value={formData.commissionRate}
+                onChange={handleInputChange}
+                min="0"
+                max="100"
+                step="0.01"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.commissionRate ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="15.00"
+              />
+              {errors.commissionRate && <p className="mt-1 text-sm text-red-600">{errors.commissionRate}</p>}
+              <p className="mt-1 text-xs text-gray-500">
+                💡 Platform commission rate (e.g., 15.00 for 15%)
+              </p>
             </div>
 
             <div className="md:col-span-2">

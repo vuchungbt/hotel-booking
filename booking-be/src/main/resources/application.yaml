@@ -6,7 +6,7 @@ spring:
   application:
     name: booking-service
   datasource:
-    url: ${DB_MYSQL_URL:jdbc:mysql://localhost:3306/booking16_new_structure?createDatabaseIfNotExist=true}
+    url: ${DB_MYSQL_URL:jdbc:mysql://localhost:3306/booking23_8?createDatabaseIfNotExist=true}
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:}
   jpa:
@@ -55,10 +55,10 @@ config:
   file:
     upload-dir: ${UPLOAD_DIR:C:\temp}
   admin:
-    name: ${ADMIN_NAME:adminadmin}
-    password: ${ADMIN_PASSWORD:adminadmin123}
-    email: ${ADMIN_EMAIL:adminadmin@blwsmartware.net}
-    username: ${ADMIN_USERNAME:adminadmin}
+    name: adminadmin
+    password: adminadmin123
+    email: adminadmin@blwsmartware.net
+    username: adminadmin
 vnpay:
   tmnCode: ${VNPAY_TMN_CODE:SANDBOX01}
   secretKey: ${VNPAY_SECRET_KEY:SANDBOX_SECRET_KEY}

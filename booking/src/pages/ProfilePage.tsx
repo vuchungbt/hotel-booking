@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   User, Mail, Key, Save, BookOpen, Calendar, Gift, CreditCard, 
   MapPin, Clock, CheckCircle, AlertCircle, Copy, Trash2, Plus,
-  Phone, Camera, Edit, Star, Eye, EyeOff, Shield, Crown
+  Phone, Camera, Edit, Star, Eye, EyeOff, Shield, Crown, Wallet,
+  DollarSign, ArrowDownLeft, ArrowUpRight, Send, Receipt
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -17,6 +18,8 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [hostRequestLoading, setHostRequestLoading] = useState(false);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
   const { user, fetchUserInfo } = useAuth();
   const { showToast } = useToast();
   
@@ -34,6 +37,26 @@ const ProfilePage: React.FC = () => {
     newPassword: '',
     confirmPassword: ''
   });
+
+  // Wallet related state
+  const [walletData, setWalletData] = useState({
+    balance: 0,
+    transactions: [] as any[],
+    bankAccount: {
+      bankName: '',
+      accountNumber: '',
+      accountName: '',
+      branch: ''
+    }
+  });
+
+  const [withdrawalData, setWithdrawalData] = useState({
+    amount: '',
+    note: ''
+  });
+
+  const [isEditingBank, setIsEditingBank] = useState(false);
+  const [showWithdrawForm, setShowWithdrawForm] = useState(false);
 
   // Load user data when component mounts or user changes
   useEffect(() => {
@@ -213,7 +236,7 @@ const ProfilePage: React.FC = () => {
   const tabs = [
     { id: 'profile', label: 'Personal Information', icon: User },
     { id: 'password', label: 'Change Password', icon: Key }, 
-    { id: 'history', label: 'Bookings', icon: BookOpen },
+    { id: 'wallet', label: 'Số dư thanh toán', icon: Wallet },
     { id: 'vouchers', label: 'Mã giảm giá', icon: Gift },
     { id: 'payment', label: 'Phương thức thanh toán', icon: CreditCard },
     { id: 'roles', label: 'Quản lý vai trò', icon: Shield }, 
@@ -516,6 +539,386 @@ const ProfilePage: React.FC = () => {
     </div>
   );
 
+  const renderWalletTab = () => {
+    const formatCurrency = (amount: number) => {
+      return new Intl.NumberFormat('vi-VN', { 
+        style: 'currency', 
+        currency: 'VND',
+        minimumFractionDigits: 0
+      }).format(amount);
+    };
+
+    const formatDate = (dateString: string) => {
+      return new Date(dateString).toLocaleDateString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    const handleBankAccountSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setWalletLoading(true);
+      
+      try {
+        // API call to save bank account
+        // await userAPI.saveBankAccount(walletData.bankAccount);
+        
+        showToast('success', 'Thành công', 'Thông tin tài khoản ngân hàng đã được lưu');
+        setIsEditingBank(false);
+      } catch (error: any) {
+        console.error('Save bank account error:', error);
+        showToast('error', 'Lỗi', 'Không thể lưu thông tin tài khoản ngân hàng');
+      } finally {
+        setWalletLoading(false);
+      }
+    };
+
+    const handleWithdrawSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      
+      if (!withdrawalData.amount || parseFloat(withdrawalData.amount) <= 0) {
+        showToast('error', 'Lỗi', 'Vui lòng nhập số tiền hợp lệ');
+        return;
+      }
+      
+      if (parseFloat(withdrawalData.amount) > walletData.balance) {
+        showToast('error', 'Lỗi', 'Số dư không đủ để thực hiện giao dịch');
+        return;
+      }
+
+      if (!walletData.bankAccount.accountNumber) {
+        showToast('error', 'Lỗi', 'Vui lòng thêm thông tin tài khoản ngân hàng trước');
+        return;
+      }
+
+      setWithdrawLoading(true);
+      
+      try {
+        // API call to request withdrawal
+        // await userAPI.requestWithdrawal({
+        //   amount: parseFloat(withdrawalData.amount),
+        //   note: withdrawalData.note
+        // });
+        
+        showToast('success', 'Thành công', 'Yêu cầu rút tiền đã được gửi');
+        setShowWithdrawForm(false);
+        setWithdrawalData({ amount: '', note: '' });
+        
+        // Refresh wallet data
+        // fetchWalletData();
+      } catch (error: any) {
+        console.error('Withdrawal request error:', error);
+        showToast('error', 'Lỗi', 'Không thể gửi yêu cầu rút tiền');
+      } finally {
+        setWithdrawLoading(false);
+      }
+    };
+
+    // Sample data - replace with API call
+    const sampleTransactions = [
+      {
+        id: 'TXN-001',
+        type: 'refund',
+        amount: 500000,
+        description: 'Hoàn tiền booking #BK-123',
+        status: 'completed',
+        createdAt: '2024-01-15T10:30:00Z'
+      },
+      {
+        id: 'TXN-002',
+        type: 'withdrawal',
+        amount: -200000,
+        description: 'Rút tiền về tài khoản VCB',
+        status: 'pending',
+        createdAt: '2024-01-12T14:20:00Z'
+      },
+      {
+        id: 'TXN-003',
+        type: 'refund',
+        amount: 750000,
+        description: 'Hoàn tiền booking #BK-098',
+        status: 'completed',
+        createdAt: '2024-01-10T09:15:00Z'
+      }
+    ];
+
+    return (
+      <div className="space-y-6">
+        {/* Balance Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-100 text-sm">Số dư hiện tại</p>
+                <p className="text-3xl font-bold">{formatCurrency(walletData.balance || 1050000)}</p>
+                <p className="text-blue-100 text-xs mt-1">Có thể rút: {formatCurrency(walletData.balance || 1050000)}</p>
+              </div>
+              <div className="p-3 bg-blue-400 bg-opacity-30 rounded-full">
+                <Wallet size={32} />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Thông tin tài khoản</h3>
+              <button
+                onClick={() => setIsEditingBank(true)}
+                className="text-blue-600 hover:text-blue-700 text-sm"
+              >
+                <Edit size={16} />
+              </button>
+            </div>
+            
+            {walletData.bankAccount.accountNumber ? (
+              <div className="space-y-2">
+                <p className="text-sm"><strong>Ngân hàng:</strong> {walletData.bankAccount.bankName || 'Vietcombank'}</p>
+                <p className="text-sm"><strong>Số tài khoản:</strong> {walletData.bankAccount.accountNumber || '****1234'}</p>
+                <p className="text-sm"><strong>Chủ tài khoản:</strong> {walletData.bankAccount.accountName || user?.name}</p>
+                <p className="text-sm"><strong>Chi nhánh:</strong> {walletData.bankAccount.branch || 'TP. Hồ Chí Minh'}</p>
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-gray-500 text-sm mb-3">Chưa có thông tin tài khoản ngân hàng</p>
+                <button
+                  onClick={() => setIsEditingBank(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+                >
+                  Thêm tài khoản
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <button
+            onClick={() => setShowWithdrawForm(true)}
+            disabled={!walletData.bankAccount.accountNumber && walletData.balance === 0}
+            className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            <Send size={20} className="mr-2" />
+            Yêu cầu rút tiền
+          </button>
+        </div>
+
+        {/* Bank Account Form Modal */}
+        {isEditingBank && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <h3 className="text-lg font-semibold mb-4">Thông tin tài khoản ngân hàng</h3>
+              <form onSubmit={handleBankAccountSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên ngân hàng</label>
+                  <select
+                    value={walletData.bankAccount.bankName}
+                    onChange={(e) => setWalletData(prev => ({
+                      ...prev,
+                      bankAccount: { ...prev.bankAccount, bankName: e.target.value }
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  >
+                    <option value="">Chọn ngân hàng</option>
+                    <option value="Vietcombank">Vietcombank</option>
+                    <option value="BIDV">BIDV</option>
+                    <option value="VietinBank">VietinBank</option>
+                    <option value="Agribank">Agribank</option>
+                    <option value="Techcombank">Techcombank</option>
+                    <option value="MB Bank">MB Bank</option>
+                    <option value="VPBank">VPBank</option>
+                    <option value="ACB">ACB</option>
+                    <option value="Sacombank">Sacombank</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Số tài khoản</label>
+                  <input
+                    type="text"
+                    value={walletData.bankAccount.accountNumber}
+                    onChange={(e) => setWalletData(prev => ({
+                      ...prev,
+                      bankAccount: { ...prev.bankAccount, accountNumber: e.target.value }
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên chủ tài khoản</label>
+                  <input
+                    type="text"
+                    value={walletData.bankAccount.accountName}
+                    onChange={(e) => setWalletData(prev => ({
+                      ...prev,
+                      bankAccount: { ...prev.bankAccount, accountName: e.target.value }
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Chi nhánh</label>
+                  <input
+                    type="text"
+                    value={walletData.bankAccount.branch}
+                    onChange={(e) => setWalletData(prev => ({
+                      ...prev,
+                      bankAccount: { ...prev.bankAccount, branch: e.target.value }
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+                
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingBank(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={walletLoading}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {walletLoading ? 'Đang lưu...' : 'Lưu'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Withdrawal Form Modal */}
+        {showWithdrawForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <h3 className="text-lg font-semibold mb-4">Yêu cầu rút tiền</h3>
+              <form onSubmit={handleWithdrawSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Số tiền rút</label>
+                  <input
+                    type="number"
+                    value={withdrawalData.amount}
+                    onChange={(e) => setWithdrawalData(prev => ({ ...prev, amount: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Nhập số tiền"
+                    min="10000"
+                    max={walletData.balance || 1050000}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Số dư khả dụng: {formatCurrency(walletData.balance || 1050000)}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú (tùy chọn)</label>
+                  <textarea
+                    value={withdrawalData.note}
+                    onChange={(e) => setWithdrawalData(prev => ({ ...prev, note: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    rows={3}
+                    placeholder="Nhập ghi chú cho giao dịch..."
+                  />
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-800">
+                    <strong>Thông tin chuyển khoản:</strong><br/>
+                    {walletData.bankAccount.bankName || 'Vietcombank'} - {walletData.bankAccount.accountNumber || '****1234'}<br/>
+                    {walletData.bankAccount.accountName || user?.name}
+                  </p>
+                </div>
+                
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowWithdrawForm(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={withdrawLoading}
+                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {withdrawLoading ? 'Đang gửi...' : 'Gửi yêu cầu'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Transaction History */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <Receipt size={20} className="mr-2" />
+            Lịch sử giao dịch
+          </h3>
+          
+          <div className="space-y-3">
+            {sampleTransactions.map((transaction) => (
+              <div key={transaction.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-full ${
+                    transaction.type === 'refund' ? 'bg-green-100' : 'bg-blue-100'
+                  }`}>
+                    {transaction.type === 'refund' ? (
+                      <ArrowDownLeft size={16} className="text-green-600" />
+                    ) : (
+                      <ArrowUpRight size={16} className="text-blue-600" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{transaction.description}</p>
+                    <p className="text-sm text-gray-500">{formatDate(transaction.createdAt)}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className={`font-semibold ${
+                    transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {transaction.amount > 0 ? '+' : ''}{formatCurrency(transaction.amount)}
+                  </p>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    transaction.status === 'completed' 
+                      ? 'bg-green-100 text-green-800' 
+                      : transaction.status === 'pending'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {transaction.status === 'completed' ? 'Hoàn thành' : 
+                     transaction.status === 'pending' ? 'Đang xử lý' : 'Thất bại'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {sampleTransactions.length === 0 && (
+            <div className="text-center py-8">
+              <Receipt size={48} className="mx-auto text-gray-400 mb-4" />
+              <p className="text-gray-500">Chưa có giao dịch nào</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderRolesTab = () => {
     // Get user's current role
     const userRole = user?.roles && user.roles.length > 0 ? user.roles[0].name : null;
@@ -732,8 +1135,9 @@ const ProfilePage: React.FC = () => {
           <div className="p-6">
             {activeTab === 'profile' && renderProfileTab()}
             {activeTab === 'password' && renderPasswordTab()}
+            {activeTab === 'wallet' && renderWalletTab()}
             {activeTab === 'roles' && renderRolesTab()}
-            {activeTab !== 'profile' && activeTab !== 'password' && activeTab !== 'roles' && renderOtherTabs()}
+            {activeTab !== 'profile' && activeTab !== 'password' && activeTab !== 'wallet' && activeTab !== 'roles' && renderOtherTabs()}
           </div>
         </div>
       </div>

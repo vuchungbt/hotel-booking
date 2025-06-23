@@ -1,6 +1,8 @@
 package net.blwsmartware.booking.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -193,6 +195,23 @@ public class HotelController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(MessageResponse.<HotelResponse>builder()
                         .message("Hotel featured status toggled successfully")
+                        .result(response)
+                        .build());
+    }
+    
+    @PutMapping("/admin/{id}/commission-rate")
+    @IsAdmin
+    public ResponseEntity<MessageResponse<HotelResponse>> updateCommissionRate(
+            @PathVariable UUID id, 
+            @RequestParam @DecimalMin(value = "0.00", message = "Commission rate must be at least 0%")
+                         @DecimalMax(value = "100.00", message = "Commission rate cannot exceed 100%")
+                         BigDecimal commissionRate) {
+        HotelResponse response = hotelService.updateCommissionRate(id, commissionRate);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<HotelResponse>builder()
+                        .message("Hotel commission rate updated successfully")
                         .result(response)
                         .build());
     }

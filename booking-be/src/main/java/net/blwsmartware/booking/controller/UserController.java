@@ -224,4 +224,19 @@ public class UserController {
 
     }
 
+    // ===== STATISTICS ENDPOINTS =====
+    
+    @GetMapping("/admin/stats/total")
+    @IsAdmin
+    public ResponseEntity<MessageResponse<Long>> getTotalUsersCount() {
+        Long count = userService.getTotalUsersCount();
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<Long>builder()
+                        .message("Total users count retrieved successfully")
+                        .result(count)
+                        .build());
+    }
+
 }

@@ -153,6 +153,7 @@ export interface HotelCreateRequest {
   amenities?: string;
   cancellationPolicy?: string;
   petPolicy?: string;
+  commissionRate?: number;
   ownerId?: string;
   isActive?: boolean;
   isFeatured?: boolean;
@@ -175,6 +176,7 @@ export interface HotelUpdateRequest {
   amenities?: string;
   cancellationPolicy?: string;
   petPolicy?: string;
+  commissionRate?: number;
   ownerId?: string;
   active?: boolean;
   featured?: boolean; // Note: Only admin can modify this field
@@ -224,6 +226,7 @@ export interface HotelResponse {
   amenities?: string;
   cancellationPolicy?: string;
   petPolicy?: string;
+  commissionRate?: number;
   ownerId: string;
   ownerName?: string;
   ownerEmail?: string;
@@ -1136,6 +1139,52 @@ export interface MessageResponse<T> {
   result: T;
 }
 
+// Revenue Types
+export interface RevenueStatsResponse {
+  totalRevenue: number;
+  totalCommissionRevenue: number;
+  totalHotels: number;
+  totalBookings: number;
+  averageCommissionRate: number;
+  monthlyGrowth: number;
+}
+
+export interface HotelRevenueResponse {
+  id: string;
+  hotelName: string;
+  ownerName: string;
+  totalBookings: number;
+  totalRevenue: number;
+  commissionRate: number;
+  commissionAmount: number;
+  netRevenue: number;
+  city: string;
+  country: string;
+  lastBookingDate?: string;
+  status: string;
+}
+
+export interface RevenuePageResponse {
+  stats: RevenueStatsResponse;
+  hotels: HotelRevenueResponse[];
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  pageSize: number;
+}
+
+export interface RevenueFilterParams {
+  search?: string;
+  status?: string;
+  dateRange?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+  direction?: string;
+}
+
 // Upload APIs
 export const uploadAPI = {
   // Generic single image upload
@@ -1303,5 +1352,90 @@ export const vnpayAPI = {
       params: { transDate }
     })
 };
+
+// Commission Management APIs
+export const updateHotelCommissionRate = async (hotelId: string, commissionRate: number) => {
+  try {
+    const response = await api.put(`/hotels/admin/${hotelId}/commission-rate`, null, {
+      params: { commissionRate }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to update hotel commission rate:', error);
+    throw error;
+  }
+};
+
+// Get all hotels for admin (with commission rates)
+export const getHotelsForCommissionManagement = async (params?: {
+  pageNumber?: number;
+  pageSize?: number;
+  sortBy?: string;
+  city?: string;
+  country?: string;
+  isActive?: boolean;
+}) => {
+  try {
+    const response = await api.get('/hotels/admin', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch hotels for commission management:', error);
+    throw error;
+  }
+};
+
+// Revenue APIs
+export const revenueAPI = {
+  getRevenueData: async (params?: RevenueFilterParams) => {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      if (params?.search) queryParams.append('search', params.search);
+      if (params?.status) queryParams.append('status', params.status);
+      if (params?.dateRange) queryParams.append('dateRange', params.dateRange);
+      if (params?.startDate) queryParams.append('startDate', params.startDate);
+      if (params?.endDate) queryParams.append('endDate', params.endDate);
+      if (params?.page !== undefined) queryParams.append('page', params.page.toString());
+      if (params?.size !== undefined) queryParams.append('size', params.size.toString());
+      if (params?.sort) queryParams.append('sort', params.sort);
+      if (params?.direction) queryParams.append('direction', params.direction);
+
+      const url = `/admin/revenue${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const response = await api.get<MessageResponse<RevenuePageResponse>>(url);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch revenue data:', error);
+      throw error;
+    }
+  },
+
+  getRevenueStats: async (startDate?: string, endDate?: string) => {
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+
+      const url = `/admin/revenue/stats${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await api.get<MessageResponse<RevenueStatsResponse>>(url);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch revenue stats:', error);
+      throw error;
+    }
+  },
+
+  recalculateHotelRevenue: async (hotelId: string) => {
+    try {
+      const response = await api.post<MessageResponse<void>>(`/admin/revenue/hotel/${hotelId}/recalculate`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to recalculate hotel revenue:', error);
+      throw error;
+    }
+  }
+};
+
+// Backward compatibility
+export const getRevenueData = revenueAPI.getRevenueData;
 
 export default api;

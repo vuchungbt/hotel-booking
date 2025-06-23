@@ -44,9 +44,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, type }) => 
       label: 'Finance',
       icon: <DollarSign size={20} />,
       subItems: [
+        { path: '/admin/revenue', label: 'Revenue', icon: <TrendingUp size={20} /> },
         { path: '/admin/commissions', label: 'Commissions', icon: <Percent size={20} /> },
-        { path: '/admin/invoices', label: 'Invoices', icon: <FileText size={20} /> },
-        { path: '/admin/commission-payments', label: 'Payments', icon: <CreditCard size={20} /> },
       ],
     },
     { path: '/admin/promotions', label: 'Promotions', icon: <Tag size={20} /> },
