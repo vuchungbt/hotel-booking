@@ -30,7 +30,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminCommissions from './pages/admin/AdminCommissions';
 import AdminRevenue from './pages/admin/AdminRevenue';
 import AdminPromotions from './pages/admin/AdminPromotions';
-import AdminAnalytics from './pages/admin/AdminAnalytics'; 
+ 
 
 import AdminBookings from './pages/admin/AdminBookings';
 import AdminBookingDetail from './pages/admin/AdminBookingDetail';
@@ -54,7 +54,7 @@ import HostDashboard from './pages/host/HostDashboard';
 import HostProperties from './pages/host/HostProperties';
 import HostBookings from './pages/host/HostBookings';
 import HostBookingDetail from './pages/host/HostBookingDetail';
-import HostAnalytics from './pages/host/HostAnalytics';
+
 import AddProperty from './pages/host/AddProperty';
 import PropertyDetail from './pages/host/PropertyDetail';
 import HostHotels from './pages/host/HostHotels';
@@ -103,7 +103,7 @@ const hostRoutes = [
   { path: '/host/bookings/:id', element: <HostBookingDetail /> },
   { path: '/host/vouchers', element: <HostVouchers /> },
   { path: '/host/reviews', element: <HostReviews /> },
-  { path: '/host/analytics', element: <HostAnalytics /> }
+
 ];
 
 function App() {
@@ -187,11 +187,7 @@ function App() {
                 <DashboardLayout type="admin"><AdminPromotions /></DashboardLayout>
               </ProtectedRoute>
             } />
-            <Route path="/admin/analytics" element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <DashboardLayout type="admin"><AdminAnalytics /></DashboardLayout>
-              </ProtectedRoute>
-            } />
+
 
             <Route path="/admin/bookings" element={
               <ProtectedRoute requiredRole="ADMIN">
@@ -345,11 +341,7 @@ function App() {
                 <DashboardLayout type="host"><HostBookingDetail /></DashboardLayout>
               </ProtectedRoute>
             } />
-            <Route path="/host/analytics" element={
-              <ProtectedRoute requiredRole="HOST">
-                <DashboardLayout type="host"><HostAnalytics /></DashboardLayout>
-              </ProtectedRoute>
-            } />
+
             <Route path="/host/vouchers" element={
               <ProtectedRoute requiredRole="HOST">
                 <DashboardLayout type="host"><HostVouchers /></DashboardLayout>

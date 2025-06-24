@@ -147,9 +147,9 @@ public class ReviewServiceImpl implements ReviewService {
             throw new AppRuntimeException(ErrorResponse.REVIEW_ALREADY_EXISTS);
         }
         
-        // NEW: Check if user has completed booking for this hotel
+        // NEW: Check if user has completed or confirmed booking for this hotel
         if (!bookingRepository.existsCompletedBookingByUserAndHotel(user.getId(), hotel.getId())) {
-            log.warn("User {} attempted to review hotel {} without completed booking", user.getId(), hotel.getId());
+            log.warn("User {} attempted to review hotel {} without completed or confirmed booking", user.getId(), hotel.getId());
             throw new AppRuntimeException(ErrorResponse.REVIEW_NOT_ALLOWED);
         }
         
@@ -315,10 +315,10 @@ public class ReviewServiceImpl implements ReviewService {
     public boolean canUserReviewHotel(UUID userId, UUID hotelId) {
         log.info("Checking if user {} can review hotel {}", userId, hotelId);
         
-        // Check if user has completed booking for this hotel
+        // Check if user has completed or confirmed booking for this hotel
         boolean hasCompletedBooking = bookingRepository.existsCompletedBookingByUserAndHotel(userId, hotelId);
         if (!hasCompletedBooking) {
-            log.info("User {} has no completed booking for hotel {}", userId, hotelId);
+            log.info("User {} has no completed or confirmed booking for hotel {}", userId, hotelId);
             return false;
         }
         

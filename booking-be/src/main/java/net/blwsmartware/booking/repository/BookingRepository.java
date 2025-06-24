@@ -123,13 +123,22 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     
     // ===== REVIEW VALIDATION QUERIES =====
     @Query("SELECT COUNT(b) > 0 FROM Booking b WHERE b.user.id = :userId " +
-           "AND b.hotel.id = :hotelId AND b.status = 'COMPLETED'")
+           "AND b.hotel.id = :hotelId AND (b.status = 'COMPLETED' OR b.status = 'CONFIRMED')")
     boolean existsCompletedBookingByUserAndHotel(@Param("userId") UUID userId, @Param("hotelId") UUID hotelId);
     
+    @Query("SELECT COUNT(b) > 0 FROM Booking b WHERE b.user.id = :userId " +
+           "AND b.hotel.id = :hotelId AND (b.status = 'COMPLETED' OR b.status = 'CONFIRMED')")
+    boolean existsEligibleBookingForReviewByUserAndHotel(@Param("userId") UUID userId, @Param("hotelId") UUID hotelId);
+    
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
-           "AND b.hotel.id = :hotelId AND b.status = 'COMPLETED' " +
+           "AND b.hotel.id = :hotelId AND (b.status = 'COMPLETED' OR b.status = 'CONFIRMED') " +
            "ORDER BY b.checkOutDate DESC")
     List<Booking> findCompletedBookingsByUserAndHotel(@Param("userId") UUID userId, @Param("hotelId") UUID hotelId);
+    
+    @Query("SELECT b FROM Booking b WHERE b.user.id = :userId " +
+           "AND b.hotel.id = :hotelId AND (b.status = 'COMPLETED' OR b.status = 'CONFIRMED') " +
+           "ORDER BY b.checkOutDate DESC")
+    List<Booking> findEligibleBookingsForReviewByUserAndHotel(@Param("userId") UUID userId, @Param("hotelId") UUID hotelId);
 
     // ===== REVENUE ANALYSIS QUERIES =====
     @Query("SELECT COALESCE(SUM(b.totalAmount), 0) FROM Booking b WHERE b.paymentStatus = 'PAID' " +
@@ -160,4 +169,24 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.hotel.id = :hotelId AND b.paymentStatus = 'PAID'")
     Long countPaidBookingsByHotel(@Param("hotelId") UUID hotelId);
+
+    // ===== TOP PERFORMERS QUERIES =====
+    @Query("SELECT b.hotel.id as hotelId, b.hotel.name as hotelName, b.hotel.address as location, " +
+           "SUM(b.totalAmount) as totalRevenue, COUNT(b) as totalBookings " +
+           "FROM Booking b " +
+           "WHERE b.paymentStatus = 'PAID' AND b.createdAt >= :startDate AND b.createdAt < :endDate " +
+           "GROUP BY b.hotel.id, b.hotel.name, b.hotel.address " +
+           "ORDER BY totalRevenue DESC")
+    List<Object[]> findTopHotelsByRevenue(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, Pageable pageable);
+
+    @Query("SELECT b.hotel.address as location, " +
+           "SUM(b.totalAmount) as totalRevenue, COUNT(b) as totalBookings " +
+           "FROM Booking b " +
+           "WHERE b.paymentStatus = 'PAID' AND b.createdAt >= :startDate AND b.createdAt < :endDate " +
+           "GROUP BY b.hotel.address " +
+           "ORDER BY totalRevenue DESC")
+    List<Object[]> findTopLocationsByRevenue(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, Pageable pageable);
+
+    @Query("SELECT b FROM Booking b WHERE b.paymentStatus = 'PAID' AND b.createdAt >= :startDate AND b.createdAt < :endDate")
+    List<Booking> findPaidBookingsByDateRange(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 } 

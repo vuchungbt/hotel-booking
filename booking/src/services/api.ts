@@ -683,6 +683,37 @@ export interface AdminDashboardResponse {
   totalUsers: number;
 }
 
+// Admin Analytics Response
+export interface AdminAnalyticsResponse {
+  totalRevenue: number;
+  totalBookings: number;
+  averageBookingValue: number;
+  monthlyRevenue: Array<{
+    month: string;
+    value: number;
+  }>;
+  monthlyBookings: Array<{
+    month: string;
+    value: number;
+  }>;
+  monthlyNewUsers: Array<{
+    month: string;
+    value: number;
+  }>;
+  topHotels: Array<{
+    id: string;
+    name: string;
+    location: string;
+    bookings: number;
+    revenue: number;
+  }>;
+  topLocations: Array<{
+    name: string;
+    bookings: number;
+    revenue: number;
+  }>;
+}
+
 // Host Dashboard Statistics
 export interface HostDashboardResponse {
   totalHotels: number;
@@ -880,6 +911,11 @@ export const reviewAPI = {
 // Admin Dashboard APIs
 export const adminAPI = {
   getDashboard: () => api.get<{ success: boolean; result: AdminDashboardResponse }>('/admin/dashboard'),
+  
+  getAnalytics: (startDate?: string, endDate?: string) => 
+    api.get<{ success: boolean; result: AdminAnalyticsResponse }>('/admin/analytics', { 
+      params: { startDate, endDate } 
+    }),
   
   getHotelStats: () => api.get('/admin/stats/hotels'),
   

@@ -4,15 +4,20 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import net.blwsmartware.booking.dto.response.AdminAnalyticsResponse;
 import net.blwsmartware.booking.dto.response.AdminDashboardResponse;
 import net.blwsmartware.booking.dto.response.MessageResponse;
 import net.blwsmartware.booking.service.*;
 import net.blwsmartware.booking.validator.IsAdmin;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/admin")
@@ -25,6 +30,7 @@ public class AdminController {
     RoomTypeService roomTypeService;
     ReviewService reviewService;
     UserService userService;
+    AnalyticsService analyticsService;
     
     @GetMapping("/dashboard")
     @IsAdmin
@@ -73,6 +79,30 @@ public class AdminController {
             
         } catch (Exception e) {
             log.error("Error retrieving dashboard statistics", e);
+            throw e;
+        }
+    }
+    
+    @GetMapping("/analytics")
+    @IsAdmin
+    public ResponseEntity<MessageResponse<AdminAnalyticsResponse>> getAnalytics(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        
+        log.info("Getting admin analytics from {} to {}", startDate, endDate);
+        
+        try {
+            AdminAnalyticsResponse analyticsResponse = analyticsService.getAdminAnalytics(startDate, endDate);
+            
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(MessageResponse.<AdminAnalyticsResponse>builder()
+                            .message("Analytics data retrieved successfully")
+                            .result(analyticsResponse)
+                            .build());
+                            
+        } catch (Exception e) {
+            log.error("Error retrieving analytics data", e);
             throw e;
         }
     }

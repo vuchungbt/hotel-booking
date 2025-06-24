@@ -649,14 +649,8 @@ const HotelDetailPage: React.FC = () => {
                           Review not available
                         </h4>
                         <p className="text-gray-600 mb-4">
-                          You can only review hotels where you have completed a stay. Please book and complete your stay to leave a review.
+                          Please book and complete your stay to leave a review.
                         </p>
-                        <Link
-                          to={`/hotels/${id}?checkIn=${checkInDate}&checkOut=${checkOutDate}&guests=${guestCount}#rooms`}
-                          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-block"
-                        >
-                          Book this hotel
-                        </Link>
                       </div>
                     )}
                   </div>

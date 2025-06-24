@@ -33,7 +33,7 @@ const ReviewEditForm: React.FC<ReviewEditFormProps> = ({
     e.preventDefault();
     
     if (rating === 0) {
-      setError('Vui lòng chọn số sao đánh giá');
+      setError('Please select a rating');
       return;
     }
 
@@ -52,13 +52,13 @@ const ReviewEditForm: React.FC<ReviewEditFormProps> = ({
       console.error('Error updating review:', error);
       
       if (error.response?.status === 401) {
-        setError('Bạn cần đăng nhập để chỉnh sửa đánh giá');
+        setError('You need to login to update your review');
       } else if (error.response?.status === 403) {
-        setError('Bạn không có quyền chỉnh sửa đánh giá này');
+        setError('You are not allowed to update this review');
       } else if (error.response?.status === 404) {
-        setError('Không tìm thấy đánh giá');
+        setError('Review not found');
       } else {
-        setError(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật đánh giá');
+        setError(error.response?.data?.message || 'An error occurred while updating your review');
       }
     } finally {
       setLoading(false);
@@ -86,13 +86,13 @@ const ReviewEditForm: React.FC<ReviewEditFormProps> = ({
       console.error('Error deleting review:', error);
       
       if (error.response?.status === 401) {
-        setError('Bạn cần đăng nhập để xóa đánh giá');
+        setError('You need to login to delete your review');
       } else if (error.response?.status === 403) {
-        setError('Bạn không có quyền xóa đánh giá này');
+        setError('You are not allowed to delete this review');
       } else if (error.response?.status === 404) {
-        setError('Không tìm thấy đánh giá');
+        setError('Review not found');
       } else {
-        setError(error.response?.data?.message || 'Có lỗi xảy ra khi xóa đánh giá');
+        setError(error.response?.data?.message || 'An error occurred while deleting your review');
       }
     } finally {
       setDeleting(false);
@@ -126,7 +126,7 @@ const ReviewEditForm: React.FC<ReviewEditFormProps> = ({
     <div className="bg-white border border-gray-200 rounded-lg p-6">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-gray-900">
-          Chỉnh sửa đánh giá cho {review.hotelName}
+          Update review for {review.hotelName}
         </h3>
         <button
           onClick={onCancel}
@@ -146,12 +146,12 @@ const ReviewEditForm: React.FC<ReviewEditFormProps> = ({
         {/* Rating */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
-            Đánh giá của bạn *
+              Your review *
           </label>
           <div className="flex items-center space-x-1">
             {renderStars()}
             <span className="ml-3 text-sm text-gray-600">
-              ({rating > 0 ? rating : 0}/5 sao)
+              ({rating > 0 ? rating : 0}/5 stars)
             </span>
           </div>
         </div>
@@ -159,18 +159,18 @@ const ReviewEditForm: React.FC<ReviewEditFormProps> = ({
         {/* Comment */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nội dung đánh giá (tùy chọn)
+            Review content (optional)
           </label>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={4}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-            placeholder="Chia sẻ trải nghiệm của bạn về khách sạn này..."
+            placeholder="Share your experience about this hotel..."
             maxLength={2000}
           />
           <div className="text-right text-sm text-gray-500 mt-1">
-            {comment.length}/2000 ký tự
+            {comment.length}/2000 characters
           </div>
         </div>
 
@@ -190,10 +190,10 @@ const ReviewEditForm: React.FC<ReviewEditFormProps> = ({
             <Trash2 className="h-4 w-4" />
             <span>
               {deleting 
-                ? 'Đang xóa...' 
+                ? 'Deleting...' 
                 : showDeleteConfirm 
-                  ? 'Xác nhận xóa' 
-                  : 'Xóa đánh giá'
+                  ? 'Confirm delete' 
+                  : 'Delete review'
               }
             </span>
           </button>
@@ -205,7 +205,7 @@ const ReviewEditForm: React.FC<ReviewEditFormProps> = ({
               onClick={() => setShowDeleteConfirm(false)}
               className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
             >
-              Hủy xóa
+              Cancel delete
             </button>
           )}
 
@@ -217,14 +217,14 @@ const ReviewEditForm: React.FC<ReviewEditFormProps> = ({
               disabled={deleting}
               className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
               disabled={loading || deleting || rating === 0}
               className="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Đang cập nhật...' : 'Cập nhật đánh giá'}
+              {loading ? 'Updating...' : 'Update review'}
             </button>
           </div>
         </div>

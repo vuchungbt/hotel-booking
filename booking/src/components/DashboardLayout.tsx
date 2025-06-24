@@ -49,7 +49,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, type }) => 
       ],
     },
     { path: '/admin/promotions', label: 'Promotions', icon: <Tag size={20} /> },
-    { path: '/admin/analytics', label: 'Analytics', icon: <BarChart2 size={20} /> }, 
     { path: '/admin/settings', label: 'Settings', icon: <Settings size={20} /> },
   ];
 
@@ -60,7 +59,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, type }) => 
     { path: '/host/bookings', label: 'Bookings', icon: <BookOpen size={20} /> },
     { path: '/host/vouchers', label: 'Vouchers', icon: <Tag size={20} /> },
     { path: '/host/reviews', label: 'Reviews', icon: <Star size={20} /> },
-    { path: '/host/analytics', label: 'Analytics', icon: <BarChart2 size={20} /> },
+
     { path: '/host/settings', label: 'Settings', icon: <Settings size={20} /> },
   ];
 

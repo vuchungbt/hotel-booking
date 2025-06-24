@@ -68,7 +68,7 @@ public enum ErrorResponse {
     // Review-related errors
     REVIEW_NOT_FOUND(4001, "Review not found!", HttpStatus.NOT_FOUND),
     REVIEW_ALREADY_EXISTS(4002, "User has already reviewed this hotel!", HttpStatus.BAD_REQUEST),
-    REVIEW_NOT_ALLOWED(4003, "User is not allowed to review this hotel!", HttpStatus.FORBIDDEN),
+    REVIEW_NOT_ALLOWED(4003, "You can only review hotels with confirmed or completed bookings!", HttpStatus.FORBIDDEN),
     
     // Booking-related errors
     BOOKING_NOT_FOUND(5001, "Booking not found!", HttpStatus.NOT_FOUND),

@@ -125,36 +125,8 @@ const VNPayPaymentModal: React.FC<VNPayPaymentModalProps> = ({
               </label>
             ))}
           </div>
-
-          {/* Security Notice */}
-          <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-start">
-              <div className="text-green-600 mr-3 mt-0.5">
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div>
-                <h4 className="font-medium text-green-800">Thanh toán an toàn</h4>
-                <p className="text-sm text-green-700 mt-1">
-                  VNPay sử dụng công nghệ bảo mật SSL 256-bit để đảm bảo thông tin thanh toán của bạn được bảo vệ tuyệt đối.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Warning for testing */}
-          <div className="mt-4 bg-orange-50 border border-orange-200 rounded-lg p-4">
-            <div className="flex items-start">
-              <AlertCircle className="h-5 w-5 text-orange-600 mr-3 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-orange-800">Môi trường test</h4>
-                <p className="text-sm text-orange-700 mt-1">
-                  Đây là môi trường test. Sử dụng thẻ test: <strong>9704198526191432198</strong> (NGUYEN VAN A) và OTP: <strong>123456</strong>
-                </p>
-              </div>
-            </div>
-          </div>
+ 
+          
         </div>
 
         {/* Footer */}

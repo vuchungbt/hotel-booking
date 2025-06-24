@@ -115,17 +115,17 @@ public class RevenueServiceImpl implements RevenueService {
         LocalDateTime startDateTime = startDate.atStartOfDay();
         LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
         
-        // Tổng doanh thu hệ thống = tổng tất cả booking đã thanh toán
-        BigDecimal totalSystemRevenue = bookingRepository.getTotalRevenue();
+        // Tổng doanh thu hệ thống theo date range
+        BigDecimal totalSystemRevenue = bookingRepository.getTotalRevenueByDateRange(startDateTime, endDateTime);
         if (totalSystemRevenue == null) totalSystemRevenue = BigDecimal.ZERO;
         
-        // Tổng hoa hồng đã kiếm được từ tất cả khách sạn
-        BigDecimal totalCommissionRevenue = hotelRepository.getTotalCommissionEarned();
+        // Tính tổng hoa hồng theo date range từ bookings
+        BigDecimal totalCommissionRevenue = calculateCommissionByDateRange(startDateTime, endDateTime);
         if (totalCommissionRevenue == null) totalCommissionRevenue = BigDecimal.ZERO;
         
-        // Thống kê khác
+        // Thống kê khác theo date range
         Long totalHotels = hotelRepository.countByIsActiveTrue();
-        Long totalBookings = bookingRepository.countByPaymentStatus(PaymentStatus.PAID);
+        Long totalBookings = bookingRepository.countPaidBookingsByDateRange(startDateTime, endDateTime);
         
         BigDecimal averageCommissionRate = hotelRepository.getAverageCommissionRate()
                 .orElse(BigDecimal.valueOf(15.00));
@@ -243,5 +243,33 @@ public class RevenueServiceImpl implements RevenueService {
         BigDecimal commissionRate = hotel.getCommissionRate();
         
         return revenue.multiply(commissionRate).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Tính tổng commission theo date range từ bookings
+     */
+    private BigDecimal calculateCommissionByDateRange(LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        log.info("Calculating commission for date range: {} to {}", startDateTime, endDateTime);
+        
+        // Lấy tất cả bookings đã thanh toán trong khoảng thời gian
+        List<Booking> paidBookings = bookingRepository.findPaidBookingsByDateRange(startDateTime, endDateTime);
+        
+        BigDecimal totalCommission = BigDecimal.ZERO;
+        
+        for (Booking booking : paidBookings) {
+            Hotel hotel = booking.getHotel();
+            BigDecimal bookingAmount = booking.getTotalAmount();
+            BigDecimal commissionRate = hotel.getCommissionRate();
+            
+            // Tính commission cho booking này
+            BigDecimal commissionAmount = bookingAmount
+                    .multiply(commissionRate)
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            
+            totalCommission = totalCommission.add(commissionAmount);
+        }
+        
+        log.info("Total commission calculated: {} VND from {} bookings", totalCommission, paidBookings.size());
+        return totalCommission;
     }
 } 

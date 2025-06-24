@@ -561,18 +561,7 @@ const EnhancedBookingForm: React.FC<EnhancedBookingFormProps> = ({
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start">
-                  <Shield className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
-                  <div>
-                    <h4 className="font-medium text-blue-800">Thanh toán an toàn với VNPay</h4>
-                    <div className="text-blue-700 text-sm mt-1">
-                      <p>VNPay sử dụng công nghệ bảo mật tiên tiến và được chứng nhận bởi Ngân hàng Nhà nước Việt Nam. 
-                      Thông tin thẻ của bạn được mã hóa và bảo vệ hoàn toàn trong quá trình giao dịch.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              
 
               {/* Voucher Section */}
               <VoucherInput
