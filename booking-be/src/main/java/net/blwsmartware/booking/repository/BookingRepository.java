@@ -43,6 +43,8 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     
     Page<Booking> findByPaymentStatusOrderByCreatedAtDesc(PaymentStatus paymentStatus, Pageable pageable);
     
+    List<Booking> findByPaymentStatus(PaymentStatus paymentStatus);
+    
     Page<Booking> findByStatusAndPaymentStatusOrderByCreatedAtDesc(BookingStatus status, PaymentStatus paymentStatus, Pageable pageable);
     
     // ===== HOTEL SPECIFIC QUERIES =====
@@ -90,18 +92,18 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     Long countByPaymentStatus(@Param("paymentStatus") PaymentStatus paymentStatus);
     
     // ===== REVENUE QUERIES =====
-    @Query("SELECT COALESCE(SUM(b.totalAmount), 0) FROM Booking b WHERE b.hotel.owner.id = :ownerId " +
-           "AND b.paymentStatus = 'PAID'")
+    @Query("SELECT COALESCE(SUM(b.totalAmount - COALESCE(b.refundAmount, 0)), 0) FROM Booking b WHERE b.hotel.owner.id = :ownerId " +
+           "AND b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED')")
     BigDecimal getTotalRevenueByOwner(@Param("ownerId") UUID ownerId);
     
-    @Query("SELECT COALESCE(SUM(b.totalAmount), 0) FROM Booking b WHERE b.hotel.owner.id = :ownerId " +
-           "AND b.paymentStatus = 'PAID' " +
+    @Query("SELECT COALESCE(SUM(b.totalAmount - COALESCE(b.refundAmount, 0)), 0) FROM Booking b WHERE b.hotel.owner.id = :ownerId " +
+           "AND b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED') " +
            "AND YEAR(b.createdAt) = :year AND MONTH(b.createdAt) = :month")
     BigDecimal getMonthlyRevenueByOwner(@Param("ownerId") UUID ownerId, 
                                         @Param("year") int year, 
                                         @Param("month") int month);
     
-    @Query("SELECT COALESCE(SUM(b.totalAmount), 0) FROM Booking b WHERE b.paymentStatus = 'PAID'")
+    @Query("SELECT COALESCE(SUM(b.totalAmount - COALESCE(b.refundAmount, 0)), 0) FROM Booking b WHERE b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED')")
     BigDecimal getTotalRevenue();
     
     // ===== SEARCH QUERIES =====
@@ -141,22 +143,23 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     List<Booking> findEligibleBookingsForReviewByUserAndHotel(@Param("userId") UUID userId, @Param("hotelId") UUID hotelId);
 
     // ===== REVENUE ANALYSIS QUERIES =====
-    @Query("SELECT COALESCE(SUM(b.totalAmount), 0) FROM Booking b WHERE b.paymentStatus = 'PAID' " +
+    @Query("SELECT COALESCE(SUM(b.totalAmount - COALESCE(b.refundAmount, 0)), 0) FROM Booking b WHERE b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED') " +
            "AND b.createdAt >= :startDate AND b.createdAt < :endDate")
     BigDecimal getTotalRevenueByDateRange(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT COUNT(b) FROM Booking b WHERE b.paymentStatus = 'PAID' " +
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED') " +
            "AND b.createdAt >= :startDate AND b.createdAt < :endDate")
     Long countPaidBookingsByDateRange(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT COUNT(b) FROM Booking b WHERE b.hotel.id = :hotelId AND b.paymentStatus = 'PAID' " +
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.hotel.id = :hotelId AND b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED') " +
            "AND b.createdAt >= :startDate AND b.createdAt < :endDate")
     Long countPaidBookingsByHotelAndDateRange(@Param("hotelId") UUID hotelId, 
                                               @Param("startDate") LocalDateTime startDate, 
                                               @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT COALESCE(SUM(b.totalAmount), 0) FROM Booking b WHERE b.hotel.id = :hotelId " +
-           "AND b.paymentStatus = 'PAID' AND b.createdAt >= :startDate AND b.createdAt < :endDate")
+    @Query("SELECT COALESCE(SUM(b.totalAmount - COALESCE(b.refundAmount, 0)), 0) FROM Booking b WHERE b.hotel.id = :hotelId " +
+           "AND b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED') " +
+           "AND b.createdAt >= :startDate AND b.createdAt < :endDate")
     BigDecimal getTotalRevenueByHotelAndDateRange(@Param("hotelId") UUID hotelId, 
                                                   @Param("startDate") LocalDateTime startDate, 
                                                   @Param("endDate") LocalDateTime endDate);
@@ -164,29 +167,123 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     @Query("SELECT MAX(b.createdAt) FROM Booking b WHERE b.hotel.id = :hotelId AND b.paymentStatus = 'PAID'")
     Optional<LocalDateTime> findLastBookingDateByHotel(@Param("hotelId") UUID hotelId);
     
-    @Query("SELECT COALESCE(SUM(b.totalAmount), 0) FROM Booking b WHERE b.hotel.id = :hotelId AND b.paymentStatus = 'PAID'")
+    @Query("SELECT COALESCE(SUM(b.totalAmount - COALESCE(b.refundAmount, 0)), 0) FROM Booking b WHERE b.hotel.id = :hotelId " +
+           "AND b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED')")
     BigDecimal getTotalRevenueByHotel(@Param("hotelId") UUID hotelId);
     
-    @Query("SELECT COUNT(b) FROM Booking b WHERE b.hotel.id = :hotelId AND b.paymentStatus = 'PAID'")
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.hotel.id = :hotelId " +
+           "AND b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED')")
     Long countPaidBookingsByHotel(@Param("hotelId") UUID hotelId);
 
     // ===== TOP PERFORMERS QUERIES =====
     @Query("SELECT b.hotel.id as hotelId, b.hotel.name as hotelName, b.hotel.address as location, " +
-           "SUM(b.totalAmount) as totalRevenue, COUNT(b) as totalBookings " +
+           "SUM(b.totalAmount - COALESCE(b.refundAmount, 0)) as totalRevenue, COUNT(b) as totalBookings " +
            "FROM Booking b " +
-           "WHERE b.paymentStatus = 'PAID' AND b.createdAt >= :startDate AND b.createdAt < :endDate " +
+           "WHERE b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED') " +
+           "AND b.createdAt >= :startDate AND b.createdAt < :endDate " +
            "GROUP BY b.hotel.id, b.hotel.name, b.hotel.address " +
            "ORDER BY totalRevenue DESC")
     List<Object[]> findTopHotelsByRevenue(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, Pageable pageable);
 
     @Query("SELECT b.hotel.address as location, " +
-           "SUM(b.totalAmount) as totalRevenue, COUNT(b) as totalBookings " +
+           "SUM(b.totalAmount - COALESCE(b.refundAmount, 0)) as totalRevenue, COUNT(b) as totalBookings " +
            "FROM Booking b " +
-           "WHERE b.paymentStatus = 'PAID' AND b.createdAt >= :startDate AND b.createdAt < :endDate " +
+           "WHERE b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED') " +
+           "AND b.createdAt >= :startDate AND b.createdAt < :endDate " +
            "GROUP BY b.hotel.address " +
            "ORDER BY totalRevenue DESC")
     List<Object[]> findTopLocationsByRevenue(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, Pageable pageable);
 
-    @Query("SELECT b FROM Booking b WHERE b.paymentStatus = 'PAID' AND b.createdAt >= :startDate AND b.createdAt < :endDate")
+    @Query("SELECT b FROM Booking b WHERE b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED') " +
+           "AND b.createdAt >= :startDate AND b.createdAt < :endDate")
     List<Booking> findPaidBookingsByDateRange(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+    
+    // ===== HOST DASHBOARD QUERIES =====
+    @Query("SELECT COALESCE(SUM(b.totalAmount - COALESCE(b.refundAmount, 0)), 0) FROM Booking b WHERE b.hotel.owner.id = :hostId " +
+           "AND b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED')")
+    BigDecimal getTotalRevenueByHost(@Param("hostId") UUID hostId);
+    
+    @Query("SELECT COALESCE(SUM(b.totalAmount - COALESCE(b.refundAmount, 0)), 0) FROM Booking b WHERE b.hotel.owner.id = :hostId " +
+           "AND b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED') " +
+           "AND b.createdAt >= :startDate AND b.createdAt < :endDate")
+    BigDecimal getRevenueByHostAndDateRange(@Param("hostId") UUID hostId, 
+                                           @Param("startDate") LocalDateTime startDate, 
+                                           @Param("endDate") LocalDateTime endDate);
+    
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.hotel.owner.id = :hostId " +
+           "AND b.createdAt >= :startDate AND b.createdAt < :endDate")
+    Long countByHotelOwnerIdAndCreatedAtBetween(@Param("hostId") UUID hostId, 
+                                               @Param("startDate") LocalDateTime startDate, 
+                                               @Param("endDate") LocalDateTime endDate);
+    
+    @Query("SELECT COUNT(DISTINCT b.roomType.id) FROM Booking b WHERE b.hotel.owner.id = :hostId " +
+           "AND b.status IN ('CONFIRMED', 'COMPLETED') AND b.checkInDate <= CURRENT_DATE AND b.checkOutDate >= CURRENT_DATE")
+    Long getOccupiedRoomsByHost(@Param("hostId") UUID hostId);
+    
+    @Query("SELECT b FROM Booking b WHERE b.hotel.owner.id = :hostId ORDER BY b.createdAt DESC")
+    List<Booking> findRecentBookingsByHost(@Param("hostId") UUID hostId, Pageable pageable);
+    
+    @Query("SELECT CONCAT(CAST(YEAR(b.createdAt) AS STRING), '-', " +
+           "CASE WHEN MONTH(b.createdAt) < 10 THEN CONCAT('0', CAST(MONTH(b.createdAt) AS STRING)) " +
+           "ELSE CAST(MONTH(b.createdAt) AS STRING) END) as month, " +
+           "COALESCE(SUM(b.totalAmount - COALESCE(b.refundAmount, 0)), 0) as revenue, COUNT(b) as bookings " +
+           "FROM Booking b WHERE b.hotel.owner.id = :hostId " +
+           "AND b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED') " +
+           "AND b.createdAt >= :startDate AND b.createdAt < :endDate " +
+           "GROUP BY YEAR(b.createdAt), MONTH(b.createdAt) " +
+           "ORDER BY YEAR(b.createdAt), MONTH(b.createdAt)")
+    List<Object[]> getMonthlyRevenueByHost(@Param("hostId") UUID hostId, 
+                                          @Param("startDate") LocalDateTime startDate, 
+                                          @Param("endDate") LocalDateTime endDate);
+    
+    @Query("SELECT CONCAT(CAST(YEAR(b.createdAt) AS STRING), '-', " +
+           "CASE WHEN MONTH(b.createdAt) < 10 THEN CONCAT('0', CAST(MONTH(b.createdAt) AS STRING)) " +
+           "ELSE CAST(MONTH(b.createdAt) AS STRING) END) as month, " +
+           "COUNT(b) as bookings " +
+           "FROM Booking b WHERE b.hotel.owner.id = :hostId " +
+           "AND b.createdAt >= :startDate AND b.createdAt < :endDate " +
+           "GROUP BY YEAR(b.createdAt), MONTH(b.createdAt) " +
+           "ORDER BY YEAR(b.createdAt), MONTH(b.createdAt)")
+    List<Object[]> getMonthlyBookingsByHost(@Param("hostId") UUID hostId, 
+                                           @Param("startDate") LocalDateTime startDate, 
+                                           @Param("endDate") LocalDateTime endDate);
+    
+    @Query("SELECT CONCAT(CAST(YEAR(b.createdAt) AS STRING), '-', " +
+           "CASE WHEN MONTH(b.createdAt) < 10 THEN CONCAT('0', CAST(MONTH(b.createdAt) AS STRING)) " +
+           "ELSE CAST(MONTH(b.createdAt) AS STRING) END) as month, " +
+           "COALESCE(SUM(b.totalAmount - COALESCE(b.refundAmount, 0)), 0) as revenue, COUNT(b) as bookings " +
+           "FROM Booking b WHERE b.hotel.owner.id = :hostId " +
+           "AND b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED') " +
+           "AND b.createdAt >= :startDate AND b.createdAt < :endDate " +
+           "GROUP BY YEAR(b.createdAt), MONTH(b.createdAt) " +
+           "ORDER BY YEAR(b.createdAt), MONTH(b.createdAt)")
+    List<Object[]> getMonthlyAnalyticsByHost(@Param("hostId") UUID hostId, 
+                                            @Param("startDate") LocalDateTime startDate, 
+                                            @Param("endDate") LocalDateTime endDate);
+    
+    // ===== COMMISSION CALCULATION QUERIES =====
+    @Query("SELECT COALESCE(SUM((b.totalAmount - COALESCE(b.refundAmount, 0)) * b.hotel.commissionRate / 100), 0) " +
+           "FROM Booking b WHERE b.hotel.owner.id = :hostId " +
+           "AND b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED')")
+    BigDecimal getTotalCommissionByHost(@Param("hostId") UUID hostId);
+    
+    @Query("SELECT COALESCE(SUM((b.totalAmount - COALESCE(b.refundAmount, 0)) * b.hotel.commissionRate / 100), 0) " +
+           "FROM Booking b WHERE b.hotel.owner.id = :hostId " +
+           "AND b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED') " +
+           "AND b.createdAt >= :startDate AND b.createdAt < :endDate")
+    BigDecimal getCommissionByHostAndDateRange(@Param("hostId") UUID hostId, 
+                                              @Param("startDate") LocalDateTime startDate, 
+                                              @Param("endDate") LocalDateTime endDate);
+
+    // ===== REFUND STATISTICS QUERIES =====
+    @Query("SELECT COALESCE(SUM(b.refundAmount), 0) FROM Booking b WHERE b.refundAmount IS NOT NULL")
+    BigDecimal getTotalRefundAmount();
+    
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.refundAmount IS NOT NULL AND b.refundAmount > 0")
+    Long countBookingsWithRefund();
+    
+    // ===== PAYMENT FAILURE RECOVERY QUERIES =====
+    List<Booking> findByPaymentStatusAndStatus(PaymentStatus paymentStatus, BookingStatus status);
+    
+    List<Booking> findByPaymentStatusAndStatusAndCreatedAtBefore(PaymentStatus paymentStatus, BookingStatus status, LocalDateTime cutoffTime);
 } 

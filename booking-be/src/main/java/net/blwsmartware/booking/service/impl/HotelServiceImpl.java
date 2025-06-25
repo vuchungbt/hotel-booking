@@ -6,7 +6,9 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import net.blwsmartware.booking.dto.request.HotelCreateRequest;
 import net.blwsmartware.booking.dto.request.HotelUpdateRequest;
+import net.blwsmartware.booking.dto.response.CityStatsResponse;
 import net.blwsmartware.booking.dto.response.DataResponse;
+import net.blwsmartware.booking.dto.response.HostDashboardResponse;
 import net.blwsmartware.booking.dto.response.HotelResponse;
 import net.blwsmartware.booking.entity.Hotel;
 import net.blwsmartware.booking.entity.User;
@@ -15,9 +17,11 @@ import net.blwsmartware.booking.enums.ErrorResponse;
 import net.blwsmartware.booking.mapper.HotelMapper;
 import net.blwsmartware.booking.repository.HotelRepository;
 import net.blwsmartware.booking.repository.ReviewRepository;
+import net.blwsmartware.booking.repository.RoomTypeRepository;
 import net.blwsmartware.booking.repository.UserRepository;
 import net.blwsmartware.booking.service.HotelService;
 import net.blwsmartware.booking.util.DataResponseUtils;
+import net.blwsmartware.booking.util.TextUtils;
 import net.blwsmartware.booking.validator.IsAdmin;
 import net.blwsmartware.booking.validator.IsHost;
 import org.springframework.data.domain.Page;
@@ -42,6 +46,7 @@ public class HotelServiceImpl implements HotelService {
     HotelRepository hotelRepository;
     UserRepository userRepository;
     ReviewRepository reviewRepository;
+    RoomTypeRepository roomTypeRepository;
     HotelMapper hotelMapper;
     
     @Override
@@ -68,6 +73,8 @@ public class HotelServiceImpl implements HotelService {
         
         // Populate review data
         populateReviewData(hotelResponses);
+        // Populate room data
+        populateRoomData(hotelResponses);
         
         // Debug: Log mapped responses
         log.info("=== MAPPED RESPONSES DEBUG ===");
@@ -102,6 +109,8 @@ public class HotelServiceImpl implements HotelService {
         
         // Populate review data
         populateReviewData(hotelResponses);
+        // Populate room data
+        populateRoomData(hotelResponses);
         
         return DataResponseUtils.convertPageInfo(hotelPage, hotelResponses);
     }
@@ -121,6 +130,23 @@ public class HotelServiceImpl implements HotelService {
         
         HotelResponse response = hotelMapper.toResponse(hotel);
         populateReviewData(response);
+        populateRoomData(response);
+        
+        return response;
+    }
+    
+    @Override
+    @IsAdmin
+    public HotelResponse getHotelByIdForAdmin(UUID id) {
+        log.info("Getting hotel by ID: {} (admin API)", id);
+        
+        Hotel hotel = hotelRepository.findById(id)
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
+        
+        // Admin can access hotels regardless of status
+        HotelResponse response = hotelMapper.toResponse(hotel);
+        populateReviewData(response);
+        populateRoomData(response);
         
         return response;
     }
@@ -130,6 +156,19 @@ public class HotelServiceImpl implements HotelService {
     @Transactional
     public HotelResponse createHotelByAdmin(HotelCreateRequest request) {
         log.info("Admin creating new hotel: {}", request.getName());
+        
+        // Normalize city and country names (remove Vietnamese diacritics, capitalize words)
+        if (request.getCity() != null) {
+            String normalizedCity = TextUtils.normalizeCityName(request.getCity());
+            log.info("Normalized city: '{}' -> '{}'", request.getCity(), normalizedCity);
+            request.setCity(normalizedCity);
+        }
+        
+        if (request.getCountry() != null) {
+            String normalizedCountry = TextUtils.normalizeCountryName(request.getCountry());
+            log.info("Normalized country: '{}' -> '{}'", request.getCountry(), normalizedCountry);
+            request.setCountry(normalizedCountry);
+        }
         
         // Determine owner - use provided ownerId or current user
         User owner;
@@ -141,12 +180,12 @@ public class HotelServiceImpl implements HotelService {
             owner = getCurrentUser();
         }
         
-        // Check if hotel name already exists in the same city
+        // Check if hotel name already exists in the same city (using normalized city)
         if (hotelRepository.existsByNameAndCity(request.getName(), request.getCity())) {
             throw new AppRuntimeException(ErrorResponse.HOTEL_NAME_ALREADY_EXISTS);
         }
 
-        log.info("Admin creating hotel with request: {}", request);
+        log.info("Admin creating hotel with normalized request: {}", request);
         
         // Convert request to entity
         Hotel hotel = hotelMapper.toEntity(request);
@@ -167,10 +206,23 @@ public class HotelServiceImpl implements HotelService {
     public HotelResponse updateHotelByAdmin(UUID id, HotelUpdateRequest request) {
         log.info("Admin updating hotel: {}", id);
 
+        // Normalize city and country names if provided
+        if (request.getCity() != null) {
+            String normalizedCity = TextUtils.normalizeCityName(request.getCity());
+            log.info("Normalized city: '{}' -> '{}'", request.getCity(), normalizedCity);
+            request.setCity(normalizedCity);
+        }
+        
+        if (request.getCountry() != null) {
+            String normalizedCountry = TextUtils.normalizeCountryName(request.getCountry());
+            log.info("Normalized country: '{}' -> '{}'", request.getCountry(), normalizedCountry);
+            request.setCountry(normalizedCountry);
+        }
+
         Hotel hotel = hotelRepository.findById(id)
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));
 
-        // Check if new name conflicts with existing hotels in the same city
+        // Check if new name conflicts with existing hotels in the same city (using normalized city)
         if (request.getName() != null && !request.getName().equals(hotel.getName())) {
             String city = request.getCity() != null ? request.getCity() : hotel.getCity();
             if (hotelRepository.existsByNameAndCity(request.getName(), city)) {
@@ -551,10 +603,23 @@ public class HotelServiceImpl implements HotelService {
     public HotelResponse createMyHotel(HotelCreateRequest request) {
         log.info("Host creating new hotel: {}", request.getName());
         
+        // Normalize city and country names (remove Vietnamese diacritics, capitalize words)
+        if (request.getCity() != null) {
+            String normalizedCity = TextUtils.normalizeCityName(request.getCity());
+            log.info("Normalized city: '{}' -> '{}'", request.getCity(), normalizedCity);
+            request.setCity(normalizedCity);
+        }
+        
+        if (request.getCountry() != null) {
+            String normalizedCountry = TextUtils.normalizeCountryName(request.getCountry());
+            log.info("Normalized country: '{}' -> '{}'", request.getCountry(), normalizedCountry);
+            request.setCountry(normalizedCountry);
+        }
+        
         // Host can only create hotel for themselves
         User currentUser = getCurrentUser();
         
-        // Check if hotel name already exists in the same city
+        // Check if hotel name already exists in the same city (using normalized city)
         if (hotelRepository.existsByNameAndCity(request.getName(), request.getCity())) {
             throw new AppRuntimeException(ErrorResponse.HOTEL_NAME_ALREADY_EXISTS);
         }
@@ -580,9 +645,22 @@ public class HotelServiceImpl implements HotelService {
     public HotelResponse updateMyHotel(UUID id, HotelUpdateRequest request) {
         log.info("Host updating hotel: {}", id);
 
+        // Normalize city and country names if provided
+        if (request.getCity() != null) {
+            String normalizedCity = TextUtils.normalizeCityName(request.getCity());
+            log.info("Normalized city: '{}' -> '{}'", request.getCity(), normalizedCity);
+            request.setCity(normalizedCity);
+        }
+        
+        if (request.getCountry() != null) {
+            String normalizedCountry = TextUtils.normalizeCountryName(request.getCountry());
+            log.info("Normalized country: '{}' -> '{}'", request.getCountry(), normalizedCountry);
+            request.setCountry(normalizedCountry);
+        }
+
         Hotel hotel = getMyHotelEntity(id);
 
-        // Check if new name conflicts with existing hotels in the same city
+        // Check if new name conflicts with existing hotels in the same city (using normalized city)
         if (request.getName() != null && !request.getName().equals(hotel.getName())) {
             String city = request.getCity() != null ? request.getCity() : hotel.getCity();
             if (hotelRepository.existsByNameAndCity(request.getName(), city)) {
@@ -649,6 +727,29 @@ public class HotelServiceImpl implements HotelService {
         UUID currentUserId = getCurrentUserId();
         return hotelRepository.countByOwnerIdAndIsActiveTrue(currentUserId);
     }
+    
+    @Override
+    @IsHost
+    public List<HostDashboardResponse.HotelPerformance> getHostTopPerformingHotels(UUID hostId, int limit) {
+        log.info("Getting top performing hotels for host: {}", hostId);
+        
+        // For now, return a simple implementation based on hotel data
+        // This can be enhanced with actual booking performance data
+        List<Hotel> hostHotels = hotelRepository.findByOwnerIdAndIsActiveTrueOrderByCreatedAtDesc(hostId);
+        
+        return hostHotels.stream()
+                .limit(limit)
+                .map(hotel -> HostDashboardResponse.HotelPerformance.builder()
+                        .id(hotel.getId().toString())
+                        .name(hotel.getName())
+                        .location(hotel.getAddress())
+                        .bookings(0L) // TODO: Get actual booking count from BookingRepository
+                        .revenue(BigDecimal.ZERO) // TODO: Get actual revenue from BookingRepository
+                        .averageRating(0.0) // TODO: Get actual rating from ReviewRepository
+                        .occupancyRate(0.0) // TODO: Calculate actual occupancy rate
+                        .build())
+                .toList();
+    }
 
     @Override
     public DataResponse<HotelResponse> searchHotelsWithFilters(
@@ -691,5 +792,56 @@ public class HotelServiceImpl implements HotelService {
         log.info("Found {} unique amenities from {} hotel records", allAmenities.size(), rawAmenities.size());
         
         return allAmenities;
+    }
+
+    @Override
+    public List<CityStatsResponse> getTopCitiesByHotelCount(int limit) {
+        log.info("Getting top {} cities by hotel count", limit);
+        
+        Pageable pageable = PageRequest.of(0, limit);
+        List<Object[]> results = hotelRepository.findTopCitiesByHotelCount(pageable);
+        
+        List<CityStatsResponse> cityStats = results.stream()
+                .map(result -> CityStatsResponse.builder()
+                        .cityName((String) result[0])
+                        .hotelCount((Long) result[1])
+                        .build())
+                .toList();
+        
+        log.info("Found {} cities with hotel counts", cityStats.size());
+        
+        return cityStats;
+    }
+
+    private void populateRoomData(HotelResponse response) {
+        try {
+            UUID hotelId = response.getId(); // getId() already returns UUID
+            
+            // Get total room types count
+            Long totalRoomTypes = roomTypeRepository.countByHotelId(hotelId);
+            response.setTotalRoomTypes(totalRoomTypes != null ? totalRoomTypes.intValue() : 0);
+            
+            // Get total rooms count
+            Long totalRooms = roomTypeRepository.getTotalRoomsByHotel(hotelId);
+            response.setTotalRooms(totalRooms != null ? totalRooms.intValue() : 0);
+            
+            // Get available rooms count
+            Long availableRooms = roomTypeRepository.getAvailableRoomsByHotel(hotelId);
+            response.setAvailableRooms(availableRooms != null ? availableRooms.intValue() : 0);
+            
+            log.debug("Room statistics populated for hotel {}: {} room types, {} total rooms, {} available rooms", 
+                    response.getName(), response.getTotalRoomTypes(), response.getTotalRooms(), response.getAvailableRooms());
+                    
+        } catch (Exception e) {
+            log.error("Error populating room data for hotel {}: {}", response.getId(), e.getMessage());
+            // Set default values in case of error
+            response.setTotalRoomTypes(0);
+            response.setTotalRooms(0);
+            response.setAvailableRooms(0);
+        }
+    }
+
+    private void populateRoomData(List<HotelResponse> responses) {
+        responses.forEach(this::populateRoomData);
     }
 } 

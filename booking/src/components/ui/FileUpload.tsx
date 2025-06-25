@@ -45,19 +45,19 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const validateFile = useCallback((file: File): string | null => {
     // Check file type
     if (!file.type.startsWith('image/')) {
-      return 'Chỉ chấp nhận file hình ảnh';
+      return 'Only image files are accepted';
     }
 
     // Check file size
     const fileSizeMB = file.size / (1024 * 1024);
     if (fileSizeMB > maxSize) {
-      return `File quá lớn. Kích thước tối đa: ${maxSize}MB`;
+      return `File too large. Maximum size: ${maxSize}MB`;
     }
 
     // Check specific image formats
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      return 'Chỉ chấp nhận định dạng: JPG, PNG, GIF, WebP';
+      return 'Only accepts formats: JPG, PNG, GIF, WebP';
     }
 
     return null;
@@ -69,7 +69,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
     if (validationError) {
       setUploadState(prev => ({ ...prev, error: validationError }));
       onError?.(validationError);
-      showToast('error', 'Lỗi', validationError);
+      showToast('error', 'Error', validationError);
       return;
     }
 
@@ -118,19 +118,19 @@ const FileUpload: React.FC<FileUploadProps> = ({
         } else {
           throw new Error('No image URL received from server');
         }
-        showToast('success', 'Thành công', 'Upload hình ảnh thành công');
+        showToast('success', 'Success', 'Image uploaded successfully');
       } else {
-        throw new Error(response.data.message || 'Upload thất bại');
+        throw new Error(response.data.message || 'Upload failed');
       }
     } catch (error: any) {
       setUploadState(prev => ({
         ...prev,
         uploading: false,
         progress: 0,
-        error: error.response?.data?.message || error.message || 'Upload thất bại'
+        error: error.response?.data?.message || error.message || 'Upload failed'
       }));
       onError?.(error.message);
-      showToast('error', 'Lỗi upload', error.response?.data?.message || error.message || 'Upload thất bại');
+      showToast('error', 'Upload Error', error.response?.data?.message || error.message || 'Upload failed');
     }
   }, [uploadType, validateFile, onUpload, onError, showToast]);
 
@@ -190,11 +190,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const getUploadTypeLabel = () => {
     switch (uploadType) {
       case 'hotel-image':
-        return 'hình ảnh khách sạn (1200x800)';
+        return 'hotel image (1200x800)';
       case 'room-image':
-        return 'hình ảnh phòng (800x600)';
+        return 'room image (800x600)';
       default:
-        return 'hình ảnh';
+        return 'image';
     }
   };
 
@@ -217,7 +217,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
         onDrop={handleDrop}
         onClick={openFileDialog}
         className={`
-          relative border-2 border-dashed rounded-lg p-6 transition-all duration-200 cursor-pointer
+          relative border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer
+          ${uploadState.preview ? 'h-64 p-0' : 'p-6 min-h-[200px]'}
           ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
           ${disabled || uploadState.uploading ? 'opacity-50 cursor-not-allowed' : ''}
           ${uploadState.error ? 'border-red-300 bg-red-50' : ''}
@@ -262,7 +263,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
               {uploadState.uploading ? (
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-gray-700">
-                    Đang upload {getUploadTypeLabel()}...
+                    Uploading {getUploadTypeLabel()}...
                   </p>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
@@ -274,20 +275,20 @@ const FileUpload: React.FC<FileUploadProps> = ({
                 </div>
               ) : uploadState.error ? (
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-red-600">Upload thất bại</p>
+                  <p className="text-sm font-medium text-red-600">Upload failed</p>
                   <p className="text-xs text-red-500">{uploadState.error}</p>
-                  <p className="text-xs text-gray-500">Click để thử lại</p>
+                  <p className="text-xs text-gray-500">Click to retry</p>
                 </div>
               ) : (
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-gray-700">
-                    Kéo thả {getUploadTypeLabel()} vào đây
+                    Drag and drop {getUploadTypeLabel()} here
                   </p>
                   <p className="text-xs text-gray-500">
-                    hoặc <span className="text-blue-600 font-medium">click để chọn file</span>
+                    or <span className="text-blue-600 font-medium">click to select file</span>
                   </p>
                   <p className="text-xs text-gray-400">
-                    Hỗ trợ: JPG, PNG, GIF, WebP • Tối đa {maxSize}MB
+                    Supports: JPG, PNG, GIF, WebP • Max {maxSize}MB
                   </p>
                 </div>
               )}
@@ -309,7 +310,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       {uploadState.preview && uploadState.progress === 100 && (
         <div className="mt-2 text-xs text-gray-500 text-center">
           <ImageIcon size={12} className="inline mr-1" />
-          Upload thành công • Click để thay đổi
+          Upload successful • Click to change
         </div>
       )}
     </div>

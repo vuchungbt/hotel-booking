@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash, Eye, Star, MapPin, RefreshCw, ToggleLeft, ToggleRight, Hotel, BedDouble, Users } from 'lucide-react';
 import { hotelAPI, HotelResponse } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
+import { getImageProps } from '../../utils/imageUtils';
 
 const HostProperties: React.FC = () => {
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ const HostProperties: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error fetching hotels:', error);
-      showToast('error', 'Lỗi', 'Không thể tải danh sách khách sạn');
+      showToast('error', 'Error', 'Cannot load hotel list');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -75,12 +76,12 @@ const HostProperties: React.FC = () => {
       try {
         setActionLoading(id);
         await hotelAPI.deleteMyHotel(id);
-        showToast('success', 'Thành công', 'Khách sạn đã được xóa');
+        showToast('success', 'Success', 'Hotel deleted successfully');
         await fetchHotels(currentPage);
       } catch (error: any) {
         console.error('Error deleting hotel:', error);
-        const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi xóa khách sạn';
-        showToast('error', 'Lỗi', errorMessage);
+        const errorMessage = error.response?.data?.message || 'Error deleting hotel';
+        showToast('error', 'Error', errorMessage);
       } finally {
         setActionLoading(null);
       }
@@ -91,13 +92,13 @@ const HostProperties: React.FC = () => {
     try {
       setActionLoading(id);
       await hotelAPI.toggleMyHotelStatus(id);
-      showToast('success', 'Thành công', 
-        `Khách sạn "${name}" đã được ${currentStatus ? 'tạm ngừng' : 'kích hoạt'}`);
+      showToast('success', 'Success', 
+        `Hotel "${name}" has been ${currentStatus ? 'paused' : 'activated'}`);
       await fetchHotels(currentPage);
     } catch (error: any) {
       console.error('Error toggling hotel status:', error);
-      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi thay đổi trạng thái';
-      showToast('error', 'Lỗi', errorMessage);
+      const errorMessage = error.response?.data?.message || 'Error toggling hotel status';
+      showToast('error', 'Error', errorMessage);
     } finally {
       setActionLoading(null);
     }
@@ -128,8 +129,8 @@ const HostProperties: React.FC = () => {
 
   const getStatusBadge = (isActive: boolean) => {
     return isActive 
-      ? <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Đang hoạt động</span>
-      : <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Tạm ngừng</span>;
+      ? <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Active</span>
+      : <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Inactive</span>;
   };
 
   const formatCurrency = (amount: number) => {
@@ -156,8 +157,8 @@ const HostProperties: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý khách sạn</h1>
-            <p className="text-gray-600 mt-1">Tổng {totalElements} khách sạn</p>
+            <h1 className="text-2xl font-bold text-gray-900">Manage hotels</h1>
+            <p className="text-gray-600 mt-1">Total {totalElements} hotels</p>
           </div>
           <div className="flex gap-3">
             <button
@@ -166,14 +167,14 @@ const HostProperties: React.FC = () => {
               className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Làm mới
+              Refresh
             </button>
             <button
               onClick={handleAddProperty}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
             >
               <Plus size={20} className="mr-2" />
-              Thêm khách sạn mới
+              Add hotel
             </button>
           </div>
         </div>
@@ -184,22 +185,22 @@ const HostProperties: React.FC = () => {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Tìm kiếm theo tên, địa điểm..."
+                placeholder="Search by name, location..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div className="flex items-center space-x-4">
-              <label className="text-gray-700 font-medium">Trạng thái:</label>
+              <label className="text-gray-700 font-medium">Status:</label>
               <select
                 value={filterStatus}
                 onChange={(e) => handleFilterChange(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">Tất cả</option>
-                <option value="active">Đang hoạt động</option>
-                <option value="inactive">Tạm ngừng</option>
+                <option value="all">All</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
               </select>
             </div>
           </div>
@@ -209,13 +210,13 @@ const HostProperties: React.FC = () => {
         {filteredHotels.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
             <Hotel className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có khách sạn nào</h3>
-            <p className="text-gray-600 mb-6">Bắt đầu bằng cách thêm khách sạn đầu tiên của bạn</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No hotels yet</h3>
+            <p className="text-gray-600 mb-6">Start by adding your first hotel</p>
             <button
               onClick={handleAddProperty}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Thêm khách sạn mới
+              Add hotel
             </button>
           </div>
         ) : (
@@ -225,12 +226,8 @@ const HostProperties: React.FC = () => {
                 <div key={hotel.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="relative">
                     <img
-                      src={hotel.imageUrl || 'https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg'}
-                      alt={hotel.name}
+                      {...getImageProps(hotel.imageUrl, 'property', hotel.name)}
                       className="w-full h-48 object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg';
-                      }}
                     />
                     <div className="absolute top-4 right-4">
                       {getStatusBadge(hotel.active)}
@@ -254,25 +251,25 @@ const HostProperties: React.FC = () => {
                             />
                           ))}
                         </div>
-                        <span className="text-gray-700">{hotel.averageRating.toFixed(1)} ({hotel.totalReviews} đánh giá)</span>
+                        <span className="text-gray-700">{hotel.averageRating.toFixed(1)} ({hotel.totalReviews} reviews)</span>
                       </div>
                     )}
                     
                     <div className="flex flex-wrap gap-4 mb-4 text-gray-600 text-sm">
                       <div className="flex items-center">
                         <BedDouble className="h-4 w-4 mr-1" />
-                        <span>{hotel.totalRoomTypes || 0} loại phòng</span>
+                        <span>{hotel.totalRoomTypes || 0} room types</span>
                       </div>
                       <div className="flex items-center">
                         <Users className="h-4 w-4 mr-1" />
-                        <span>{hotel.totalRooms || 0} phòng</span>
+                        <span>{hotel.totalRooms || 0} rooms</span>
                       </div>
                     </div>
                     
                     {hotel.pricePerNight && (
                       <div className="mb-4">
                         <span className="text-2xl font-bold text-blue-600">{formatCurrency(hotel.pricePerNight)}</span>
-                        <span className="text-gray-600">/đêm</span>
+                        <span className="text-gray-600">/night</span>
                       </div>
                     )}
                     
@@ -286,14 +283,14 @@ const HostProperties: React.FC = () => {
                         className="flex-1 bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center"
                       >
                         <Eye className="h-4 w-4 mr-1" />
-                        Xem
+                        View
                       </button>
                       <button
                         onClick={() => handleEditProperty(hotel.id)}
                         className="flex-1 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center"
                       >
                         <Edit className="h-4 w-4 mr-1" />
-                        Sửa
+                        Edit
                       </button>
                       <button
                         onClick={() => handleToggleStatus(hotel.id, hotel.name, hotel.active)}
@@ -333,7 +330,7 @@ const HostProperties: React.FC = () => {
                   disabled={currentPage === 0}
                   className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Trước
+                    Previous
                 </button>
                 
                 {Array.from({ length: totalPages }, (_, i) => (
@@ -355,7 +352,7 @@ const HostProperties: React.FC = () => {
                   disabled={currentPage === totalPages - 1}
                   className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Sau
+                  Next
                 </button>
               </div>
             )}

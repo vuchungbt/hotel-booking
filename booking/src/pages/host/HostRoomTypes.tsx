@@ -39,7 +39,7 @@ const HostRoomTypes: React.FC = () => {
       setTotalElements(response.data.result.totalElements);
     } catch (error) {
       console.error('Error fetching room types:', error);
-      showToast('error', 'Lỗi', 'Lỗi khi tải danh sách loại phòng');
+      showToast('error', 'Error', 'Failed to load room types');
     } finally {
       setLoading(false);
     }
@@ -82,18 +82,18 @@ const HostRoomTypes: React.FC = () => {
   };
 
   const handleDeleteRoomType = async (roomTypeId: string, roomTypeName: string) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa loại phòng "${roomTypeName}"?`)) {
+    if (!confirm(`Are you sure you want to delete room type "${roomTypeName}"?`)) {
       return;
     }
 
     try {
       setActionLoading(roomTypeId);
       await hostRoomTypeAPI.deleteMyRoomType(roomTypeId);
-      showToast('success', 'Thành công', 'Xóa loại phòng thành công');
+      showToast('success', 'Success', 'Room type deleted successfully');
       fetchRoomTypes(currentPage);
     } catch (error) {
       console.error('Error deleting room type:', error);
-      showToast('error', 'Lỗi', 'Lỗi khi xóa loại phòng');
+      showToast('error', 'Error', 'Failed to delete room type');
     } finally {
       setActionLoading(null);
     }
@@ -105,12 +105,12 @@ const HostRoomTypes: React.FC = () => {
 
   const getBedTypeText = (bedType: string) => {
     const bedTypes: Record<string, string> = {
-      'Single': 'Giường đơn',
-      'Double': 'Giường đôi',
-      'Queen': 'Giường Queen',
-      'King': 'Giường King',
-      'Twin': 'Giường đôi riêng biệt',
-      'Sofa Bed': 'Giường sofa'
+      'Single': 'Single Bed',
+      'Double': 'Double Bed',
+      'Queen': 'Queen Bed',
+      'King': 'King Bed',
+      'Twin': 'Twin Beds',
+      'Sofa Bed': 'Sofa Bed'
     };
     return bedTypes[bedType] || bedType;
   };
@@ -134,9 +134,9 @@ const HostRoomTypes: React.FC = () => {
         <div className="mb-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Quản lý loại phòng</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Room Type Management</h1>
               <p className="mt-2 text-gray-600">
-                Tổng cộng {totalElements} loại phòng
+                Total {totalElements} room types
               </p>
             </div>
             <button
@@ -144,7 +144,7 @@ const HostRoomTypes: React.FC = () => {
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
             >
               <Plus className="h-5 w-5 mr-2" />
-              Thêm loại phòng
+              Add Room Type
             </button>
           </div>
         </div>
@@ -154,14 +154,14 @@ const HostRoomTypes: React.FC = () => {
           <div className="flex items-center space-x-4">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Lọc theo khách sạn
+                Filter by Hotel
               </label>
               <select
                 value={selectedHotel}
                 onChange={(e) => setSelectedHotel(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Tất cả khách sạn</option>
+                <option value="">All Hotels</option>
                 {hotels.map(hotel => (
                   <option key={hotel.id} value={hotel.id}>{hotel.name}</option>
                 ))}
@@ -175,9 +175,9 @@ const HostRoomTypes: React.FC = () => {
           {roomTypes.length === 0 ? (
             <div className="text-center py-12">
               <Bed className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Chưa có loại phòng nào</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No room types yet</h3>
               <p className="mt-1 text-sm text-gray-500">
-                Bắt đầu bằng cách tạo loại phòng đầu tiên của bạn.
+                Get started by creating your first room type.
               </p>
               <div className="mt-6">
                 <button
@@ -185,7 +185,7 @@ const HostRoomTypes: React.FC = () => {
                   className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
                 >
                   <Plus className="h-5 w-5 mr-2" />
-                  Thêm loại phòng
+                  Add Room Type
                 </button>
               </div>
             </div>
@@ -196,22 +196,22 @@ const HostRoomTypes: React.FC = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Loại phòng
+                        Room Type
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Khách sạn
+                        Hotel
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Sức chứa
+                        Capacity
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Giá/đêm
+                        Price/Night
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Phòng
+                        Rooms
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Hành động
+                        Actions
                       </th>
                     </tr>
                   </thead>
@@ -220,23 +220,21 @@ const HostRoomTypes: React.FC = () => {
                       <tr key={roomType.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
                           <div className="flex items-center">
-                            {roomType.imageUrl ? (
-                              <img
-                                src={roomType.imageUrl}
-                                alt={roomType.name}
-                                className="h-10 w-10 rounded-lg object-cover mr-3"
-                              />
-                            ) : (
-                              <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center mr-3">
-                                <Bed className="h-5 w-5 text-gray-400" />
-                              </div>
-                            )}
+                            <img
+                              src={roomType.imageUrl || 'https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg'}
+                              alt={roomType.name}
+                              className="h-10 w-10 rounded-lg object-cover mr-3"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = 'https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg';
+                              }}
+                            />
                             <div>
                               <div className="text-sm font-medium text-gray-900">
                                 {roomType.name}
                               </div>
                               <div className="text-sm text-gray-500">
-                                {roomType.bedType ? getBedTypeText(roomType.bedType) : 'Chưa cập nhật'}
+                                {roomType.bedType ? roomType.bedType : 'Not updated'}
                               </div>
                             </div>
                           </div>
@@ -250,7 +248,7 @@ const HostRoomTypes: React.FC = () => {
                         <td className="px-6 py-4">
                           <div className="flex items-center">
                             <Users className="h-4 w-4 text-gray-400 mr-2" />
-                            <span className="text-sm text-gray-900">{roomType.maxOccupancy} người</span>
+                            <span className="text-sm text-gray-900">{roomType.maxOccupancy} guests</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -265,21 +263,21 @@ const HostRoomTypes: React.FC = () => {
                           <div className="text-sm text-gray-900">
                             {roomType.availableRooms}/{roomType.totalRooms}
                           </div>
-                          <div className="text-xs text-gray-500">Trống/Tổng</div>
+                          <div className="text-xs text-gray-500">Available/Total</div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center space-x-2">
                             <button
                               onClick={() => handleViewRoomType(roomType.id)}
                               className="text-blue-600 hover:text-blue-900"
-                              title="Xem chi tiết"
+                              title="View Details"
                             >
                               <Eye className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleEditRoomType(roomType.id)}
                               className="text-yellow-600 hover:text-yellow-900"
-                              title="Chỉnh sửa"
+                              title="Edit"
                             >
                               <Edit className="h-4 w-4" />
                             </button>
@@ -287,7 +285,7 @@ const HostRoomTypes: React.FC = () => {
                               onClick={() => handleDeleteRoomType(roomType.id, roomType.name)}
                               disabled={actionLoading === roomType.id}
                               className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                              title="Xóa"
+                              title="Delete"
                             >
                               {actionLoading === roomType.id ? (
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
@@ -312,28 +310,28 @@ const HostRoomTypes: React.FC = () => {
                       disabled={currentPage === 0}
                       className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Trước
+                      Previous
                     </button>
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages - 1}
                       className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Sau
+                      Next
                     </button>
                   </div>
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-gray-700">
-                        Hiển thị{' '}
+                        Showing{' '}
                         <span className="font-medium">{currentPage * itemsPerPage + 1}</span>
-                        {' '}đến{' '}
+                        {' '}to{' '}
                         <span className="font-medium">
                           {Math.min((currentPage + 1) * itemsPerPage, totalElements)}
                         </span>
-                        {' '}của{' '}
+                        {' '}of{' '}
                         <span className="font-medium">{totalElements}</span>
-                        {' '}kết quả
+                        {' '}results
                       </p>
                     </div>
                     <div>
@@ -343,7 +341,7 @@ const HostRoomTypes: React.FC = () => {
                           disabled={currentPage === 0}
                           className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Trước
+                          Previous
                         </button>
                         {Array.from({ length: totalPages }, (_, i) => (
                           <button
@@ -363,7 +361,7 @@ const HostRoomTypes: React.FC = () => {
                           disabled={currentPage === totalPages - 1}
                           className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Sau
+                          Next
                         </button>
                       </nav>
                     </div>

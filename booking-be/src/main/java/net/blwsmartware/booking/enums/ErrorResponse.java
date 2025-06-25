@@ -122,6 +122,17 @@ public enum ErrorResponse {
     VNPAY_INVALID_AMOUNT(8005, "Invalid payment amount!", HttpStatus.BAD_REQUEST),
     BOOKING_ALREADY_PAID(8006, "Booking has already been paid!", HttpStatus.BAD_REQUEST),
 
+    // Wallet-related errors
+    WALLET_INSUFFICIENT_BALANCE(9001, "Insufficient balance for withdrawal!", HttpStatus.BAD_REQUEST),
+    WALLET_BANK_ACCOUNT_REQUIRED(9002, "Please add bank account information before requesting withdrawal!", HttpStatus.BAD_REQUEST),
+    WALLET_TRANSACTION_NOT_FOUND(9003, "Transaction not found!", HttpStatus.NOT_FOUND),
+    WALLET_TRANSACTION_ALREADY_PROCESSED(9004, "Transaction is already processed!", HttpStatus.BAD_REQUEST),
+    WALLET_USER_INSUFFICIENT_BALANCE(9005, "User has insufficient balance!", HttpStatus.BAD_REQUEST),
+    
+    // Refund processing errors
+    REFUND_PROCESSING_FAILED(9006, "Failed to process refund. Please contact support.", HttpStatus.INTERNAL_SERVER_ERROR),
+    REFUND_PROCESSING_ERROR(9007, "Failed to process refund. Please try again.", HttpStatus.BAD_REQUEST),
+
     ;
 
     private final int code;

@@ -29,11 +29,11 @@ const HostBookingDetail: React.FC = () => {
       if (response.data.success) {
         setBooking(response.data.result);
       } else {
-        throw new Error(response.data.message || 'Không thể tải thông tin đặt phòng');
+        throw new Error(response.data.message || 'Unable to load booking information');
       }
     } catch (error: any) {
       console.error('Error fetching booking detail:', error);
-      showToast('error', 'Lỗi', error.message || 'Không thể tải thông tin đặt phòng');
+      showToast('error', 'Error', error.message || 'Unable to load booking information');
       navigate('/host/bookings');
     } finally {
       setLoading(false);
@@ -98,19 +98,19 @@ const HostBookingDetail: React.FC = () => {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'COMPLETED':
-        return 'Đã hoàn thành';
+        return 'Completed';
       case 'CONFIRMED':
-        return 'Đã xác nhận';
+        return 'Confirmed';
       case 'PENDING':
-        return 'Chờ xác nhận';
+        return 'Pending';
       case 'CANCELLED':
-        return 'Đã hủy';
+        return 'Cancelled';
       case 'CANCELLED_BY_GUEST':
-        return 'Khách hủy';
+        return 'Cancelled by Guest';
       case 'CANCELLED_BY_HOST':
-        return 'Host hủy';
+        return 'Cancelled by Host';
       case 'NO_SHOW':
-        return 'Không đến';
+        return 'No Show';
       default:
         return status;
     }
@@ -119,21 +119,21 @@ const HostBookingDetail: React.FC = () => {
   const getPaymentStatusText = (status: string) => {
     switch (status) {
       case 'PAID':
-        return 'Đã thanh toán';
+        return 'Paid';
       case 'PENDING':
-        return 'Chờ thanh toán';
+        return 'Pending';
       case 'REFUNDED':
-        return 'Đã hoàn tiền';
+        return 'Refunded';
       case 'PARTIALLY_REFUNDED':
-        return 'Hoàn một phần';
+        return 'Partially Refunded';
       case 'REFUND_PENDING':
-        return 'Chờ hoàn tiền';
+        return 'Refund Pending';
       case 'REFUND_REJECTED':
-        return 'Từ chối hoàn tiền';
+        return 'Refund Rejected';
       case 'NO_REFUND':
-        return 'Không hoàn tiền';
+        return 'No Refund';
       case 'FAILED':
-        return 'Thanh toán thất bại';
+        return 'Failed';
       default:
         return status;
     }
@@ -147,14 +147,14 @@ const HostBookingDetail: React.FC = () => {
       const response = await bookingAPI.confirmBooking(id);
       
       if (response.data.success) {
-        showToast('success', 'Thành công', 'Đặt phòng đã được xác nhận');
+        showToast('success', 'Success', 'Booking confirmed successfully');
         await fetchBookingDetail(id);
       } else {
-        throw new Error(response.data.message || 'Không thể xác nhận đặt phòng');
+        throw new Error(response.data.message || 'Unable to confirm booking');
       }
     } catch (error: any) {
       console.error('Error confirming booking:', error);
-      showToast('error', 'Lỗi', error.message || 'Không thể xác nhận đặt phòng');
+      showToast('error', 'Error', error.message || 'Unable to confirm booking');
     } finally {
       setActionLoading(null);
     }
@@ -163,20 +163,20 @@ const HostBookingDetail: React.FC = () => {
   const handleCancelBooking = async () => {
     if (!booking || !id) return;
     
-    if (window.confirm('Bạn có chắc chắn muốn hủy đặt phòng này không?')) {
+    if (window.confirm('Are you sure you want to cancel this booking?')) {
       try {
         setActionLoading('cancel');
-        const response = await bookingAPI.cancelBooking(id, 'Hủy bởi chủ khách sạn');
+        const response = await bookingAPI.cancelBooking(id, 'Cancelled by Host');
         
         if (response.data.success) {
-          showToast('success', 'Thành công', 'Đặt phòng đã được hủy');
+          showToast('success', 'Success', 'Booking cancelled successfully');
           await fetchBookingDetail(id);
         } else {
-          throw new Error(response.data.message || 'Không thể hủy đặt phòng');
+          throw new Error(response.data.message || 'Unable to cancel booking');
         }
       } catch (error: any) {
         console.error('Error cancelling booking:', error);
-        showToast('error', 'Lỗi', error.message || 'Không thể hủy đặt phòng');
+        showToast('error', 'Error', error.message || 'Unable to cancel booking');
       } finally {
         setActionLoading(null);
       }
@@ -191,14 +191,14 @@ const HostBookingDetail: React.FC = () => {
       const response = await bookingAPI.completeBooking(id);
       
       if (response.data.success) {
-        showToast('success', 'Thành công', 'Đặt phòng đã được đánh dấu hoàn thành');
+        showToast('success', 'Success', 'Booking marked as completed');
         await fetchBookingDetail(id);
       } else {
-        throw new Error(response.data.message || 'Không thể hoàn thành đặt phòng');
+        throw new Error(response.data.message || 'Unable to complete booking');
       }
     } catch (error: any) {
       console.error('Error completing booking:', error);
-      showToast('error', 'Lỗi', error.message || 'Không thể hoàn thành đặt phòng');
+      showToast('error', 'Error', error.message || 'Unable to complete booking');
     } finally {
       setActionLoading(null);
     }
@@ -232,7 +232,7 @@ const HostBookingDetail: React.FC = () => {
       if (!booking || !id) return;
       
       if (!refundReason.trim()) {
-        showToast('error', 'Lỗi', 'Vui lòng nhập lý do xử lý');
+        showToast('error', 'Error', 'Please enter a reason for processing');
         return;
       }
 
@@ -244,12 +244,12 @@ const HostBookingDetail: React.FC = () => {
           refundPercentage: refundType === 'FULL' ? 100 : refundType === 'PARTIAL' ? 50 : 0
         });
         
-        showToast('success', 'Thành công', 'Đã xử lý yêu cầu hủy booking');
+        showToast('success', 'Success', 'Processed cancellation request');
         setShowCancellationModal(false);
         await fetchBookingDetail(id);
       } catch (error: any) {
         console.error('Error processing cancellation:', error);
-        showToast('error', 'Lỗi', error.response?.data?.message || 'Không thể xử lý yêu cầu hủy');
+        showToast('error', 'Error', error.response?.data?.message || 'Unable to process cancellation');
       } finally {
         setLoading(false);
       }
@@ -263,7 +263,7 @@ const HostBookingDetail: React.FC = () => {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">
-                Xử lý yêu cầu hủy booking
+                Process Cancellation Request
               </h2>
               <button
                 onClick={() => setShowCancellationModal(false)}
@@ -277,22 +277,22 @@ const HostBookingDetail: React.FC = () => {
           <div className="p-6 space-y-6">
             {/* Booking Info */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-medium text-gray-900 mb-2">Thông tin booking</h3>
+              <h3 className="font-medium text-gray-900 mb-2">Booking Information</h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600">Mã booking:</span>
+                  <span className="text-gray-600">Booking Code:</span>
                   <span className="ml-2 font-medium">{booking.bookingReference}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Khách hàng:</span>
+                  <span className="text-gray-600">Guest:</span>
                   <span className="ml-2 font-medium">{booking.guestName}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Tổng tiền:</span>
+                  <span className="text-gray-600">Total Amount:</span>
                   <span className="ml-2 font-medium text-blue-600">{formatCurrency(booking.totalAmount)}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Ngày nhận phòng:</span>
+                  <span className="text-gray-600">Check-in Date:</span>
                   <span className="ml-2 font-medium">{formatDate(booking.checkInDate)}</span>
                 </div>
               </div>
@@ -300,7 +300,7 @@ const HostBookingDetail: React.FC = () => {
 
             {/* Refund Options */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Chính sách hoàn tiền</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Refund Policy</h3>
               <div className="space-y-3">
                 <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                   <input
@@ -313,30 +313,14 @@ const HostBookingDetail: React.FC = () => {
                   />
                   <div className="ml-3 flex-1">
                     <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-900">Hoàn tiền đầy đủ</span>
+                      <span className="font-medium text-gray-900">Full Refund</span>
                       <span className="text-green-600 font-medium">{formatCurrency(booking.totalAmount)}</span>
                     </div>
-                    <p className="text-sm text-gray-600">Hoàn lại 100% số tiền đã thanh toán</p>
+                    <p className="text-sm text-gray-600">Refund 100% of the paid amount</p>
                   </div>
                 </label>
 
-                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="refundType"
-                    value="PARTIAL"
-                    checked={refundType === 'PARTIAL'}
-                    onChange={() => handleRefundTypeChange('PARTIAL')}
-                    className="h-4 w-4 text-blue-600"
-                  />
-                  <div className="ml-3 flex-1">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-900">Hoàn tiền một phần</span>
-                      <span className="text-orange-600 font-medium">{formatCurrency(booking.totalAmount * 0.5)}</span>
-                    </div>
-                    <p className="text-sm text-gray-600">Hoàn lại 50% số tiền (giữ lại phí hủy)</p>
-                  </div>
-                </label>
+            
 
                 <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                   <input
@@ -349,10 +333,10 @@ const HostBookingDetail: React.FC = () => {
                   />
                   <div className="ml-3 flex-1">
                     <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-900">Không hoàn tiền</span>
+                      <span className="font-medium text-gray-900">No Refund</span>
                       <span className="text-red-600 font-medium">{formatCurrency(0)}</span>
                     </div>
-                    <p className="text-sm text-gray-600">Không hoàn lại số tiền (vi phạm chính sách)</p>
+                    <p className="text-sm text-gray-600">No refund (violating cancellation policy)</p>
                   </div>
                 </label>
               </div>
@@ -362,7 +346,7 @@ const HostBookingDetail: React.FC = () => {
             {refundType === 'PARTIAL' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Số tiền hoàn lại tùy chỉnh
+                  Custom Refund Amount
                 </label>
                 <input
                   type="number"
@@ -379,13 +363,13 @@ const HostBookingDetail: React.FC = () => {
             {/* Refund Reason */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Lý do xử lý *
+                Reason for Processing *
               </label>
               <textarea
                 value={refundReason}
                 onChange={(e) => setRefundReason(e.target.value)}
                 rows={3}
-                placeholder="Nhập lý do xử lý yêu cầu hủy (ví dụ: khách hủy sớm, vi phạm chính sách, etc.)"
+                placeholder="Enter reason for processing cancellation request (e.g., guest cancelled early, violating cancellation policy, etc.)"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
@@ -393,21 +377,21 @@ const HostBookingDetail: React.FC = () => {
 
             {/* Summary */}
             <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium text-blue-900 mb-2">Tóm tắt xử lý</h4>
+              <h4 className="font-medium text-blue-900 mb-2">Cancellation Summary</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-blue-700">Trạng thái booking:</span>
-                  <span className="font-medium text-blue-900">Đã hủy bởi khách</span>
+                  <span className="text-blue-700">Booking Status:</span>
+                  <span className="font-medium text-blue-900">Cancelled by Host</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-blue-700">Số tiền hoàn lại:</span>
+                  <span className="text-blue-700">Refund Amount:</span>
                   <span className="font-medium text-blue-900">{formatCurrency(refundAmount)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-blue-700">Trạng thái thanh toán:</span>
+                  <span className="text-blue-700">Payment Status:</span>
                   <span className="font-medium text-blue-900">
-                    {refundType === 'FULL' ? 'Đã hoàn tiền' : 
-                     refundType === 'PARTIAL' ? 'Hoàn một phần' : 'Không hoàn tiền'}
+                    {refundType === 'FULL' ? 'Refunded' : 
+                     refundType === 'PARTIAL' ? 'Partially Refunded' : 'No Refund'}
                   </span>
                 </div>
               </div>
@@ -420,7 +404,7 @@ const HostBookingDetail: React.FC = () => {
                 onClick={() => setShowCancellationModal(false)}
                 className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                Hủy
+                Cancel
               </button>
               <button
                 onClick={handleProcessCancellation}
@@ -430,10 +414,10 @@ const HostBookingDetail: React.FC = () => {
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Đang xử lý...
+                    Processing...
                   </>
                 ) : (
-                  'Xác nhận xử lý'
+                  'Confirm Processing'
                 )}
               </button>
             </div>
@@ -461,13 +445,13 @@ const HostBookingDetail: React.FC = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
             <AlertCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy đặt phòng</h3>
-            <p className="text-gray-600 mb-6">Đặt phòng này có thể đã bị xóa hoặc không tồn tại</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Booking Not Found</h3>
+            <p className="text-gray-600 mb-6">This booking may have been deleted or does not exist</p>
             <button
               onClick={() => navigate('/host/bookings')}
               className="text-blue-600 hover:text-blue-800"
             >
-              Quay lại danh sách đặt phòng
+              Return to Booking List
             </button>
           </div>
         </div>
@@ -483,7 +467,7 @@ const HostBookingDetail: React.FC = () => {
           className="flex items-center text-gray-600 hover:text-gray-900 mb-6"
         >
           <ArrowLeft className="h-5 w-5 mr-2" />
-          Quay lại danh sách đặt phòng
+          Return to Booking List
         </button>
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -491,10 +475,10 @@ const HostBookingDetail: React.FC = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Chi tiết đặt phòng</h1>
-                <p className="text-gray-600">Mã đặt phòng: {booking.bookingReference || booking.id}</p>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">Booking Details</h1>
+                <p className="text-gray-600">Booking Code: {booking.bookingReference || booking.id}</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Đặt ngày: {formatDate(booking.createdAt)}
+                  Booking Date: {formatDate(booking.createdAt)}
                 </p>
               </div>
               <div className="flex flex-col space-y-2 mt-4 md:mt-0">
@@ -507,10 +491,10 @@ const HostBookingDetail: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
               {/* Guest Information */}
               <div>
-                <h2 className="text-xl font-semibold mb-4">Thông tin khách hàng</h2>
+                <h2 className="text-xl font-semibold mb-4">Guest Information</h2>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-gray-600">Tên khách hàng</p>
+                    <p className="text-gray-600">Guest Name</p>
                     <p className="font-medium">{booking.guestName}</p>
                   </div>
                   <div className="flex items-center text-gray-600">
@@ -523,21 +507,21 @@ const HostBookingDetail: React.FC = () => {
                   </div>
                   <div className="flex items-center text-gray-600">
                     <Users className="h-5 w-5 mr-2" />
-                    <span>{booking.guests} khách</span>
+                    <span>{booking.guests} guests</span>
                   </div>
                 </div>
               </div>
 
               {/* Hotel Information */}
               <div>
-                <h2 className="text-xl font-semibold mb-4">Thông tin khách sạn</h2>
+                <h2 className="text-xl font-semibold mb-4">Hotel Information</h2>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-gray-600">Tên khách sạn</p>
+                    <p className="text-gray-600">Hotel Name</p>
                     <p className="font-medium">{booking.hotelName}</p>
                   </div>
                   <div>
-                    <p className="text-gray-600">Loại phòng</p>
+                    <p className="text-gray-600">Room Type</p>
                     <p className="font-medium">{booking.roomTypeName}</p>
                   </div>
                 </div>
@@ -546,29 +530,29 @@ const HostBookingDetail: React.FC = () => {
 
             {/* Stay Details */}
             <div className="border-t pt-6 mb-8">
-              <h3 className="text-xl font-semibold mb-4">Chi tiết lưu trú</h3>
+              <h3 className="text-xl font-semibold mb-4">Stay Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <div className="flex items-center text-gray-600 mb-2">
                     <Calendar className="h-5 w-5 mr-2" />
-                    <span className="font-medium">Ngày nhận phòng</span>
+                    <span className="font-medium">Check-in Date</span>
                   </div>
                   <p className="text-lg">{formatDate(booking.checkInDate)}</p>
                 </div>
                 <div>
                   <div className="flex items-center text-gray-600 mb-2">
                     <Calendar className="h-5 w-5 mr-2" />
-                    <span className="font-medium">Ngày trả phòng</span>
+                    <span className="font-medium">Check-out Date</span>
                   </div>
                   <p className="text-lg">{formatDate(booking.checkOutDate)}</p>
                 </div>
                 <div>
                   <div className="flex items-center text-gray-600 mb-2">
                     <Clock className="h-5 w-5 mr-2" />
-                    <span className="font-medium">Số đêm</span>
+                    <span className="font-medium">Number of Nights</span>
                   </div>
                   <p className="text-lg">
-                    {Math.ceil((new Date(booking.checkOutDate).getTime() - new Date(booking.checkInDate).getTime()) / (1000 * 60 * 60 * 24))} đêm
+                    {Math.ceil((new Date(booking.checkOutDate).getTime() - new Date(booking.checkInDate).getTime()) / (1000 * 60 * 60 * 24))} nights
                   </p>
                 </div>
               </div>
@@ -577,7 +561,7 @@ const HostBookingDetail: React.FC = () => {
             {/* Special Requests */}
             {booking.specialRequests && (
               <div className="border-t pt-6 mb-8">
-                <h3 className="text-xl font-semibold mb-4">Yêu cầu đặc biệt</h3>
+                <h3 className="text-xl font-semibold mb-4">Special Requests</h3>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <p className="text-gray-700">{booking.specialRequests}</p>
                 </div>
@@ -586,16 +570,16 @@ const HostBookingDetail: React.FC = () => {
 
             {/* Payment Information */}
             <div className="border-t pt-6 mb-8">
-              <h3 className="text-xl font-semibold mb-4">Thông tin thanh toán</h3>
+              <h3 className="text-xl font-semibold mb-4">Payment Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {booking.paymentMethod && (
                   <div>
-                    <p className="text-gray-600">Phương thức thanh toán</p>
+                    <p className="text-gray-600">Payment Method</p>
                     <p className="font-medium">{booking.paymentMethod}</p>
                   </div>
                 )}
                 <div>
-                  <p className="text-gray-600">Tổng số tiền</p>
+                  <p className="text-gray-600">Total Amount</p>
                   <p className="font-bold text-2xl text-blue-600">{formatCurrency(booking.totalAmount)}</p>
                 </div>
               </div>
@@ -616,7 +600,7 @@ const HostBookingDetail: React.FC = () => {
                       ) : (
                         <Check className="h-4 w-4 mr-2" />
                       )}
-                      Xác nhận đặt phòng
+                      Confirm Booking
                     </button>
                     <button
                       onClick={handleCancelBooking}
@@ -628,7 +612,7 @@ const HostBookingDetail: React.FC = () => {
                       ) : (
                         <X className="h-4 w-4 mr-2" />
                       )}
-                      Hủy đặt phòng
+                      Cancel Booking
                     </button>
                   </>
                 )}
@@ -644,7 +628,7 @@ const HostBookingDetail: React.FC = () => {
                     ) : (
                       <Clock className="h-4 w-4 mr-2" />
                     )}
-                    Hoàn thành đặt phòng
+                    Complete Booking
                   </button>
                 )}
 
@@ -654,7 +638,7 @@ const HostBookingDetail: React.FC = () => {
                     className="flex items-center px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
                   >
                     <X className="h-4 w-4 mr-2" />
-                    Xử lý yêu cầu hủy
+                    Process Cancellation
                   </button>
                 )}
               </div>

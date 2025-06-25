@@ -84,4 +84,11 @@ public interface RoomTypeRepository extends JpaRepository<RoomType, UUID> {
     
     @Query("SELECT MAX(rt.pricePerNight) FROM RoomType rt WHERE rt.hotel.id = :hotelId")
     BigDecimal getMaxPriceByHotel(@Param("hotelId") UUID hotelId);
+    
+    // Host statistics queries
+    @Query("SELECT COUNT(rt) FROM RoomType rt WHERE rt.hotel.owner.id = :hostId")
+    Long countByHostId(@Param("hostId") UUID hostId);
+    
+    @Query("SELECT SUM(rt.totalRooms) FROM RoomType rt WHERE rt.hotel.owner.id = :hostId")
+    Long getTotalRoomsByHost(@Param("hostId") UUID hostId);
 } 

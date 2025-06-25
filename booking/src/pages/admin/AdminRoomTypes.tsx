@@ -12,8 +12,9 @@ interface ApiResponse {
     content: RoomTypeResponse[];
     totalElements: number;
     totalPages: number;
-    size: number;
-    number: number;
+    pageSize: number;
+    pageNumber: number;
+    isLastPage: boolean;
   };
 }
 
@@ -72,7 +73,7 @@ const AdminRoomTypes: React.FC = () => {
         setRoomTypes(data.result.content);
         setTotalPages(data.result.totalPages);
         setTotalElements(data.result.totalElements);
-        setCurrentPage(data.result.number);
+        setCurrentPage(data.result.pageNumber);
       } else {
         showToast('error', 'Error', data.message || 'Unable to load room type list');
       }
@@ -87,7 +88,7 @@ const AdminRoomTypes: React.FC = () => {
   // Fetch hotels for filter dropdown
   const fetchHotels = async () => {
     try {
-      const response = await hotelAPI.getAllHotels(0, 100, 'name');
+      const response = await hotelAPI.getAllHotels();
       const data = response.data as any;
       if (data.success) {
         setHotels(data.result.content);
@@ -278,7 +279,7 @@ const AdminRoomTypes: React.FC = () => {
           <h1 className="text-2xl sm:text-3xl font-bold">Room Type Management</h1>
           <p className="text-gray-600 mt-1">Manage room types in the system</p>
         </div>
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+        {/* <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
           <button
             onClick={handleRefresh}
             disabled={loading}
@@ -294,7 +295,7 @@ const AdminRoomTypes: React.FC = () => {
             <Plus size={20} className="mr-2" />
                           Add Room Type
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Search and Filters */}
@@ -484,17 +485,15 @@ const AdminRoomTypes: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        {roomType.imageUrl ? (
-                          <img
-                            src={roomType.imageUrl}
-                            alt={roomType.name}
-                            className="h-12 w-12 rounded-lg object-cover mr-4"
-                          />
-                        ) : (
-                          <div className="h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center mr-4">
-                            <BedDouble size={20} className="text-gray-400" />
-                          </div>
-                        )}
+                        <img
+                          src={roomType.imageUrl || 'https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg'}
+                          alt={roomType.name}
+                          className="h-12 w-12 rounded-lg object-cover mr-4"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg';
+                          }}
+                        />
                         <div>
                           <div className="text-sm font-medium text-gray-900">{roomType.name}</div>
                           {roomType.description && (

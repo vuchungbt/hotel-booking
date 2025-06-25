@@ -55,7 +55,7 @@ public class Hotel {
     String imageUrl;
 
     @Column(name = "is_active")
-    boolean isActive = true;
+    boolean isActive = false;
 
     @Column(name = "is_featured")
     boolean isFeatured = false;

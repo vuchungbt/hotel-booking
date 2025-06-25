@@ -6,13 +6,13 @@ spring:
   application:
     name: booking-service
   datasource:
-    url: ${DB_MYSQL_URL:jdbc:mysql://localhost:3306/booking23_8?createDatabaseIfNotExist=true}
+    url: ${DB_MYSQL_URL:jdbc:mysql://localhost:3306/booking26_10?createDatabaseIfNotExist=true}
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:}
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+#    show-sql: true
   servlet:
     multipart:
       enabled: true

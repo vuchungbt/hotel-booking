@@ -294,6 +294,7 @@ export interface UserResponse {
     active: boolean;
     emailVerified?: boolean;
     hostRequested?: boolean;
+    walletBalance?: number;
   }
 }
 
@@ -423,12 +424,19 @@ export const hotelAPI = {
   getAvailableAmenities: () =>
     api.get('/hotels/amenities'),
 
+  // Get top cities by hotel count for homepage  
+  getTopCities: (limit = 4) =>
+    api.get('/hotels/top-cities', { params: { limit } }),
+
   // ===== ADMIN APIs =====
   getAdminHotels: (pageNumber = 0, pageSize = 10, sortBy = 'id') =>
     api.get('/hotels/admin', { params: { pageNumber, pageSize, sortBy } }),
 
   getAdminHotelsWithFilters: (params: HotelFilterParams) => 
     api.get('/hotels/admin/filter', { params }),
+
+  getAdminHotelById: (id: string) =>
+    api.get(`/hotels/admin/${id}`),
 
   createHotelByAdmin: (data: HotelCreateRequest) =>
     api.post('/hotels/admin', data),
@@ -493,12 +501,6 @@ export const hotelAPI = {
   // ===== DEPRECATED - Keep for backward compatibility =====
   getAllHotels: (pageNumber = 0, pageSize = 10) =>
     api.get('/hotels/active', { params: { pageNumber, pageSize } }),
-
-  getAdminHotelById: (id: string) =>
-    api.get(`/hotels/${id}`),
-
-  createHostHotel: (data: HotelCreateRequest) =>
-    api.post('/hotels/host', data),
 
   getHostHotelById: (id: string) =>
     api.get(`/hotels/host/${id}`),
@@ -720,24 +722,47 @@ export interface HostDashboardResponse {
   activeHotels: number;
   totalRoomTypes: number;
   totalBookings: number;
+  pendingBookings: number;
+  confirmedBookings: number;
+  cancelledBookings: number;
+  completedBookings: number;
   monthlyRevenue: number;
+  totalRevenue: number;
+  averageBookingValue: number;
+  totalCommission: number;
   averageRating: number;
   occupancyRate: number;
   totalReviews: number;
-  pendingBookings: number;
-  confirmedBookings: number;
   recentBookings?: Array<{
     id: string;
     guestName: string;
     hotelName: string;
+    roomTypeName: string;
     checkInDate: string;
     checkOutDate: string;
     totalAmount: number;
     status: string;
+    paymentStatus: string;
+    createdAt: string;
   }>;
   monthlyRevenueData?: Array<{
     month: string;
     revenue: number;
+    bookings: number;
+  }>;
+  monthlyBookingData?: Array<{
+    month: string;
+    revenue: number;
+    bookings: number;
+  }>;
+  topPerformingHotels?: Array<{
+    id: string;
+    name: string;
+    location: string;
+    bookings: number;
+    revenue: number;
+    averageRating: number;
+    occupancyRate: number;
   }>;
 }
 
@@ -929,6 +954,11 @@ export const adminAPI = {
 // Host Dashboard APIs
 export const hostAPI = {
   getDashboard: () => api.get<{ success: boolean; result: HostDashboardResponse }>('/host/dashboard'),
+  
+  getAnalytics: (startDate?: string, endDate?: string) => 
+    api.get<{ success: boolean; result: HostDashboardResponse }>('/host/analytics', { 
+      params: { startDate, endDate } 
+    }),
   
   getHotelStats: () => api.get('/hotels/host/stats'),
   
@@ -1473,5 +1503,108 @@ export const revenueAPI = {
 
 // Backward compatibility
 export const getRevenueData = revenueAPI.getRevenueData;
+
+// ===== WALLET APIs =====
+
+export interface BankAccountRequest {
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  branch?: string;
+}
+
+export interface WithdrawalRequest {
+  amount: number;
+  note?: string;
+}
+
+export interface BankAccountResponse {
+  id: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  branch?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WalletTransactionResponse {
+  id: string;
+  transactionType: 'REFUND' | 'WITHDRAWAL';
+  amount: number;
+  description: string;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  referenceId?: string;
+  note?: string;
+  createdAt: string;
+  processedAt?: string;
+}
+
+export interface CityStatsResponse {
+  cityName: string;
+  hotelCount: number;
+}
+
+export interface WalletResponse {
+  balance: number;
+  bankAccount?: BankAccountResponse;
+}
+
+export interface WalletApiResponse {
+  code: number;
+  success: boolean;
+  message: string;
+  result: WalletResponse;
+}
+
+export interface TransactionApiResponse {
+  code: number;
+  success: boolean;
+  message: string;
+  result: WalletTransactionResponse;
+}
+
+export interface TransactionListResponse {
+  code: number;
+  success: boolean;
+  message: string;
+  result: {
+    pageNumber: number;
+    pageSize: number;
+    totalElements: number;
+    totalPages: number;
+    isLastPage: boolean;
+    content: WalletTransactionResponse[];
+  };
+}
+
+// Wallet API functions
+export const walletAPI = {
+  // Get wallet information
+  getWalletInfo: async (): Promise<WalletApiResponse> => {
+    const response = await api.get('/wallet');
+    return response.data;
+  },
+
+  // Save/Update bank account
+  saveBankAccount: async (request: BankAccountRequest): Promise<WalletApiResponse> => {
+    const response = await api.post('/wallet/bank-account', request);
+    return response.data;
+  },
+
+  // Request withdrawal
+  requestWithdrawal: async (request: WithdrawalRequest): Promise<TransactionApiResponse> => {
+    const response = await api.post('/wallet/withdrawal', request);
+    return response.data;
+  },
+
+  // Get transaction history
+  getTransactionHistory: async (pageNumber: number = 0, pageSize: number = 10): Promise<TransactionListResponse> => {
+    const response = await api.get('/wallet/transactions', {
+      params: { pageNumber, pageSize }
+    });
+    return response.data;
+  }
+};
 
 export default api;

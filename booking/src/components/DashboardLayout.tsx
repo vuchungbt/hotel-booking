@@ -2,7 +2,7 @@ import React, { ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
-  Users, Hotel, BookOpen, Settings, Star, BarChart2, Tag, Home, 
+  Users, Hotel, BookOpen, Star, BarChart2, Tag, Home, 
   FileText, Percent, CreditCard, LogOut, ChevronDown, ChevronRight,
   Menu, X, FolderOpen, DollarSign, Calendar, MessageSquare, BedDouble, TrendingUp
 } from 'lucide-react';
@@ -46,10 +46,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, type }) => 
       subItems: [
         { path: '/admin/revenue', label: 'Revenue', icon: <TrendingUp size={20} /> },
         { path: '/admin/commissions', label: 'Commissions', icon: <Percent size={20} /> },
+        { path: '/admin/withdrawals', label: 'Withdrawals', icon: <CreditCard size={20} /> },
       ],
     },
     { path: '/admin/promotions', label: 'Promotions', icon: <Tag size={20} /> },
-    { path: '/admin/settings', label: 'Settings', icon: <Settings size={20} /> },
   ];
 
   const hostMenuItems = [
@@ -59,13 +59,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, type }) => 
     { path: '/host/bookings', label: 'Bookings', icon: <BookOpen size={20} /> },
     { path: '/host/vouchers', label: 'Vouchers', icon: <Tag size={20} /> },
     { path: '/host/reviews', label: 'Reviews', icon: <Star size={20} /> },
-
-    { path: '/host/settings', label: 'Settings', icon: <Settings size={20} /> },
   ];
 
   const menuItems = isAdmin ? adminMenuItems : hostMenuItems;
 
   const isActive = (path: string) => {
+    // Special handling for Overview pages to avoid matching all sub-paths
+    if (path === '/admin' || path === '/host') {
+      return location.pathname === path;
+    }
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 

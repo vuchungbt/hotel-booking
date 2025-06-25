@@ -12,8 +12,9 @@ interface ApiResponse {
     content: HotelResponse[];
     totalElements: number;
     totalPages: number;
-    size: number;
-    number: number;
+    pageSize: number;
+    pageNumber: number;
+    isLastPage: boolean;
   };
 }
 
@@ -37,8 +38,32 @@ const AdminHotels: React.FC = () => {
   const [isSelectAll, setIsSelectAll] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [inactiveHotels, setInactiveHotels] = useState<HotelResponse[]>([]);
+  const [inactiveLoading, setInactiveLoading] = useState(true);
 
   const itemsPerPage = 10;
+
+  // Fetch inactive hotels for approval
+  const fetchInactiveHotels = async () => {
+    try {
+      setInactiveLoading(true);
+      const response = await hotelAPI.getAdminHotelsWithFilters({
+        pageNumber: 0,
+        pageSize: 50,
+        sortBy: 'createdAt',
+        isActive: false
+      });
+      
+      const data = response.data as ApiResponse;
+      if (data.success) {
+        setInactiveHotels(data.result.content);
+      }
+    } catch (error: any) {
+      console.error('Error fetching inactive hotels:', error);
+    } finally {
+      setInactiveLoading(false);
+    }
+  };
 
   // Fetch hotels from API
   const fetchHotels = async (page = 0, size = itemsPerPage, sortBy = 'createdAt') => {
@@ -82,7 +107,7 @@ const AdminHotels: React.FC = () => {
         setHotels(data.result.content);
         setTotalPages(data.result.totalPages);
         setTotalElements(data.result.totalElements);
-        setCurrentPage(data.result.number);
+        setCurrentPage(data.result.pageNumber);
       } else {
         console.error('❌ API Error:', data.message);
         showToast('error', 'Error', data.message || 'Unable to load hotel list');
@@ -97,10 +122,12 @@ const AdminHotels: React.FC = () => {
 
   useEffect(() => {
     fetchHotels();
+    fetchInactiveHotels();
   }, [searchTerm, cityFilter, countryFilter, starRatingFilter, statusFilter, featuredFilter, minPrice, maxPrice]);
 
   const handleRefresh = () => {
     fetchHotels(currentPage);
+    fetchInactiveHotels();
   };
 
   const handlePageChange = (page: number) => {
@@ -140,10 +167,12 @@ const AdminHotels: React.FC = () => {
   };
 
   const handleEditHotel = (hotelId: string) => {
+    console.log('🔧 Navigating to edit hotel:', hotelId);
     navigate(`/admin/hotels/edit/${hotelId}`);
   };
 
   const handleViewHotel = (hotelId: string) => {
+    console.log('👁️ Navigating to view hotel:', hotelId);
     navigate(`/admin/hotels/${hotelId}`);
   };
 
@@ -273,6 +302,37 @@ const AdminHotels: React.FC = () => {
     setSearchTerm('');
   };
 
+  const handleApproveHotel = async (hotelId: string) => {
+    try {
+      setActionLoading(hotelId);
+      await hotelAPI.toggleHotelStatus(hotelId);
+      showToast('success', 'Success', 'Hotel approved and activated successfully');
+      fetchInactiveHotels();
+      fetchHotels(currentPage);
+    } catch (error: any) {
+      console.error('Error approving hotel:', error);
+      showToast('error', 'Error', 'Unable to approve hotel');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteInactiveHotel = async (hotelId: string) => {
+    if (window.confirm('Are you sure you want to delete this pending hotel?')) {
+      try {
+        setActionLoading(hotelId);
+        await hotelAPI.deleteHotelByAdmin(hotelId);
+        showToast('success', 'Success', 'Hotel deleted successfully');
+        fetchInactiveHotels();
+      } catch (error: any) {
+        console.error('Error deleting hotel:', error);
+        showToast('error', 'Error', 'Unable to delete hotel');
+      } finally {
+        setActionLoading(null);
+      }
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
@@ -280,7 +340,7 @@ const AdminHotels: React.FC = () => {
           <h1 className="text-xl sm:text-2xl font-bold">Hotel Management</h1>
           <p className="text-gray-600 mt-1">Total {totalElements} hotels</p>
         </div>
-        <div className="flex space-x-3">
+        {/* <div className="flex space-x-3">
           <button
             onClick={handleRefresh}
             disabled={loading}
@@ -296,7 +356,7 @@ const AdminHotels: React.FC = () => {
             <Plus size={20} className="mr-2" />
                           Add Hotel
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Search and Filters */}
@@ -427,6 +487,130 @@ const AdminHotels: React.FC = () => {
         )}
       </div>
 
+      {/* Pending Hotels Approval Table */}
+      {inactiveHotels.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border border-orange-200 mb-6 overflow-hidden">
+          <div className="bg-orange-50 px-6 py-4 border-b border-orange-200">
+            <h3 className="text-lg font-semibold text-orange-800 flex items-center">
+              <HotelIcon size={20} className="mr-2" />
+              Pending Hotel Approvals ({inactiveHotels.length})
+            </h3>
+            <p className="text-sm text-orange-600 mt-1">Hotels waiting for approval to be activated</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Hotel
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Location
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Owner
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Created Date
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {inactiveLoading ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center">
+                      <div className="flex justify-center items-center">
+                        <RefreshCw className="animate-spin mr-2" size={20} />
+                        Loading pending hotels...
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  inactiveHotels.map((hotel) => (
+                    <tr key={hotel.id} className="hover:bg-orange-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <img
+                              className="h-10 w-10 rounded-lg object-cover"
+                              src={hotel.imageUrl || 'https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg'}
+                              alt={hotel.name}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = 'https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg';
+                              }}
+                            />
+                          </div>
+                          <div className="ml-3">
+                            <div className="text-sm font-medium text-gray-900">{hotel.name}</div>
+                            <div className="text-sm text-gray-500 flex items-center">
+                              {hotel.starRating && (
+                                <div className="flex items-center">
+                                  {[...Array(hotel.starRating)].map((_, i) => (
+                                    <Star key={i} size={12} className="text-yellow-400 fill-current" />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 flex items-center">
+                          <MapPin size={14} className="mr-1 text-gray-400" />
+                          {hotel.city && hotel.country ? `${hotel.city}, ${hotel.country}` : hotel.address}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{hotel.ownerName || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">{hotel.ownerEmail || ''}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 flex items-center">
+                          <Calendar size={14} className="mr-1 text-gray-400" />
+                          {hotel.createdAt ? formatDate(hotel.createdAt) : 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => handleViewHotel(hotel.id)}
+                            className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition-colors flex items-center"
+                            title="View Details"
+                          >
+                            <Eye size={14} className="mr-1" />
+                            View
+                          </button>
+                          <button
+                            onClick={() => handleApproveHotel(hotel.id)}
+                            disabled={actionLoading === hotel.id}
+                            className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700 transition-colors flex items-center disabled:opacity-50"
+                          >
+                            <Check size={14} className="mr-1" />
+                            {actionLoading === hotel.id ? 'Approving...' : 'Approve'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteInactiveHotel(hotel.id)}
+                            disabled={actionLoading === hotel.id}
+                            className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700 transition-colors flex items-center disabled:opacity-50"
+                          >
+                            <Trash size={14} className="mr-1" />
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Bulk Actions */}
       {selectedHotels.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
@@ -450,6 +634,13 @@ const AdminHotels: React.FC = () => {
 
       {/* Hotels Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+            <HotelIcon size={20} className="mr-2" />
+            Active Hotels ({totalElements})
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">Approved and active hotels in the system</p>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -515,17 +706,15 @@ const AdminHotels: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-12 w-12">
-                          {hotel.imageUrl ? (
-                            <img
-                              className="h-12 w-12 rounded-lg object-cover"
-                              src={hotel.imageUrl}
-                              alt={hotel.name}
-                            />
-                          ) : (
-                            <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">
-                              <HotelIcon size={20} className="text-gray-400" />
-                            </div>
-                          )}
+                          <img
+                            className="h-12 w-12 rounded-lg object-cover"
+                            src={hotel.imageUrl || 'https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg'}
+                            alt={hotel.name}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg';
+                            }}
+                          />
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{hotel.name}</div>

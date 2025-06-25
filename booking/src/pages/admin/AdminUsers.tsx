@@ -33,8 +33,9 @@ interface ApiResponse {
     content: User[];
     totalElements: number;
     totalPages: number;
-    size: number;
-    number: number;
+    pageSize: number;
+    pageNumber: number;
+    isLastPage: boolean;
   };
 }
 
@@ -69,7 +70,7 @@ const AdminUsers: React.FC = () => {
         setUsers(data.result.content);
         setTotalPages(data.result.totalPages);
         setTotalElements(data.result.totalElements);
-        setCurrentPage(data.result.number);
+        setCurrentPage(data.result.pageNumber);
       } else {
         showToast('error', 'Error', data.message || 'Unable to load user list');
       }

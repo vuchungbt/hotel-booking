@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import net.blwsmartware.booking.constant.PagePrepare;
 import net.blwsmartware.booking.dto.request.HotelCreateRequest;
 import net.blwsmartware.booking.dto.request.HotelUpdateRequest;
+import net.blwsmartware.booking.dto.response.CityStatsResponse;
 import net.blwsmartware.booking.dto.response.DataResponse;
 import net.blwsmartware.booking.dto.response.HotelResponse;
 import net.blwsmartware.booking.dto.response.MessageResponse;
@@ -103,6 +104,19 @@ public class HotelController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(MessageResponse.<DataResponse<HotelResponse>>builder()
                         .message("Filtered hotels retrieved successfully")
+                        .result(response)
+                        .build());
+    }
+    
+    @GetMapping("/admin/{id}")
+    @IsAdmin
+    public ResponseEntity<MessageResponse<HotelResponse>> getHotelByIdForAdmin(@PathVariable UUID id) {
+        HotelResponse response = hotelService.getHotelByIdForAdmin(id);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<HotelResponse>builder()
+                        .message("Hotel details retrieved successfully for admin")
                         .result(response)
                         .build());
     }
@@ -690,6 +704,19 @@ public class HotelController {
                 .body(MessageResponse.<List<String>>builder()
                         .message("Available amenities retrieved successfully")
                         .result(amenities)
+                        .build());
+    }
+
+    @GetMapping("/top-cities")
+    public ResponseEntity<MessageResponse<List<CityStatsResponse>>> getTopCities(
+            @RequestParam(defaultValue = "4") int limit) {
+        List<CityStatsResponse> topCities = hotelService.getTopCitiesByHotelCount(limit);
+        
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<List<CityStatsResponse>>builder()
+                        .message("Top cities retrieved successfully")
+                        .result(topCities)
                         .build());
     }
 } 

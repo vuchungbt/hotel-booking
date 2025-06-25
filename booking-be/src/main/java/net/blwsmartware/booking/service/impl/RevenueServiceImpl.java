@@ -75,6 +75,47 @@ public class RevenueServiceImpl implements RevenueService {
 
     @Override
     @Transactional
+    public void revertHotelRevenue(UUID bookingId) {
+        log.info("Reverting hotel revenue for cancelled/refunded booking: {}", bookingId);
+        
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new AppRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
+        
+        // Chỉ trừ commission nếu booking trước đó đã được thanh toán và có commission
+        if (booking.getPaymentStatus() != PaymentStatus.PAID && 
+            booking.getPaymentStatus() != PaymentStatus.REFUNDED && 
+            booking.getPaymentStatus() != PaymentStatus.PARTIALLY_REFUNDED) {
+            log.warn("Booking {} was never paid or already processed, skipping commission revert", bookingId);
+            return;
+        }
+        
+        Hotel hotel = booking.getHotel();
+        BigDecimal refundAmount = booking.getRefundAmount() != null ? booking.getRefundAmount() : booking.getTotalAmount();
+        BigDecimal commissionRate = hotel.getCommissionRate();
+        
+        // Tính commission cần trừ dựa trên số tiền refund
+        BigDecimal commissionToRevert = refundAmount
+                .multiply(commissionRate)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        
+        // Trừ commission khỏi tổng commission của hotel
+        BigDecimal currentCommission = hotel.getCommissionEarned() != null ? hotel.getCommissionEarned() : BigDecimal.ZERO;
+        BigDecimal newCommission = currentCommission.subtract(commissionToRevert);
+        
+        // Đảm bảo commission không âm
+        if (newCommission.compareTo(BigDecimal.ZERO) < 0) {
+            newCommission = BigDecimal.ZERO;
+        }
+        
+        hotel.setCommissionEarned(newCommission);
+        hotelRepository.save(hotel);
+        
+        log.info("Reverted commission {} VND for booking {} from hotel {} (remaining: {} VND)", 
+                commissionToRevert, bookingId, hotel.getName(), hotel.getCommissionEarned());
+    }
+
+    @Override
+    @Transactional
     public void recalculateHotelRevenue(UUID hotelId) {
         log.info("Recalculating hotel revenue for hotel: {}", hotelId);
         

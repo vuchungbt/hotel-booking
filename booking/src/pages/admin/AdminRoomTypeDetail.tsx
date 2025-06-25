@@ -29,12 +29,12 @@ const AdminRoomTypeDetail: React.FC = () => {
       if (data.success) {
         setRoomType(data.result);
       } else {
-        showToast('error', 'Lỗi', data.message || 'Không thể tải thông tin loại phòng');
+        showToast('error', 'Error', data.message || 'Cannot load room type information');
         navigate('/admin/room-types');
       }
     } catch (error: any) {
       console.error('Error fetching room type:', error);
-      showToast('error', 'Lỗi', 'Không thể tải thông tin loại phòng');
+      showToast('error', 'Error', 'Cannot load room type information');
       navigate('/admin/room-types');
     } finally {
       setLoading(false);
@@ -52,7 +52,7 @@ const AdminRoomTypeDetail: React.FC = () => {
       try {
         setActionLoading('delete');
         await roomTypeAPI.deleteRoomType(roomType.id);
-                  showToast('success', 'Success', 'Room type deleted successfully');
+                    showToast('success', 'Success', 'Room type deleted successfully');
         navigate('/admin/room-types');
       } catch (error: any) {
         console.error('Error deleting room type:', error);
@@ -80,12 +80,12 @@ const AdminRoomTypeDetail: React.FC = () => {
 
   const getBedTypeText = (bedType: string) => {
     const bedTypes: Record<string, string> = {
-      'Single': 'Giường đơn',
-      'Double': 'Giường đôi',
-      'Queen': 'Giường Queen',
-      'King': 'Giường King',
-      'Twin': 'Giường đôi riêng biệt',
-      'Sofa Bed': 'Giường sofa'
+      'Single': 'Single Bed',
+      'Double': 'Double Bed',
+      'Queen': 'Queen Bed',
+      'King': 'King Bed',
+      'Twin': 'Twin Beds',
+      'Sofa Bed': 'Sofa Bed'
     };
     return bedTypes[bedType] || bedType;
   };
@@ -101,7 +101,7 @@ const AdminRoomTypeDetail: React.FC = () => {
   if (!roomType) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500">Không tìm thấy loại phòng</p>
+        <p className="text-gray-500">Room type not found</p>
       </div>
     );
   }
@@ -148,30 +148,30 @@ const AdminRoomTypeDetail: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center">
               <BedDouble size={20} className="mr-2 text-blue-500" />
-              Thông tin cơ bản
+              Basic Information
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tên loại phòng</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Room Type Name</label>
                 <p className="text-gray-900 font-medium">{roomType.name}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Loại giường</label>
-                <p className="text-gray-900">{roomType.bedType ? getBedTypeText(roomType.bedType) : 'Không xác định'}</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bed Type</label>
+                <p className="text-gray-900">{roomType.bedType ? getBedTypeText(roomType.bedType) : 'Unspecified'}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sức chứa tối đa</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Max Occupancy</label>
                 <div className="flex items-center">
                   <Users size={16} className="text-gray-400 mr-2" />
-                  <span className="text-gray-900">{roomType.maxOccupancy} người</span>
+                  <span className="text-gray-900">{roomType.maxOccupancy} people</span>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Diện tích</label>
-                <p className="text-gray-900">{roomType.roomSize ? `${roomType.roomSize} m²` : 'Không xác định'}</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Room Size</label>
+                <p className="text-gray-900">{roomType.roomSize ? `${roomType.roomSize} m²` : 'Unspecified'}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Giá mỗi đêm</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Price per Night</label>
                 <div className="flex items-center">
                   <DollarSign size={16} className="text-gray-400 mr-2" />
                   <span className="text-gray-900 font-semibold">{formatCurrency(roomType.pricePerNight)}</span>
@@ -180,7 +180,7 @@ const AdminRoomTypeDetail: React.FC = () => {
             </div>
             {roomType.description && (
               <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Mô tả</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                 <p className="text-gray-900 leading-relaxed">{roomType.description}</p>
               </div>
             )}
@@ -190,20 +190,20 @@ const AdminRoomTypeDetail: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center">
               <BedDouble size={20} className="mr-2 text-green-500" />
-              Tình trạng phòng
+              Room Status
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">{roomType.totalRooms}</div>
-                <div className="text-sm text-blue-700">Tổng số phòng</div>
+                <div className="text-sm text-blue-700">Total Rooms</div>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">{roomType.availableRooms}</div>
-                <div className="text-sm text-green-700">Phòng trống</div>
+                <div className="text-sm text-green-700">Available Rooms</div>
               </div>
               <div className="text-center p-4 bg-orange-50 rounded-lg">
                 <div className="text-2xl font-bold text-orange-600">{roomType.totalRooms - roomType.availableRooms}</div>
-                <div className="text-sm text-orange-700">Phòng đã đặt</div>
+                <div className="text-sm text-orange-700">Occupied Rooms</div>
               </div>
             </div>
           </div>
@@ -213,7 +213,7 @@ const AdminRoomTypeDetail: React.FC = () => {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center">
                 <Image size={20} className="mr-2 text-purple-500" />
-                Tiện nghi phòng
+                Room Amenities
               </h2>
               <div className="flex flex-wrap gap-2">
                 {roomType.amenities.split(',').map((amenity, index) => (
@@ -246,18 +246,18 @@ const AdminRoomTypeDetail: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center">
               <HotelIcon size={20} className="mr-2 text-indigo-500" />
-              Thông tin khách sạn
+              Hotel Information
             </h3>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tên khách sạn</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Name</label>
                 <p className="text-gray-900">{roomType.hotelName}</p>
               </div>
               <button
                 onClick={() => navigate(`/admin/hotels/${roomType.hotelId}`)}
                 className="w-full bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg hover:bg-indigo-100 transition-colors text-sm"
               >
-                Xem thông tin khách sạn
+                View Hotel Information
               </button>
             </div>
           </div>
@@ -266,11 +266,11 @@ const AdminRoomTypeDetail: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center">
               <Calendar size={20} className="mr-2 text-gray-500" />
-              Thông tin hệ thống
+              System Information
             </h3>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ngày tạo</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Created Date</label>
                 <p className="text-gray-900 text-sm">{formatDate(roomType.createdAt)}</p>
               </div>
               <div>
@@ -279,7 +279,7 @@ const AdminRoomTypeDetail: React.FC = () => {
               </div>
               {roomType.createdBy && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tạo bởi</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Created By</label>
                   <div className="flex items-center">
                     <User size={16} className="text-gray-400 mr-2" />
                     <span className="text-gray-900 text-sm">{roomType.createdBy}</span>
@@ -300,19 +300,19 @@ const AdminRoomTypeDetail: React.FC = () => {
 
           {/* Quick Actions */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold mb-4">Thao tác nhanh</h3>
+            <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
             <div className="space-y-3">
               <button
                 onClick={() => navigate(`/admin/room-types/add?hotelId=${roomType.hotelId}`)}
                 className="w-full bg-blue-50 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors text-sm"
               >
-                Thêm loại phòng mới cho khách sạn này
+                Add New Room Type for This Hotel
               </button>
               <button
                 onClick={() => navigate('/admin/room-types')}
                 className="w-full bg-gray-50 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm"
               >
-                Quay lại danh sách loại phòng
+                Return to Room Type List
               </button>
             </div>
           </div>

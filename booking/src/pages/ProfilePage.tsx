@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  User, Mail, Key, Save, BookOpen, Calendar, Gift, CreditCard, 
-  MapPin, Clock, CheckCircle, AlertCircle, Copy, Trash2, Plus,
-  Phone, Camera, Edit, Star, Eye, EyeOff, Shield, Crown, Wallet,
-  DollarSign, ArrowDownLeft, ArrowUpRight, Send, Receipt
+  User, Mail, Key, Save, BookOpen, 
+   Clock, CheckCircle, AlertCircle, 
+  Phone, Camera, Edit,  Eye, EyeOff, Shield, Crown, Wallet,
+   ArrowDownLeft, ArrowUpRight, Send, Receipt
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { userAPI, ProfileUpdateRequest, PasswordUpdateRequest } from '../services/api';
+import { userAPI, ProfileUpdateRequest, PasswordUpdateRequest, walletAPI, BankAccountRequest, WithdrawalRequest, WalletResponse, WalletTransactionResponse } from '../services/api';
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -39,16 +39,11 @@ const ProfilePage: React.FC = () => {
   });
 
   // Wallet related state
-  const [walletData, setWalletData] = useState({
+  const [walletData, setWalletData] = useState<WalletResponse>({
     balance: 0,
-    transactions: [] as any[],
-    bankAccount: {
-      bankName: '',
-      accountNumber: '',
-      accountName: '',
-      branch: ''
-    }
+    bankAccount: undefined
   });
+  const [transactions, setTransactions] = useState<WalletTransactionResponse[]>([]);
 
   const [withdrawalData, setWithdrawalData] = useState({
     amount: '',
@@ -57,6 +52,14 @@ const ProfilePage: React.FC = () => {
 
   const [isEditingBank, setIsEditingBank] = useState(false);
   const [showWithdrawForm, setShowWithdrawForm] = useState(false);
+  
+  // Temporary bank account data for editing
+  const [tempBankAccount, setTempBankAccount] = useState({
+    bankName: '',
+    accountNumber: '',
+    accountName: '',
+    branch: ''
+  });
 
   // Load user data when component mounts or user changes
   useEffect(() => {
@@ -71,6 +74,42 @@ const ProfilePage: React.FC = () => {
       });
     }
   }, [user]);
+
+  // Load wallet data when activeTab is wallet
+  useEffect(() => {
+    if (activeTab === 'wallet') {
+      fetchWalletData();
+    }
+  }, [activeTab]);
+
+  const fetchWalletData = async () => {
+    try {
+      setWalletLoading(true);
+      
+      // Fetch wallet info
+      const walletResponse = await walletAPI.getWalletInfo();
+      setWalletData(walletResponse.result);
+      
+      // Fetch transaction history
+      try {
+        const transactionResponse = await walletAPI.getTransactionHistory(0, 10);
+        console.log('Transaction API response:', transactionResponse);
+        console.log('Transaction data:', transactionResponse.result.content);
+        setTransactions(transactionResponse.result.content || []);
+      } catch (transactionError) {
+        console.error('Failed to fetch transaction history:', transactionError);
+        setTransactions([]); // Set empty array on error
+      }
+      
+    } catch (error: any) {
+      console.error('Failed to fetch wallet data:', error);
+      showToast('error', 'Error', 'Failed to load wallet information');
+      // Set default values on error
+      setTransactions([]);
+    } finally {
+      setWalletLoading(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -90,12 +129,12 @@ const ProfilePage: React.FC = () => {
 
   const validateForm = (): boolean => {
     if (!formData.name.trim()) {
-      showToast('error', 'Lỗi', 'Vui lòng nhập họ và tên');
+      showToast('error', 'Error', 'Please enter your full name');
       return false;
     }
     
     if (!formData.username.trim()) {
-      showToast('error', 'Lỗi', 'Vui lòng nhập tên đăng nhập');
+      showToast('error', 'Error', 'Please enter your username');
       return false;
     }
 
@@ -156,7 +195,7 @@ const ProfilePage: React.FC = () => {
     } catch (error: any) {
       console.error('Update profile error:', error);
       const errorMessage = error.response?.data?.message || 'An error occurred while updating information';
-      showToast('error', 'Lỗi', errorMessage);
+      showToast('error', 'Error', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -191,7 +230,7 @@ const ProfilePage: React.FC = () => {
     } catch (error: any) {
       console.error('Update password error:', error);
       const errorMessage = error.response?.data?.message || 'An error occurred while changing password';
-      showToast('error', 'Lỗi', errorMessage);
+      showToast('error', 'Error', errorMessage);
     } finally {
       setPasswordLoading(false);
     }
@@ -222,8 +261,8 @@ const ProfilePage: React.FC = () => {
               showToast('success', 'Success', 'Host request has been sent successfully!');
     } catch (error: any) {
       console.error('Host request error:', error);
-      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi gửi yêu cầu';
-      showToast('error', 'Lỗi', errorMessage);
+      const errorMessage = error.response?.data?.message || 'An error occurred while sending request';
+      showToast('error', 'Error', errorMessage);
     } finally {
       setHostRequestLoading(false);
     }
@@ -236,10 +275,8 @@ const ProfilePage: React.FC = () => {
   const tabs = [
     { id: 'profile', label: 'Personal Information', icon: User },
     { id: 'password', label: 'Change Password', icon: Key }, 
-    { id: 'wallet', label: 'Số dư thanh toán', icon: Wallet },
-    { id: 'vouchers', label: 'Mã giảm giá', icon: Gift },
-    { id: 'payment', label: 'Phương thức thanh toán', icon: CreditCard },
-    { id: 'roles', label: 'Quản lý vai trò', icon: Shield }, 
+    { id: 'wallet', label: 'Wallet Balance', icon: Wallet },
+    { id: 'roles', label: 'Role Management', icon: Shield }, 
   ];
 
   const renderProfileTab = () => (
@@ -259,7 +296,7 @@ const ProfilePage: React.FC = () => {
           <p className="text-gray-500">{formData.email}</p>
           {user?.createAt && (
             <p className="text-sm text-gray-400">
-              Thành viên từ {formatDate(user.createAt)}
+              Member since {formatDate(user.createAt)}
             </p>
           )}
         </div>
@@ -270,7 +307,7 @@ const ProfilePage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Họ và tên *
+              Full Name *
             </label>
             <div className="relative">
               <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -308,12 +345,12 @@ const ProfilePage: React.FC = () => {
                   {user.emailVerified ? (
                     <div className="flex items-center text-green-600">
                       <CheckCircle className="h-4 w-4 mr-1" />
-                      Email đã được xác nhận
+                      Email verified
                     </div>
                   ) : (
                     <div className="flex items-center text-yellow-600">
                       <AlertCircle className="h-4 w-4 mr-1" />
-                      Email chưa được xác nhận
+                      Email not verified
                     </div>
                   )}
                 </div>
@@ -323,7 +360,7 @@ const ProfilePage: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tên đăng nhập *
+              Username *
             </label>
             <div className="relative">
               <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -341,7 +378,7 @@ const ProfilePage: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Số điện thoại
+              Phone Number
             </label>
             <div className="relative">
               <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -358,7 +395,7 @@ const ProfilePage: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ngày sinh
+              Date of Birth
             </label>
             <input
               type="date"
@@ -373,7 +410,7 @@ const ProfilePage: React.FC = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Địa chỉ
+            Address
           </label>
           <textarea
             name="address"
@@ -394,7 +431,7 @@ const ProfilePage: React.FC = () => {
                 disabled={loading}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
-                Hủy
+                Cancel
               </button>
               <button
                 type="submit"
@@ -404,12 +441,12 @@ const ProfilePage: React.FC = () => {
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Đang lưu...
+                    Saving...
                   </>
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />
-                    Lưu thay đổi
+                    Save Changes
                   </>
                 )}
               </button>
@@ -421,7 +458,7 @@ const ProfilePage: React.FC = () => {
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
             >
               <Edit className="h-4 w-4 mr-2" />
-              Chỉnh sửa
+              Edit
             </button>
           )}
         </div>
@@ -435,9 +472,9 @@ const ProfilePage: React.FC = () => {
         <div className="flex">
           <AlertCircle className="h-5 w-5 text-yellow-400 mr-2" />
           <div>
-            <h3 className="text-sm font-medium text-yellow-800">Lưu ý bảo mật</h3>
+            <h3 className="text-sm font-medium text-yellow-800">Security Notice</h3>
             <p className="text-sm text-yellow-700 mt-1">
-              Mật khẩu mới phải có ít nhất 8 ký tự và nên bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.
+              New password must be at least 8 characters and should include uppercase, lowercase, numbers and special characters.
             </p>
           </div>
         </div>
@@ -446,7 +483,7 @@ const ProfilePage: React.FC = () => {
       <form onSubmit={handlePasswordSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Mật khẩu hiện tại *
+            Current Password *
           </label>
           <div className="relative">
             <Key className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -470,7 +507,7 @@ const ProfilePage: React.FC = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Mật khẩu mới *
+            New Password *
           </label>
           <div className="relative">
             <Key className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -494,7 +531,7 @@ const ProfilePage: React.FC = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Xác nhận mật khẩu mới *
+            Confirm New Password *
           </label>
           <div className="relative">
             <Key className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -525,12 +562,12 @@ const ProfilePage: React.FC = () => {
             {passwordLoading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Đang cập nhật...
+                Updating...
               </>
             ) : (
               <>
                 <Key className="h-4 w-4 mr-2" />
-                Đổi mật khẩu
+                Change Password
               </>
             )}
           </button>
@@ -563,14 +600,21 @@ const ProfilePage: React.FC = () => {
       setWalletLoading(true);
       
       try {
-        // API call to save bank account
-        // await userAPI.saveBankAccount(walletData.bankAccount);
+        const bankAccountData: BankAccountRequest = {
+          bankName: tempBankAccount.bankName,
+          accountNumber: tempBankAccount.accountNumber,
+          accountName: tempBankAccount.accountName,
+          branch: tempBankAccount.branch
+        };
         
-        showToast('success', 'Thành công', 'Thông tin tài khoản ngân hàng đã được lưu');
+        await walletAPI.saveBankAccount(bankAccountData);
+        await fetchWalletData(); // Refresh wallet data
+        
+        showToast('success', 'Success', 'Bank account information has been saved');
         setIsEditingBank(false);
       } catch (error: any) {
         console.error('Save bank account error:', error);
-        showToast('error', 'Lỗi', 'Không thể lưu thông tin tài khoản ngân hàng');
+        showToast('error', 'Error', 'Unable to save bank account information');
       } finally {
         setWalletLoading(false);
       }
@@ -580,70 +624,46 @@ const ProfilePage: React.FC = () => {
       e.preventDefault();
       
       if (!withdrawalData.amount || parseFloat(withdrawalData.amount) <= 0) {
-        showToast('error', 'Lỗi', 'Vui lòng nhập số tiền hợp lệ');
+        showToast('error', 'Error', 'Please enter a valid amount');
         return;
       }
       
       if (parseFloat(withdrawalData.amount) > walletData.balance) {
-        showToast('error', 'Lỗi', 'Số dư không đủ để thực hiện giao dịch');
+        showToast('error', 'Error', 'Insufficient balance for this transaction');
         return;
       }
 
-      if (!walletData.bankAccount.accountNumber) {
-        showToast('error', 'Lỗi', 'Vui lòng thêm thông tin tài khoản ngân hàng trước');
+      if (!walletData.bankAccount?.accountNumber) {
+        showToast('error', 'Error', 'Please add bank account information first');
         return;
       }
 
       setWithdrawLoading(true);
       
       try {
-        // API call to request withdrawal
-        // await userAPI.requestWithdrawal({
-        //   amount: parseFloat(withdrawalData.amount),
-        //   note: withdrawalData.note
-        // });
+        const withdrawalRequest: WithdrawalRequest = {
+          amount: parseFloat(withdrawalData.amount),
+          note: withdrawalData.note
+        };
         
-        showToast('success', 'Thành công', 'Yêu cầu rút tiền đã được gửi');
+        await walletAPI.requestWithdrawal(withdrawalRequest);
+        await fetchWalletData(); // Refresh wallet data
+        
+        showToast('success', 'Success', 'Withdrawal request has been sent');
         setShowWithdrawForm(false);
         setWithdrawalData({ amount: '', note: '' });
-        
-        // Refresh wallet data
-        // fetchWalletData();
       } catch (error: any) {
         console.error('Withdrawal request error:', error);
-        showToast('error', 'Lỗi', 'Không thể gửi yêu cầu rút tiền');
+        showToast('error', 'Error', 'Unable to send withdrawal request');
       } finally {
         setWithdrawLoading(false);
       }
     };
 
-    // Sample data - replace with API call
-    const sampleTransactions = [
-      {
-        id: 'TXN-001',
-        type: 'refund',
-        amount: 500000,
-        description: 'Hoàn tiền booking #BK-123',
-        status: 'completed',
-        createdAt: '2024-01-15T10:30:00Z'
-      },
-      {
-        id: 'TXN-002',
-        type: 'withdrawal',
-        amount: -200000,
-        description: 'Rút tiền về tài khoản VCB',
-        status: 'pending',
-        createdAt: '2024-01-12T14:20:00Z'
-      },
-      {
-        id: 'TXN-003',
-        type: 'refund',
-        amount: 750000,
-        description: 'Hoàn tiền booking #BK-098',
-        status: 'completed',
-        createdAt: '2024-01-10T09:15:00Z'
-      }
-    ];
+    // Use real transaction data from state
+    // transactions is already defined in state
+    console.log('renderWalletTab - transactions state:', transactions);
+    console.log('renderWalletTab - transactions length:', transactions?.length);
 
     return (
       <div className="space-y-6">
@@ -652,9 +672,9 @@ const ProfilePage: React.FC = () => {
           <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-sm">Số dư hiện tại</p>
-                <p className="text-3xl font-bold">{formatCurrency(walletData.balance || 1050000)}</p>
-                <p className="text-blue-100 text-xs mt-1">Có thể rút: {formatCurrency(walletData.balance || 1050000)}</p>
+                <p className="text-blue-100 text-sm">Current Balance</p>
+                <p className="text-3xl font-bold">{formatCurrency(walletData.balance)}</p>
+                <p className="text-blue-100 text-xs mt-1">Available: {formatCurrency(walletData.balance)}</p>
               </div>
               <div className="p-3 bg-blue-400 bg-opacity-30 rounded-full">
                 <Wallet size={32} />
@@ -664,30 +684,46 @@ const ProfilePage: React.FC = () => {
 
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Thông tin tài khoản</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Account Information</h3>
               <button
-                onClick={() => setIsEditingBank(true)}
+                onClick={() => {
+                  setTempBankAccount({
+                    bankName: walletData.bankAccount?.bankName || '',
+                    accountNumber: walletData.bankAccount?.accountNumber || '',
+                    accountName: walletData.bankAccount?.accountName || '',
+                    branch: walletData.bankAccount?.branch || ''
+                  });
+                  setIsEditingBank(true);
+                }}
                 className="text-blue-600 hover:text-blue-700 text-sm"
               >
                 <Edit size={16} />
               </button>
             </div>
             
-            {walletData.bankAccount.accountNumber ? (
+            {walletData.bankAccount?.accountNumber ? (
               <div className="space-y-2">
-                <p className="text-sm"><strong>Ngân hàng:</strong> {walletData.bankAccount.bankName || 'Vietcombank'}</p>
-                <p className="text-sm"><strong>Số tài khoản:</strong> {walletData.bankAccount.accountNumber || '****1234'}</p>
-                <p className="text-sm"><strong>Chủ tài khoản:</strong> {walletData.bankAccount.accountName || user?.name}</p>
-                <p className="text-sm"><strong>Chi nhánh:</strong> {walletData.bankAccount.branch || 'TP. Hồ Chí Minh'}</p>
+                <p className="text-sm"><strong>Bank:</strong> {walletData.bankAccount.bankName}</p>
+                <p className="text-sm"><strong>Account Number:</strong> {walletData.bankAccount.accountNumber}</p>
+                <p className="text-sm"><strong>Account Holder:</strong> {walletData.bankAccount.accountName}</p>
+                <p className="text-sm"><strong>Branch:</strong> {walletData.bankAccount.branch}</p>
               </div>
             ) : (
               <div className="text-center py-4">
-                <p className="text-gray-500 text-sm mb-3">Chưa có thông tin tài khoản ngân hàng</p>
+                <p className="text-gray-500 text-sm mb-3">No bank account information</p>
                 <button
-                  onClick={() => setIsEditingBank(true)}
+                  onClick={() => {
+                    setTempBankAccount({
+                      bankName: '',
+                      accountNumber: '',
+                      accountName: '',
+                      branch: ''
+                    });
+                    setIsEditingBank(true);
+                  }}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
                 >
-                  Thêm tài khoản
+                  Add Account
                 </button>
               </div>
             )}
@@ -698,11 +734,11 @@ const ProfilePage: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-4">
           <button
             onClick={() => setShowWithdrawForm(true)}
-            disabled={!walletData.bankAccount.accountNumber && walletData.balance === 0}
+            disabled={!walletData.bankAccount?.accountNumber || walletData.balance === 0}
             className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
           >
             <Send size={20} className="mr-2" />
-            Yêu cầu rút tiền
+            Request Withdrawal
           </button>
         </div>
 
@@ -710,20 +746,17 @@ const ProfilePage: React.FC = () => {
         {isEditingBank && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <h3 className="text-lg font-semibold mb-4">Thông tin tài khoản ngân hàng</h3>
+              <h3 className="text-lg font-semibold mb-4">Bank Account Information</h3>
               <form onSubmit={handleBankAccountSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên ngân hàng</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
                   <select
-                    value={walletData.bankAccount.bankName}
-                    onChange={(e) => setWalletData(prev => ({
-                      ...prev,
-                      bankAccount: { ...prev.bankAccount, bankName: e.target.value }
-                    }))}
+                    value={tempBankAccount.bankName}
+                    onChange={(e) => setTempBankAccount(prev => ({ ...prev, bankName: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     required
                   >
-                    <option value="">Chọn ngân hàng</option>
+                                          <option value="">Select Bank</option>
                     <option value="Vietcombank">Vietcombank</option>
                     <option value="BIDV">BIDV</option>
                     <option value="VietinBank">VietinBank</option>
@@ -737,42 +770,33 @@ const ProfilePage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Số tài khoản</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
                   <input
                     type="text"
-                    value={walletData.bankAccount.accountNumber}
-                    onChange={(e) => setWalletData(prev => ({
-                      ...prev,
-                      bankAccount: { ...prev.bankAccount, accountNumber: e.target.value }
-                    }))}
+                    value={tempBankAccount.accountNumber}
+                    onChange={(e) => setTempBankAccount(prev => ({ ...prev, accountNumber: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên chủ tài khoản</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Account Holder Name</label>
                   <input
                     type="text"
-                    value={walletData.bankAccount.accountName}
-                    onChange={(e) => setWalletData(prev => ({
-                      ...prev,
-                      bankAccount: { ...prev.bankAccount, accountName: e.target.value }
-                    }))}
+                    value={tempBankAccount.accountName}
+                    onChange={(e) => setTempBankAccount(prev => ({ ...prev, accountName: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Chi nhánh</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Branch</label>
                   <input
                     type="text"
-                    value={walletData.bankAccount.branch}
-                    onChange={(e) => setWalletData(prev => ({
-                      ...prev,
-                      bankAccount: { ...prev.bankAccount, branch: e.target.value }
-                    }))}
+                    value={tempBankAccount.branch}
+                    onChange={(e) => setTempBankAccount(prev => ({ ...prev, branch: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
@@ -784,14 +808,14 @@ const ProfilePage: React.FC = () => {
                     onClick={() => setIsEditingBank(false)}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                   >
-                    Hủy
+                    Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={walletLoading}
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {walletLoading ? 'Đang lưu...' : 'Lưu'}
+                    {walletLoading ? 'Saving...' : 'Save'}
                   </button>
                 </div>
               </form>
@@ -803,22 +827,22 @@ const ProfilePage: React.FC = () => {
         {showWithdrawForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <h3 className="text-lg font-semibold mb-4">Yêu cầu rút tiền</h3>
+              <h3 className="text-lg font-semibold mb-4">Request Withdrawal</h3>
               <form onSubmit={handleWithdrawSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Số tiền rút</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Withdrawal Amount</label>
                   <input
                     type="number"
                     value={withdrawalData.amount}
                     onChange={(e) => setWithdrawalData(prev => ({ ...prev, amount: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Nhập số tiền"
+                    placeholder="Enter amount"
                     min="10000"
-                    max={walletData.balance || 1050000}
+                    max={walletData.balance}
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Số dư khả dụng: {formatCurrency(walletData.balance || 1050000)}
+                    Available balance: {formatCurrency(walletData.balance)}
                   </p>
                 </div>
                 
@@ -829,15 +853,15 @@ const ProfilePage: React.FC = () => {
                     onChange={(e) => setWithdrawalData(prev => ({ ...prev, note: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     rows={3}
-                    placeholder="Nhập ghi chú cho giao dịch..."
+                    placeholder="Enter note..."
                   />
                 </div>
                 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-sm text-blue-800">
-                    <strong>Thông tin chuyển khoản:</strong><br/>
-                    {walletData.bankAccount.bankName || 'Vietcombank'} - {walletData.bankAccount.accountNumber || '****1234'}<br/>
-                    {walletData.bankAccount.accountName || user?.name}
+                    <strong>Bank account information:</strong><br/>
+                    {walletData.bankAccount?.bankName || 'No bank selected'} - {walletData.bankAccount?.accountNumber || 'No account'}<br/>
+                    {walletData.bankAccount?.accountName || user?.name || 'No account name'}
                   </p>
                 </div>
                 
@@ -847,14 +871,14 @@ const ProfilePage: React.FC = () => {
                     onClick={() => setShowWithdrawForm(false)}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                   >
-                    Hủy
+                    Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={withdrawLoading}
                     className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
                   >
-                    {withdrawLoading ? 'Đang gửi...' : 'Gửi yêu cầu'}
+                    {withdrawLoading ? 'Sending...' : 'Send Request'}
                   </button>
                 </div>
               </form>
@@ -866,20 +890,23 @@ const ProfilePage: React.FC = () => {
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Receipt size={20} className="mr-2" />
-            Lịch sử giao dịch
+            Transaction History
           </h3>
           
           <div className="space-y-3">
-            {sampleTransactions.map((transaction) => (
+            {transactions && transactions.map((transaction) => (
               <div key={transaction.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                 <div className="flex items-center space-x-3">
                   <div className={`p-2 rounded-full ${
-                    transaction.type === 'refund' ? 'bg-green-100' : 'bg-blue-100'
+                    transaction.transactionType === 'REFUND' ? 'bg-green-100' : 
+                    transaction.transactionType === 'WITHDRAWAL' ? 'bg-blue-100' : 'bg-gray-100'
                   }`}>
-                    {transaction.type === 'refund' ? (
+                    {transaction.transactionType === 'REFUND' ? (
                       <ArrowDownLeft size={16} className="text-green-600" />
-                    ) : (
+                    ) : transaction.transactionType === 'WITHDRAWAL' ? (
                       <ArrowUpRight size={16} className="text-blue-600" />
+                    ) : (
+                      <ArrowUpRight size={16} className="text-gray-600" />
                     )}
                   </div>
                   <div>
@@ -889,29 +916,32 @@ const ProfilePage: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <p className={`font-semibold ${
-                    transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
+                    transaction.transactionType === 'REFUND' ? 'text-green-600' : 
+                    transaction.transactionType === 'WITHDRAWAL' ? 'text-blue-600' : 'text-gray-600'
                   }`}>
-                    {transaction.amount > 0 ? '+' : ''}{formatCurrency(transaction.amount)}
+                    {transaction.transactionType === 'WITHDRAWAL' ? '-' : 
+                     transaction.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(transaction.amount))}
                   </p>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    transaction.status === 'completed' 
+                    transaction.status === 'COMPLETED' 
                       ? 'bg-green-100 text-green-800' 
-                      : transaction.status === 'pending'
+                      : transaction.status === 'PENDING'
                       ? 'bg-yellow-100 text-yellow-800'
                       : 'bg-red-100 text-red-800'
                   }`}>
-                    {transaction.status === 'completed' ? 'Hoàn thành' : 
-                     transaction.status === 'pending' ? 'Đang xử lý' : 'Thất bại'}
+                    {transaction.status === 'COMPLETED' ? 'Completed' : 
+                     transaction.status === 'PENDING' ? 'Pending' : 
+                     transaction.status === 'FAILED' ? 'Failed' : 'Cancelled'}
                   </span>
                 </div>
               </div>
             ))}
           </div>
 
-          {sampleTransactions.length === 0 && (
+          {(!transactions || transactions.length === 0) && (
             <div className="text-center py-8">
               <Receipt size={48} className="mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500">Chưa có giao dịch nào</p>
+              <p className="text-gray-500">No transaction history</p>
             </div>
           )}
         </div>
@@ -931,7 +961,7 @@ const ProfilePage: React.FC = () => {
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Shield className="h-5 w-5 mr-2 text-blue-600" />
-            Vai trò hiện tại
+            Current Role
           </h3>
           
           <div className="space-y-3">
@@ -946,7 +976,7 @@ const ProfilePage: React.FC = () => {
                     <span className="font-medium text-gray-900">
                       {user.roles[0].name === 'ADMIN' ? 'Administrator' :
                        user.roles[0].name === 'HOST' ? 'Hotel Owner' :
-                       user.roles[0].name === 'USER' ? 'Người dùng' : user.roles[0].name}
+                       user.roles[0].name === 'USER' ? 'User' : user.roles[0].name}
                     </span>
                     <p className="text-sm text-gray-500">{user.roles[0].description}</p>
                   </div>
@@ -955,11 +985,11 @@ const ProfilePage: React.FC = () => {
                   user.roles[0].name === 'ADMIN' ? 'bg-red-100 text-red-800' :
                   user.roles[0].name === 'HOST' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
                 }`}>
-                  Đã kích hoạt
+                  Activated
                 </span>
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-4">Chưa có vai trò nào được gán</p>
+              <p className="text-gray-500 text-center py-4">No roles assigned yet</p>
             )}
           </div>
         </div>
@@ -969,47 +999,47 @@ const ProfilePage: React.FC = () => {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <Shield className="h-5 w-5 mr-2 text-blue-600" />
-              Quyền hạn của vai trò {userRole}
+              Role Permissions for {userRole}
             </h3>
             
             <div className="space-y-3">
               {userRole === 'ADMIN' && (
                 <div className="text-gray-700">
-                  <h4 className="font-medium mb-2 text-red-600">Quyền Administrator (Toàn quyền):</h4>
+                  <h4 className="font-medium mb-2 text-red-600">Administrator (Full Access):</h4>
                   <ul className="list-disc list-inside space-y-1 text-sm">
-                    <li>Quản lý tất cả người dùng và phân quyền</li>
-                    <li>Quản lý tất cả khách sạn và phòng</li>
-                    <li>Xem và quản lý tất cả booking</li>
-                    <li>Quản lý hệ thống và cài đặt</li>
-                    <li>Xem báo cáo và thống kê toàn hệ thống</li>
-                    <li>Tất cả quyền của HOST và USER</li>
+                    <li>Manage all users and permissions</li>
+                    <li>Manage all hotels and rooms</li>
+                    <li>View and manage all bookings</li>
+                    <li>Manage system and settings</li>
+                    <li>View and manage all reports and statistics</li>
+                    <li>All permissions of HOST and USER</li>
                   </ul>
                 </div>
               )}
               
               {userRole === 'HOST' && (
                 <div className="text-gray-700">
-                  <h4 className="font-medium mb-2 text-green-600">Quyền Hotel Owner:</h4>
+                  <h4 className="font-medium mb-2 text-green-600">Hotel Owner:</h4>
                   <ul className="list-disc list-inside space-y-1 text-sm">
-                    <li>Đăng tải và quản lý khách sạn của bạn</li>
-                    <li>Tạo và quản lý các loại phòng</li>
-                    <li>Nhận và quản lý booking từ khách hàng</li>
-                    <li>Xem thống kê doanh thu và báo cáo</li>
-                    <li>Nhận hoa hồng từ mỗi booking thành công</li>
-                    <li>Tất cả quyền của USER</li>
+                    <li>Upload and manage your own hotels</li>
+                    <li>Create and manage different room types</li>
+                    <li>Receive and manage bookings from customers</li>
+                    <li>View detailed revenue and reporting</li>
+                    <li>Receive commission from each successful booking</li>
+                    <li>All permissions of USER</li>
                   </ul>
                 </div>
               )}
               
               {userRole === 'USER' && (
                 <div className="text-gray-700">
-                  <h4 className="font-medium mb-2 text-blue-600">Quyền User:</h4>
+                  <h4 className="font-medium mb-2 text-blue-600">User:</h4>
                   <ul className="list-disc list-inside space-y-1 text-sm">
-                    <li>Tìm kiếm và đặt phòng khách sạn</li>
-                    <li>Quản lý booking cá nhân</li>
-                    <li>Viết và quản lý đánh giá</li>
-                    <li>Cập nhật thông tin cá nhân</li>
-                    <li>Sử dụng voucher giảm giá</li>
+                    <li>Search and book hotels</li>
+                    <li>Manage personal bookings</li>
+                    <li>Write and manage reviews</li>
+                    <li>Update personal information</li>
+                    <li>Use vouchers</li>
                   </ul>
                 </div>
               )}
@@ -1031,9 +1061,9 @@ const ProfilePage: React.FC = () => {
                 <ul className="list-disc list-inside space-y-1 text-sm">
                   <li>Upload and manage your own hotels</li>
                   <li>Receive and manage bookings from customers</li>
-                  <li>Tạo và quản lý các loại phòng khác nhau</li>
-                  <li>Xem thống kê doanh thu và báo cáo chi tiết</li>
-                  <li>Nhận hoa hồng từ mỗi booking thành công</li>
+                  <li>Create and manage different room types</li>
+                  <li>View detailed revenue and reporting</li>
+                  <li>Receive commission from each successful booking</li>
                 </ul>
               </div>
 
@@ -1042,10 +1072,10 @@ const ProfilePage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center text-amber-600">
                       <Clock className="h-5 w-5 mr-2" />
-                      <span className="font-medium">Yêu cầu đang chờ phê duyệt</span>
+                      <span className="font-medium">Request is pending approval</span>
                     </div>
                     <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-sm font-medium">
-                      Chờ duyệt
+                      Pending approval
                     </span>
                   </div>
                 ) : (
@@ -1057,7 +1087,7 @@ const ProfilePage: React.FC = () => {
                     {hostRequestLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Đang gửi yêu cầu...
+                        Sending request...
                       </>
                     ) : (
                       <>
@@ -1077,10 +1107,10 @@ const ProfilePage: React.FC = () => {
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
               <Shield className="h-5 w-5 mr-2 text-red-600" />
-              Quyền Quản trị viên
+                  Administrator (Full Access)
             </h3>
             <p className="text-gray-700">
-              Bạn có quyền quản trị toàn bộ hệ thống. Vui lòng sử dụng quyền này một cách có trách nhiệm.
+              You have full access to the system. Please use this role responsibly.
             </p>
           </div>
         )}
@@ -1093,8 +1123,8 @@ const ProfilePage: React.FC = () => {
       <div className="text-gray-400 mb-4">
         <BookOpen size={48} className="mx-auto" />
       </div>
-      <h3 className="text-lg font-medium text-gray-900 mb-2">Tính năng đang phát triển</h3>
-      <p className="text-gray-500">Tab này sẽ được hoàn thiện trong phiên bản tiếp theo.</p>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">Feature in Development</h3>
+      <p className="text-gray-500">This tab will be completed in the next version.</p>
     </div>
   );
 
@@ -1103,7 +1133,7 @@ const ProfilePage: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Tài khoản của tôi</h1>
+          <h1 className="text-3xl font-bold text-gray-900">My Account</h1>
                       <p className="text-gray-600 mt-2">Manage your personal information and activities</p>
         </div>
 

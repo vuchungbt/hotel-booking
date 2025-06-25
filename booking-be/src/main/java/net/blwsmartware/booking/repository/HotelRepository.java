@@ -205,5 +205,16 @@ public interface HotelRepository extends JpaRepository<Hotel, UUID> {
     
     @Query("SELECT COALESCE(SUM(h.commissionEarned), 0) FROM Hotel h WHERE h.isActive = true")
     BigDecimal getTotalCommissionEarned();
+    
+    // Host specific queries
+    List<Hotel> findByOwnerIdAndIsActiveTrueOrderByCreatedAtDesc(UUID ownerId);
+    
+    // ===== CITY STATISTICS QUERIES =====
+    @Query("SELECT h.city as cityName, COUNT(h) as hotelCount " +
+           "FROM Hotel h " +
+           "WHERE h.isActive = true AND h.city IS NOT NULL AND h.city != '' " +
+           "GROUP BY h.city " +
+           "ORDER BY COUNT(h) DESC")
+    List<Object[]> findTopCitiesByHotelCount(Pageable pageable);
 
 }

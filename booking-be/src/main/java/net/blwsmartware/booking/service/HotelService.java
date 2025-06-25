@@ -2,8 +2,10 @@ package net.blwsmartware.booking.service;
 
 import net.blwsmartware.booking.dto.request.HotelCreateRequest;
 import net.blwsmartware.booking.dto.request.HotelUpdateRequest;
+import net.blwsmartware.booking.dto.response.CityStatsResponse;
 import net.blwsmartware.booking.dto.response.DataResponse;
 import net.blwsmartware.booking.dto.response.HotelResponse;
+import net.blwsmartware.booking.dto.response.HostDashboardResponse;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -16,6 +18,7 @@ public interface HotelService {
     DataResponse<HotelResponse> getAllHotelsWithFilters(
             String city, String country, Integer starRating, Boolean isActive, Boolean isFeatured,
             BigDecimal minPrice, BigDecimal maxPrice, Integer pageNumber, Integer pageSize, String sortBy);
+    HotelResponse getHotelByIdForAdmin(UUID id);
     HotelResponse createHotelByAdmin(HotelCreateRequest request);
     HotelResponse updateHotelByAdmin(UUID id, HotelUpdateRequest request);
     void deleteHotelByAdmin(UUID id);
@@ -44,6 +47,7 @@ public interface HotelService {
     // Host Statistics
     Long getMyHotelsCount();
     Long getMyActiveHotelsCount();
+    List<HostDashboardResponse.HotelPerformance> getHostTopPerformingHotels(UUID hostId, int limit);
     
     // ===== PUBLIC OPERATIONS =====
     HotelResponse getHotelById(UUID id);
@@ -62,6 +66,9 @@ public interface HotelService {
     
     // Get available amenities
     List<String> getAvailableAmenities();
+    
+    // Get top cities by hotel count for homepage
+    List<CityStatsResponse> getTopCitiesByHotelCount(int limit);
     
     // ===== UTILITY METHODS =====
     boolean isHotelNameExistsInCity(String name, String city);

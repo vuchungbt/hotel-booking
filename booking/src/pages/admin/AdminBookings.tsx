@@ -135,7 +135,7 @@ const AdminBookings: React.FC = () => {
           bookings: sortedBookings,
           totalPages: result.totalPages,
           totalElements: result.totalElements,
-          currentPage: result.number,
+          currentPage: result.pageNumber,
           loading: false
         }));
       }
@@ -734,7 +734,7 @@ const AdminBookings: React.FC = () => {
             {state.totalElements} bookings • Page {state.currentPage + 1} / {state.totalPages}
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        {/* <div className="flex items-center space-x-3">
           <button
             onClick={handleRefresh}
             disabled={state.loading}
@@ -750,13 +750,13 @@ const AdminBookings: React.FC = () => {
             <FileSpreadsheet size={16} className="mr-2" />
             Export Excel
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex-1 relative">
+          <div className="flex-1 relative"> 
             <input
               type="text"
               placeholder="Search by booking code, guest name, email, hotel..."

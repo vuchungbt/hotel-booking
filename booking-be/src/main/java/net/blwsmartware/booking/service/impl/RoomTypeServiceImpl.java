@@ -265,6 +265,13 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     }
     
     @Override
+    @IsHost
+    public Long getMyRoomTypesCount() {
+        UUID hostId = getCurrentUserId();
+        return roomTypeRepository.countByHostId(hostId);
+    }
+    
+    @Override
     public boolean isRoomTypeNameExistsForHotel(String name, UUID hotelId) {
         Hotel hotel = hotelRepository.findById(hotelId)
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.HOTEL_NOT_FOUND));

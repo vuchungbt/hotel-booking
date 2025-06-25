@@ -3,6 +3,7 @@ package net.blwsmartware.booking.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -18,6 +19,7 @@ public class UserResponse {
     boolean isActive;
     boolean emailVerified;
     boolean hostRequested;
+    BigDecimal walletBalance;
     String tel,address;
     LocalDate dob;
     Instant createAt;

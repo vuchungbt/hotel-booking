@@ -14,7 +14,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import EmailVerificationPage from './pages/EmailVerificationPage';
 import ProfilePage from './pages/ProfilePage';
 import AboutPage from './pages/AboutPage';
-import ContactPage from './pages/ContactPage';
+
 import HotelsPage from './pages/HotelsPage';
 import HotelDetailPage from './pages/HotelDetailPage';
 import BookingHistoryPage from './pages/BookingHistoryPage';
@@ -34,6 +34,7 @@ import AdminPromotions from './pages/admin/AdminPromotions';
 
 import AdminBookings from './pages/admin/AdminBookings';
 import AdminBookingDetail from './pages/admin/AdminBookingDetail';
+import AdminWithdrawals from './pages/admin/AdminWithdrawals';
 import AdminHotels from './pages/admin/AdminHotels';
 import AdminHotelDetail from './pages/admin/AdminHotelDetail';
 import AdminHotelAdd from './pages/admin/AdminHotelAdd';
@@ -47,7 +48,7 @@ import AdminUserDetail from './pages/admin/AdminUserDetail';
 import AdminUserEdit from './pages/admin/AdminUserEdit';
 import AdminUserAdd from './pages/admin/AdminUserAdd';
 import AdminReviews from './pages/admin/AdminReviews';
-import AdminSettings from './pages/admin/AdminSettings';
+
 
 // Host pages
 import HostDashboard from './pages/host/HostDashboard';
@@ -120,7 +121,7 @@ function App() {
             <Route path="/reset-password" element={<PublicLayout><ResetPasswordPage /></PublicLayout>} />
             <Route path="/email-verification" element={<PublicLayout><EmailVerificationPage /></PublicLayout>} />
             <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
-            <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
+
             <Route path="/hotels" element={<PublicLayout><HotelsPage /></PublicLayout>} />
             <Route path="/hotels/:id" element={<PublicLayout><HotelDetailPage /></PublicLayout>} />
 
@@ -199,6 +200,11 @@ function App() {
                 <DashboardLayout type="admin"><AdminBookingDetail /></DashboardLayout>
               </ProtectedRoute>
             } />
+            <Route path="/admin/withdrawals" element={
+              <ProtectedRoute requiredRole="ADMIN">
+                <DashboardLayout type="admin"><AdminWithdrawals /></DashboardLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/admin/hotels" element={
               <ProtectedRoute requiredRole="ADMIN">
                 <DashboardLayout type="admin"><AdminHotels /></DashboardLayout>
@@ -264,11 +270,7 @@ function App() {
                 <DashboardLayout type="admin"><AdminReviews /></DashboardLayout>
               </ProtectedRoute>
             } />
-            <Route path="/admin/settings" element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <DashboardLayout type="admin"><AdminSettings /></DashboardLayout>
-              </ProtectedRoute>
-            } />
+
 
             {/* Host routes - require HOST role */}
             <Route path="/host" element={

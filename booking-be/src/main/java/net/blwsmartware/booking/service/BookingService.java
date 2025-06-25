@@ -5,10 +5,13 @@ import net.blwsmartware.booking.dto.request.BookingUpdateRequest;
 import net.blwsmartware.booking.dto.request.CancellationRequest;
 import net.blwsmartware.booking.dto.response.BookingResponse;
 import net.blwsmartware.booking.dto.response.DataResponse;
+import net.blwsmartware.booking.dto.response.HostDashboardResponse;
 import net.blwsmartware.booking.enums.BookingStatus;
 import net.blwsmartware.booking.enums.PaymentStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public interface BookingService {
@@ -43,6 +46,20 @@ public interface BookingService {
     Long getBookingsCountByPaymentStatus(PaymentStatus paymentStatus);
     Long getHostBookingsCount();
     Long getHostBookingsCountByStatus(BookingStatus status);
+    
+    // ===== HOST DASHBOARD METHODS =====
+    BigDecimal getHostTotalRevenue();
+    BigDecimal getHostMonthlyRevenue();
+    Double getHostOccupancyRate();
+    Long getHostBookingsCountByDateRange(UUID hostId, LocalDate startDate, LocalDate endDate);
+    BigDecimal getHostRevenueByDateRange(UUID hostId, LocalDate startDate, LocalDate endDate);
+    BigDecimal getHostTotalCommission();
+    BigDecimal getHostCommissionByDateRange(UUID hostId, LocalDate startDate, LocalDate endDate);
+    List<HostDashboardResponse.RecentBooking> getHostRecentBookings(UUID hostId, int limit);
+    List<HostDashboardResponse.MonthlyData> getHostMonthlyRevenueData(UUID hostId, int months);
+    List<HostDashboardResponse.MonthlyData> getHostMonthlyBookingData(UUID hostId, int months);
+    List<HostDashboardResponse.MonthlyData> getHostMonthlyAnalytics(UUID hostId, LocalDate startDate, LocalDate endDate);
+    
     // ===== UTILITY METHODS =====
     boolean isRoomAvailable(UUID roomTypeId, LocalDate checkInDate, LocalDate checkOutDate);
     boolean isRoomAvailable(UUID roomTypeId, LocalDate checkInDate, LocalDate checkOutDate, UUID excludeBookingId);

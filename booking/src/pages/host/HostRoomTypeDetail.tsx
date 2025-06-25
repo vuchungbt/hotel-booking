@@ -25,7 +25,7 @@ const HostRoomTypeDetail: React.FC = () => {
       setRoomType(response.data.result);
     } catch (error) {
       console.error('Error fetching room type:', error);
-      showToast('error', 'Lỗi khi tải thông tin loại phòng');
+      showToast('error', 'Failed to load room type information');
       navigate('/host/room-types');
     } finally {
       setLoading(false);
@@ -39,18 +39,18 @@ const HostRoomTypeDetail: React.FC = () => {
   const handleDelete = async () => {
     if (!roomType) return;
 
-    if (!confirm(`Bạn có chắc chắn muốn xóa loại phòng "${roomType.name}"?`)) {
+    if (!confirm(`Are you sure you want to delete room type "${roomType.name}"?`)) {
       return;
     }
 
     try {
       setDeleteLoading(true);
       await hostRoomTypeAPI.deleteMyRoomType(id!);
-      showToast('success', 'Xóa loại phòng thành công');
+      showToast('success', 'Room type deleted successfully');
       navigate('/host/room-types');
     } catch (error) {
       console.error('Error deleting room type:', error);
-      showToast('error', 'Lỗi khi xóa loại phòng');
+      showToast('error', 'Failed to delete room type');
     } finally {
       setDeleteLoading(false);
     }
@@ -70,12 +70,12 @@ const HostRoomTypeDetail: React.FC = () => {
 
   const getBedTypeText = (bedType: string) => {
     const bedTypes: Record<string, string> = {
-      'Single': 'Giường đơn',
-      'Double': 'Giường đôi',
-      'Queen': 'Giường Queen',
-      'King': 'Giường King',
-      'Twin': 'Giường đôi riêng biệt',
-      'Sofa Bed': 'Giường sofa'
+      'Single': 'Single Bed',
+      'Double': 'Double Bed',
+      'Queen': 'Queen Bed',
+      'King': 'King Bed',
+      'Twin': 'Twin Beds',
+      'Sofa Bed': 'Sofa Bed'
     };
     return bedTypes[bedType] || bedType;
   };
@@ -97,14 +97,14 @@ const HostRoomTypeDetail: React.FC = () => {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900">Không tìm thấy loại phòng</h2>
-            <p className="mt-2 text-gray-600">Loại phòng không tồn tại hoặc bạn không có quyền truy cập.</p>
+            <h2 className="text-2xl font-bold text-gray-900">Room type not found</h2>
+            <p className="mt-2 text-gray-600">The room type does not exist or you do not have access permission.</p>
             <button
               onClick={() => navigate('/host/room-types')}
               className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Quay lại
+              Go Back
             </button>
           </div>
         </div>
@@ -127,7 +127,7 @@ const HostRoomTypeDetail: React.FC = () => {
               </button>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">{roomType.name}</h1>
-                <p className="mt-2 text-gray-600">Chi tiết loại phòng</p>
+                <p className="mt-2 text-gray-600">Room type details</p>
               </div>
             </div>
             <div className="flex space-x-3">
@@ -136,7 +136,7 @@ const HostRoomTypeDetail: React.FC = () => {
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
               >
                 <Edit className="h-4 w-4 mr-2" />
-                Chỉnh sửa
+                Edit
               </button>
               <button
                 onClick={handleDelete}
@@ -146,12 +146,12 @@ const HostRoomTypeDetail: React.FC = () => {
                 {deleteLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Đang xóa...
+                    Deleting...
                   </>
                 ) : (
                   <>
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Xóa
+                    Delete
                   </>
                 )}
               </button>
@@ -179,37 +179,37 @@ const HostRoomTypeDetail: React.FC = () => {
                 <div className="p-2 bg-blue-100 rounded-lg mr-3">
                   <Bed className="h-5 w-5 text-blue-600" />
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900">Thông tin cơ bản</h2>
+                <h2 className="text-xl font-semibold text-gray-900">Basic Information</h2>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên loại phòng</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Room type name</label>
                   <p className="text-gray-900">{roomType.name}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Loại giường</label>
-                  <p className="text-gray-900">{roomType.bedType ? getBedTypeText(roomType.bedType) : 'Chưa cập nhật'}</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Bed type</label>
+                  <p className="text-gray-900">{roomType.bedType ? getBedTypeText(roomType.bedType) : 'Not updated'}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sức chứa tối đa</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Max occupancy</label>
                   <div className="flex items-center">
                     <Users className="h-4 w-4 text-gray-400 mr-2" />
-                    <p className="text-gray-900">{roomType.maxOccupancy} người</p>
+                    <p className="text-gray-900">{roomType.maxOccupancy} people</p>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Diện tích</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Room size</label>
                   <div className="flex items-center">
                     <Home className="h-4 w-4 text-gray-400 mr-2" />
-                    <p className="text-gray-900">{roomType.roomSize ? `${roomType.roomSize} m²` : 'Chưa cập nhật'}</p>
+                    <p className="text-gray-900">{roomType.roomSize ? `${roomType.roomSize} m²` : 'Not updated'}</p>
                   </div>
                 </div>
               </div>
 
               {roomType.description && (
                 <div className="mt-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Mô tả</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                   <p className="text-gray-900 whitespace-pre-wrap">{roomType.description}</p>
                 </div>
               )}
@@ -222,7 +222,7 @@ const HostRoomTypeDetail: React.FC = () => {
                   <div className="p-2 bg-green-100 rounded-lg mr-3">
                     <Tag className="h-5 w-5 text-green-600" />
                   </div>
-                  <h2 className="text-xl font-semibold text-gray-900">Tiện nghi</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">Amenities</h2>
                 </div>
                 
                 <div className="flex flex-wrap gap-2">
@@ -247,7 +247,7 @@ const HostRoomTypeDetail: React.FC = () => {
                 <div className="p-2 bg-yellow-100 rounded-lg mr-3">
                   <Building className="h-5 w-5 text-yellow-600" />
                 </div>
-                <h2 className="text-lg font-semibold text-gray-900">Khách sạn</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Hotel</h2>
               </div>
               <p className="text-gray-900 font-medium">{roomType.hotelName}</p>
             </div>
@@ -258,26 +258,26 @@ const HostRoomTypeDetail: React.FC = () => {
                 <div className="p-2 bg-purple-100 rounded-lg mr-3">
                   <DollarSign className="h-5 w-5 text-purple-600" />
                 </div>
-                <h2 className="text-lg font-semibold text-gray-900">Giá & Số lượng</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Price & Availability</h2>
               </div>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Giá mỗi đêm</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price per night</label>
                   <p className="text-2xl font-bold text-green-600">{formatCurrency(roomType.pricePerNight)}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Số phòng</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Total rooms</label>
                   <div className="flex justify-between">
-                    <span className="text-gray-900">Tổng cộng:</span>
+                    <span className="text-gray-900">Total:</span>
                     <span className="font-medium">{roomType.totalRooms}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-900">Có sẵn:</span>
+                    <span className="text-gray-900">Available:</span>
                     <span className="font-medium text-green-600">{roomType.availableRooms}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-900">Đã đặt:</span>
+                    <span className="text-gray-900">Booked:</span>
                     <span className="font-medium text-orange-600">{roomType.totalRooms - roomType.availableRooms}</span>
                   </div>
                 </div>
@@ -290,16 +290,16 @@ const HostRoomTypeDetail: React.FC = () => {
                 <div className="p-2 bg-gray-100 rounded-lg mr-3">
                   <Calendar className="h-5 w-5 text-gray-600" />
                 </div>
-                <h2 className="text-lg font-semibold text-gray-900">Thông tin</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Audit Information</h2>
               </div>
               
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Ngày tạo:</span>
+                  <span className="text-gray-600">Created date:</span>
                   <span className="text-gray-900">{formatDate(roomType.createdAt)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Cập nhật lần cuối:</span>
+                  <span className="text-gray-600">Last updated:</span>
                   <span className="text-gray-900">{formatDate(roomType.updatedAt)}</span>
                 </div>
                 <div className="flex justify-between">

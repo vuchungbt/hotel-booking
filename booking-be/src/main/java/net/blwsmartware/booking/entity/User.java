@@ -9,6 +9,7 @@ import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Date;
@@ -53,6 +54,10 @@ public class User {
 
     @Builder.Default
     boolean hostRequested=false;
+
+    @Column(name = "wallet_balance", precision = 12, scale = 2)
+    @Builder.Default
+    BigDecimal walletBalance = BigDecimal.ZERO;
 
     String code;
 

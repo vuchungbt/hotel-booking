@@ -15,12 +15,17 @@ const HostDashboard: React.FC = () => {
     activeHotels: 0,
     totalRoomTypes: 0,
     totalBookings: 0,
+    pendingBookings: 0,
+    confirmedBookings: 0,
+    cancelledBookings: 0,
+    completedBookings: 0,
     monthlyRevenue: 0,
+    totalRevenue: 0,
+    averageBookingValue: 0,
+    totalCommission: 0,
     averageRating: 0,
     occupancyRate: 0,
-    totalReviews: 0,
-    pendingBookings: 0,
-    confirmedBookings: 0
+    totalReviews: 0
   });
   
   const [loading, setLoading] = useState(true);
@@ -35,6 +40,15 @@ const HostDashboard: React.FC = () => {
     totalBookings: 0,
     averageBookingValue: 0,
     totalCommission: 0
+  });
+  
+  // Monthly chart data states
+  const [monthlyData, setMonthlyData] = useState<{
+    monthlyRevenue: Array<{ month: string; value: number; }>;
+    monthlyBookings: Array<{ month: string; value: number; }>;
+  }>({
+    monthlyRevenue: [],
+    monthlyBookings: []
   });
   
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
@@ -54,11 +68,20 @@ const HostDashboard: React.FC = () => {
     try {
       setLoading(true);
 
-      // Try to get full dashboard data first, fallback to individual API calls
+      // Try to get full dashboard data first
       try {
         const dashboardResponse = await hostAPI.getDashboard();
         if (dashboardResponse.data.success) {
-          setDashboardData(dashboardResponse.data.result);
+          const data = dashboardResponse.data.result;
+          setDashboardData(data);
+          // Also update revenue data with commission from main dashboard
+          setRevenueData(prev => ({
+            ...prev,
+            totalRevenue: data.totalRevenue || 0,
+            totalBookings: data.totalBookings || 0,
+            averageBookingValue: data.averageBookingValue || 0,
+            totalCommission: data.totalCommission || 0
+          }));
           return;
         }
       } catch (error) {
@@ -75,15 +98,19 @@ const HostDashboard: React.FC = () => {
         ...prev,
         totalHotels: hotelStatsResponse.data.result || 0,
         activeHotels: myHotelsResponse.data.result || 0,
-        // For now, use placeholder values for booking/revenue data
-        // These will be replaced when booking APIs are implemented
+        // Default values for booking/revenue data when API fails
         totalBookings: 0,
+        pendingBookings: 0,
+        confirmedBookings: 0,
+        cancelledBookings: 0,
+        completedBookings: 0,
         monthlyRevenue: 0,
+        totalRevenue: 0,
+        averageBookingValue: 0,
+        totalCommission: 0,
         averageRating: 0,
         occupancyRate: 0,
-        totalReviews: 0,
-        pendingBookings: 0,
-        confirmedBookings: 0
+        totalReviews: 0
       }));
 
     } catch (error: any) {
@@ -99,8 +126,48 @@ const HostDashboard: React.FC = () => {
     try {
       setAnalyticsLoading(true);
       
-      // TODO: Replace with actual host analytics API
-      // For now, use sample data
+      try {
+        const analyticsResponse = await hostAPI.getAnalytics(startDate, endDate);
+        if (analyticsResponse.data.success) {
+          const data = analyticsResponse.data.result;
+          setRevenueData({
+            totalRevenue: data.totalRevenue || 0,
+            totalBookings: data.totalBookings || 0,
+            averageBookingValue: data.averageBookingValue || 0,
+            totalCommission: data.totalCommission || 0
+          });
+          
+          // Process monthly data for charts
+          if (data.monthlyRevenueData && data.monthlyBookingData) {
+            console.log('Host Analytics Monthly Data:', {
+              monthlyRevenueData: data.monthlyRevenueData,
+              monthlyBookingData: data.monthlyBookingData
+            });
+            
+            setMonthlyData({
+              monthlyRevenue: data.monthlyRevenueData.map(item => ({
+                month: formatMonthLabel(item.month),
+                value: item.revenue
+              })),
+              monthlyBookings: data.monthlyBookingData.map(item => ({
+                month: formatMonthLabel(item.month),
+                value: item.bookings
+              }))
+            });
+          } else {
+            console.log('No monthly data received from API');
+            setMonthlyData({
+              monthlyRevenue: [],
+              monthlyBookings: []
+            });
+          }
+          return;
+        }
+      } catch (error) {
+        console.log('Analytics API not available, using sample data...');
+      }
+      
+      // Fallback: Use sample data
       setRevenueData({
         totalRevenue: 150000000,
         totalBookings: 45,
@@ -127,6 +194,16 @@ const HostDashboard: React.FC = () => {
     }
   }, [startDate, endDate]);
 
+  // Debug effect to log monthly data changes
+  useEffect(() => {
+    console.log('Monthly Data Updated:', {
+      monthlyRevenue: monthlyData.monthlyRevenue,
+      monthlyBookings: monthlyData.monthlyBookings,
+      revenueCount: monthlyData.monthlyRevenue.length,
+      bookingsCount: monthlyData.monthlyBookings.length
+    });
+  }, [monthlyData]);
+
   // Handle date filter
   const handleDateFilter = () => {
     if (!startDate || !endDate) {
@@ -145,6 +222,13 @@ const HostDashboard: React.FC = () => {
 
   const formatCurrency = (amount: number) => {
     return amount.toLocaleString('vi-VN') + 'đ';
+  };
+
+  // Format month string for display (e.g., "2024-01" -> "T1 2024")
+  const formatMonthLabel = (monthStr: string) => {
+    if (!monthStr) return '';
+    const [year, month] = monthStr.split('-');
+    return `T${parseInt(month)} ${year}`;
   };
 
   // Basic stats from API
@@ -184,12 +268,12 @@ const HostDashboard: React.FC = () => {
       color: 'purple',
       description: 'Average rating score'
     },
-    { 
-      label: 'Occupancy Rate', 
-      value: dashboardData.occupancyRate + '%', 
-      icon: TrendingUp,
-      color: 'orange',
-      description: 'Current occupancy rate'
+    {
+      label: 'Bookings',
+      value: revenueData.totalBookings.toLocaleString(),
+      icon: BookOpen,
+      color: 'green',
+      description: 'Total number of bookings'
     }
   ];
 
@@ -204,13 +288,6 @@ const HostDashboard: React.FC = () => {
       span: 'col-span-1 sm:col-span-2'
     },
     {
-      label: 'Bookings',
-      value: revenueData.totalBookings.toLocaleString(),
-      icon: BookOpen,
-      color: 'green',
-      description: `Total number of bookings`
-    }, 
-    {
       label: 'Avg Booking Value',
       value: formatCurrency(revenueData.averageBookingValue),
       icon: TrendingUp,
@@ -223,7 +300,8 @@ const HostDashboard: React.FC = () => {
       value: formatCurrency(revenueData.totalCommission),
       icon: Percent,
       color: 'purple',
-      description: `Total commission paid to system`
+      description: `Total commission paid to system`,
+      span: 'col-span-1 sm:col-span-2'
     }
   ];
 
@@ -240,6 +318,71 @@ const HostDashboard: React.FC = () => {
       red: { bg: 'bg-red-50', text: 'text-red-600', icon: 'text-red-500' }
     };
     return colorMap[color] || colorMap.blue;
+  };
+
+  // Enhanced chart component with tooltips and better styling
+  const EnhancedBarChart = ({ data, labels, color, title, formatValue }: { 
+    data: number[], 
+    labels: string[], 
+    color: string,
+    title: string,
+    formatValue?: (value: number) => string
+  }) => {
+    const maxValue = Math.max(...data, 1); // Avoid division by zero
+    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    
+    return (
+      <div className="relative">
+        <div className="flex h-48 items-end space-x-1 px-2">
+          {data.map((value, index) => (
+            <div 
+              key={index} 
+              className="flex flex-col items-center flex-1 relative group"
+              onMouseEnter={() => setHoveredIndex(index)}
+              onMouseLeave={() => setHoveredIndex(null)}
+            >
+              {/* Tooltip */}
+              {hoveredIndex === index && (
+                <div className="absolute bottom-full mb-2 bg-gray-800 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap z-10 shadow-lg">
+                  <div className="font-semibold">{labels[index]}</div>
+                  <div>{formatValue ? formatValue(value) : value.toLocaleString()}</div>
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                </div>
+              )}
+              
+              {/* Bar */}
+              <div 
+                className={`w-full ${color} rounded-t-lg transition-all duration-300 hover:opacity-90 cursor-pointer shadow-sm`} 
+                style={{ 
+                  height: `${Math.max((value / maxValue) * 100, 2)}%`,
+                  minHeight: value > 0 ? '4px' : '0px'
+                }}
+              >
+                {/* Value label on top of bar */}
+                {value > 0 && (
+                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-medium text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {formatValue ? formatValue(value) : value}
+                  </div>
+                )}
+              </div>
+              
+              {/* Month label */}
+              <div className="text-xs mt-2 text-gray-600 font-medium">{labels[index]}</div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Chart title and stats */}
+        <div className="mt-4 pt-3 border-t border-gray-100">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-500">Total:</span>
+            <span className="font-semibold text-gray-900">
+              {formatValue ? formatValue(data.reduce((a, b) => a + b, 0)) : data.reduce((a, b) => a + b, 0).toLocaleString()}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
   };
 
 
@@ -470,7 +613,7 @@ const HostDashboard: React.FC = () => {
         </div>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Revenue Chart */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
@@ -482,12 +625,26 @@ const HostDashboard: React.FC = () => {
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
               )}
             </div>
-            <div className="flex h-48 items-center justify-center bg-gray-50 rounded-lg">
-              <div className="text-center text-gray-500">
-                <TrendingUp className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p>Revenue chart will be implemented with real data</p>
+            {analyticsLoading ? (
+              <div className="h-48 flex items-center justify-center">
+                <div className="animate-pulse space-y-2 w-full">
+                  <div className="flex space-x-2 h-32 items-end">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="bg-gray-200 rounded flex-1" style={{height: `${Math.random() * 80 + 20}%`}}></div>
+                    ))}
+                  </div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <EnhancedBarChart 
+                data={monthlyData.monthlyRevenue.map(item => Number(item.value)) || []} 
+                labels={monthlyData.monthlyRevenue.map(item => item.month) || []} 
+                color="bg-gradient-to-t from-blue-400 to-blue-600"
+                title="Monthly Revenue"
+                formatValue={formatCurrency}
+              />
+            )}
           </div>
 
           {/* Bookings Chart */}
@@ -501,33 +658,30 @@ const HostDashboard: React.FC = () => {
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-500 border-t-transparent"></div>
               )}
             </div>
-            <div className="flex h-48 items-center justify-center bg-gray-50 rounded-lg">
-              <div className="text-center text-gray-500">
-                <BookOpen className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p>Bookings chart will be implemented with real data</p>
+            {analyticsLoading ? (
+              <div className="h-48 flex items-center justify-center">
+                <div className="animate-pulse space-y-2 w-full">
+                  <div className="flex space-x-2 h-32 items-end">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="bg-gray-200 rounded flex-1" style={{height: `${Math.random() * 80 + 20}%`}}></div>
+                    ))}
+                  </div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* Occupancy Chart */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold flex items-center">
-                <Hotel className="h-5 w-5 mr-2 text-purple-500" />
-                Monthly Occupancy
-              </h3>
-              {analyticsLoading && (
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-500 border-t-transparent"></div>
-              )}
-            </div>
-            <div className="flex h-48 items-center justify-center bg-gray-50 rounded-lg">
-              <div className="text-center text-gray-500">
-                <Hotel className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p>Occupancy chart will be implemented with real data</p>
-              </div>
-            </div>
+            ) : (
+              <EnhancedBarChart 
+                data={monthlyData.monthlyBookings.map(item => Number(item.value)) || []} 
+                labels={monthlyData.monthlyBookings.map(item => item.month) || []} 
+                color="bg-gradient-to-t from-green-400 to-green-600"
+                title="Monthly Bookings"
+                formatValue={(value) => value.toLocaleString() + ' bookings'}
+              />
+            )}
           </div>
         </div>
+
+
 
 
       </div>

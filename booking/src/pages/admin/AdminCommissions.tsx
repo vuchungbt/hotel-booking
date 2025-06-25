@@ -95,11 +95,11 @@ const AdminCommissions: React.FC = () => {
           setNewCommissionRate(15);
           
           // Show success message
-          alert(`Đã cập nhật tỷ lệ hoa hồng thành ${newCommissionRate}%`);
+          alert(`Commission rate updated to ${newCommissionRate}%`);
         }
       } catch (error) {
         console.error('Failed to update commission rate:', error);
-        alert('Có lỗi xảy ra khi cập nhật tỷ lệ hoa hồng');
+        alert('An error occurred while updating the commission rate');
       }
     }
   };
@@ -122,7 +122,7 @@ const AdminCommissions: React.FC = () => {
       <div className="w-full flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Đang tải dữ liệu...</p>
+          <p className="mt-4 text-gray-600">Loading data...</p>
         </div>
       </div>
     );
@@ -132,8 +132,8 @@ const AdminCommissions: React.FC = () => {
     <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold">Quản lý tỷ lệ hoa hồng khách sạn</h1>
-          <p className="text-gray-600 mt-1">Cập nhật tỷ lệ hoa hồng cho từng khách sạn (mặc định: 15%)</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Hotel Commission Rate Management</h1>
+          <p className="text-gray-600 mt-1">Update commission rates for each hotel (default: 15%)</p>
         </div>
       </div>
 
@@ -143,7 +143,7 @@ const AdminCommissions: React.FC = () => {
           <div className="flex-1 relative">
             <input
               type="text"
-              placeholder="Tìm kiếm theo tên khách sạn, chủ sở hữu, địa điểm..."
+              placeholder="Search by hotel name, owner, location..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -157,10 +157,10 @@ const AdminCommissions: React.FC = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="active">Đang hoạt động</option>
-              <option value="inactive">Ngừng hoạt động</option>
-              <option value="featured">Nổi bật</option>
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="featured">Featured</option>
             </select>
           </div>
         </div>
@@ -173,22 +173,22 @@ const AdminCommissions: React.FC = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Khách sạn
+                  Hotel
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Chủ sở hữu
+                  Owner
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Địa điểm
+                  Location
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tỷ lệ hoa hồng
+                  Commission Rate
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
+                  Status
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
+                  Action
                 </th>
               </tr>
             </thead>
@@ -202,7 +202,7 @@ const AdminCommissions: React.FC = () => {
                         <div className="text-sm font-medium text-gray-900">{hotel.name}</div>
                         {hotel.featured && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 mt-1">
-                            Nổi bật
+                            Featured
                           </span>
                         )}
                       </div>
@@ -237,14 +237,14 @@ const AdminCommissions: React.FC = () => {
                         <button
                           onClick={handleSaveCommissionRate}
                           className="text-green-600 hover:text-green-900"
-                          title="Lưu"
+                          title="Save"
                         >
                           <Check size={16} />
                         </button>
                         <button
                           onClick={handleCancelCommissionEdit}
                           className="text-red-600 hover:text-red-900"
-                          title="Hủy"
+                          title="Cancel"
                         >
                           <X size={16} />
                         </button>
@@ -262,7 +262,7 @@ const AdminCommissions: React.FC = () => {
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-red-100 text-red-800'
                     }`}>
-                      {hotel.active ? 'Đang hoạt động' : 'Ngừng hoạt động'}
+                      {hotel.active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -271,7 +271,7 @@ const AdminCommissions: React.FC = () => {
                         <button
                           onClick={() => handleEditCommissionRate(hotel.id)}
                           className="text-blue-600 hover:text-blue-900"
-                          title="Chỉnh sửa tỷ lệ hoa hồng"
+                          title="Edit commission rate"
                         >
                           <Edit size={18} />
                         </button>
@@ -290,10 +290,10 @@ const AdminCommissions: React.FC = () => {
         <div className="bg-white rounded-lg shadow-md p-8 text-center">
           <Building className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="text-xl font-medium text-gray-900 mb-2">
-            Không tìm thấy khách sạn nào
+            No hotels found
           </h3>
           <p className="text-gray-600">
-            Không có khách sạn nào phù hợp với tiêu chí tìm kiếm của bạn.
+            No hotels match your search criteria.
           </p>
         </div>
       )}

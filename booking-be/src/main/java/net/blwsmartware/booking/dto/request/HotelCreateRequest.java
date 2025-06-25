@@ -72,6 +72,6 @@ public class HotelCreateRequest {
 
     UUID ownerId; // Optional - if not provided, will use current user
 
-    Boolean isActive = true;
+    Boolean isActive = false;
     Boolean isFeatured = false;
 } 

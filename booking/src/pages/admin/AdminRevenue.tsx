@@ -110,13 +110,13 @@ const AdminRevenue: React.FC = () => {
     return (
       <div className="w-full">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <h3 className="text-red-800 font-semibold">Lỗi tải dữ liệu</h3>
+          <h3 className="text-red-800 font-semibold">Error loading data</h3>
           <p className="text-red-600 mt-1">{error}</p>
           <button
             onClick={fetchRevenueData}
             className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
           >
-            Thử lại
+            Retry
           </button>
         </div>
       </div>
@@ -128,8 +128,8 @@ const AdminRevenue: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold">Báo cáo doanh thu</h1>
-          <p className="text-gray-600 mt-1">Tổng quan doanh thu và hoa hồng từ các khách sạn</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Revenue Report</h1>
+          <p className="text-gray-600 mt-1">Overview of revenue and commissions from hotels</p>
           
         </div>
         <div className="flex items-center space-x-3">
@@ -138,26 +138,26 @@ const AdminRevenue: React.FC = () => {
             onChange={(e) => setDateRange(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="this-month">Tháng này</option>
-            <option value="last-month">Tháng trước</option>
-            <option value="this-quarter">Quý này</option>
-            <option value="this-year">Năm này</option>
-            <option value="custom">Tùy chọn</option>
+            <option value="this-month">This Month</option>
+            <option value="last-month">Last Month</option>
+            <option value="this-quarter">This Quarter</option>
+            <option value="this-year">This Year</option>
+            <option value="custom">Custom</option>
           </select>
           <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
             <Download size={18} className="mr-2" />
-            Xuất báo cáo
+            Export Report
           </button>
         </div>
       </div>
 
       {/* Revenue Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Tổng doanh thu */}
+        {/* Total Revenue */}
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Tổng doanh thu</p>
+              <p className="text-sm font-medium text-gray-600">Total Revenue</p>
               <p className="text-2xl font-bold text-gray-900">{formatCurrency(revenueStats.totalRevenue)}</p>
                
             </div>
@@ -167,11 +167,11 @@ const AdminRevenue: React.FC = () => {
           </div>
         </div>
 
-        {/* Doanh thu hoa hồng */}
+        {/* Commission Revenue */}
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Doanh thu hoa hồng</p>
+              <p className="text-sm font-medium text-gray-600">Commission Revenue</p>
               <p className="text-2xl font-bold text-gray-900">{formatCurrency(revenueStats.totalCommissionRevenue)}</p>
                
             </div>
@@ -181,13 +181,13 @@ const AdminRevenue: React.FC = () => {
           </div>
         </div>
 
-        {/* Tổng số khách sạn */}
+        {/* Total Hotels */}
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Tổng khách sạn</p>
+              <p className="text-sm font-medium text-gray-600">Total Hotels</p>
               <p className="text-2xl font-bold text-gray-900">{formatNumber(revenueStats.totalHotels)}</p>
-              <p className="text-sm text-gray-600 mt-2">khách sạn hoạt động</p>
+              <p className="text-sm text-gray-600 mt-2">active hotels</p>
             </div>
             <div className="p-3 bg-purple-100 rounded-full">
               <Building size={24} className="text-purple-600" />
@@ -195,13 +195,13 @@ const AdminRevenue: React.FC = () => {
           </div>
         </div>
 
-        {/* Tổng số booking */}
+        {/* Total Bookings */}
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Tổng bookings</p>
+              <p className="text-sm font-medium text-gray-600">Total Bookings</p>
               <p className="text-2xl font-bold text-gray-900">{formatNumber(revenueStats.totalBookings)}</p>
-              <p className="text-sm text-gray-600 mt-2">đặt phòng thành công</p>
+              <p className="text-sm text-gray-600 mt-2">successful bookings</p>
             </div>
             <div className="p-3 bg-orange-100 rounded-full">
               <Calendar size={24} className="text-orange-600" />
@@ -216,7 +216,7 @@ const AdminRevenue: React.FC = () => {
           <div className="flex-1 relative">
             <input
               type="text"
-              placeholder="Tìm kiếm theo tên khách sạn, chủ sở hữu, địa điểm..."
+              placeholder="Search by hotel name, owner, location..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -230,9 +230,9 @@ const AdminRevenue: React.FC = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="active">Đang hoạt động</option>
-              <option value="inactive">Ngừng hoạt động</option>
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
             </select>
           </div>
         </div>
@@ -241,8 +241,8 @@ const AdminRevenue: React.FC = () => {
       {/* Revenue Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Doanh số theo khách sạn</h3>
-          <p className="text-sm text-gray-600 mt-1">Thu nhập ròng và hoa hồng của từng khách sạn</p>
+          <h3 className="text-lg font-semibold text-gray-900">Revenue by Hotel</h3>
+          <p className="text-sm text-gray-600 mt-1">Net income and commission for each hotel</p>
         </div>
         
         <div className="overflow-x-auto">
@@ -250,28 +250,28 @@ const AdminRevenue: React.FC = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Khách sạn
+                  Hotel
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Địa điểm
+                  Location
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Bookings
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tổng doanh thu
+                  Total Revenue
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Hoa hồng
+                  Commission
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thu nhập ròng
+                  Net Revenue
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
+                  Status
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
+                  Action
                 </th>
               </tr>
             </thead>
@@ -289,11 +289,11 @@ const AdminRevenue: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{hotel.city}, {hotel.country}</div>
-                    <div className="text-sm text-gray-500">Booking cuối: {formatDate(hotel.lastBookingDate)}</div>
+                    <div className="text-sm text-gray-500">Last booking: {formatDate(hotel.lastBookingDate)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{formatNumber(hotel.totalBookings)}</div>
-                    <div className="text-sm text-gray-500">đặt phòng</div>
+                    <div className="text-sm text-gray-500">bookings</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{formatCurrency(hotel.totalRevenue)}</div>
@@ -311,14 +311,14 @@ const AdminRevenue: React.FC = () => {
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-red-100 text-red-800'
                     }`}>
-                      {hotel.status === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động'}
+                      {hotel.status === 'active' ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => navigate(`/admin/hotels/${hotel.id}`)}
                       className="text-blue-600 hover:text-blue-900"
-                      title="Xem chi tiết"
+                      title="View Details"
                     >
                       <Eye size={18} />
                     </button>
@@ -343,7 +343,7 @@ const AdminRevenue: React.FC = () => {
                   : 'bg-white text-gray-700 hover:bg-gray-50'
               }`}
             >
-              Trước
+              Previous
             </button>
             <button
               onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
@@ -354,17 +354,17 @@ const AdminRevenue: React.FC = () => {
                   : 'bg-white text-gray-700 hover:bg-gray-50'
               }`}
             >
-              Sau
+              Next
             </button>
           </div>
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-gray-700">
-                Hiển thị <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> đến{' '}
+                Displaying <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
                 <span className="font-medium">
                   {Math.min(currentPage * itemsPerPage, totalElements)}
                 </span>{' '}
-                trong tổng số <span className="font-medium">{totalElements}</span> khách sạn
+                of <span className="font-medium">{totalElements}</span> hotels
               </p>
             </div>
             <div>
@@ -378,7 +378,7 @@ const AdminRevenue: React.FC = () => {
                       : 'text-gray-500 hover:bg-gray-50'
                   }`}
                 >
-                  <span className="sr-only">Trang trước</span>
+                  <span className="sr-only">Previous Page</span>
                   <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
@@ -405,7 +405,7 @@ const AdminRevenue: React.FC = () => {
                       : 'text-gray-500 hover:bg-gray-50'
                   }`}
                 >
-                  <span className="sr-only">Trang sau</span>
+                  <span className="sr-only">Next Page</span>
                   <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                   </svg>
@@ -421,10 +421,10 @@ const AdminRevenue: React.FC = () => {
         <div className="bg-white rounded-lg shadow-md p-8 text-center">
           <Building className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="text-xl font-medium text-gray-900 mb-2">
-            Không tìm thấy dữ liệu doanh thu
+            No revenue data found
           </h3>
           <p className="text-gray-600">
-            Không có khách sạn nào phù hợp với tiêu chí tìm kiếm của bạn.
+            No hotels match your search criteria.
           </p>
         </div>
       )}

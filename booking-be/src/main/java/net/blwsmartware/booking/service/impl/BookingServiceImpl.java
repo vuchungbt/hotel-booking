@@ -9,6 +9,7 @@ import net.blwsmartware.booking.dto.request.BookingUpdateRequest;
 import net.blwsmartware.booking.dto.request.CancellationRequest;
 import net.blwsmartware.booking.dto.response.BookingResponse;
 import net.blwsmartware.booking.dto.response.DataResponse;
+import net.blwsmartware.booking.dto.response.HostDashboardResponse;
 import net.blwsmartware.booking.entity.Booking;
 import net.blwsmartware.booking.entity.Hotel;
 import net.blwsmartware.booking.entity.RoomType;
@@ -25,6 +26,8 @@ import net.blwsmartware.booking.repository.UserRepository;
 import net.blwsmartware.booking.repository.VNPayTransactionRepository;
 import net.blwsmartware.booking.service.BookingService;
 import net.blwsmartware.booking.service.VoucherService;
+import net.blwsmartware.booking.service.WalletService;
+import net.blwsmartware.booking.service.RevenueService;
 import net.blwsmartware.booking.util.DataResponseUtils;
 import net.blwsmartware.booking.validator.IsAdmin;
 import net.blwsmartware.booking.validator.IsHost;
@@ -42,11 +45,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.time.temporal.ChronoUnit;
 
 @Service
@@ -62,6 +63,8 @@ public class BookingServiceImpl implements BookingService {
     VNPayTransactionRepository vnPayTransactionRepository;
     BookingMapper bookingMapper;
     VoucherService voucherService;
+    WalletService walletService;
+    RevenueService revenueService;
     
     // ===== GUEST OPERATIONS =====
     
@@ -242,7 +245,9 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
         // Check if booking can be cancelled
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
+        if (booking.getStatus() == BookingStatus.CANCELLED || 
+            booking.getStatus() == BookingStatus.CANCELLED_BY_GUEST ||
+            booking.getStatus() == BookingStatus.CANCELLED_BY_HOST) {
             throw new AppRuntimeException(ErrorResponse.BOOKING_ALREADY_CANCELLED);
         }
         
@@ -250,42 +255,71 @@ public class BookingServiceImpl implements BookingService {
             throw new AppRuntimeException(ErrorResponse.BOOKING_CANNOT_BE_CANCELLED);
         }
         
+        // Store original payment status for refund logic
+        PaymentStatus originalPaymentStatus = booking.getPaymentStatus();
+        
         // Update booking status to cancelled by guest
         booking.setStatus(BookingStatus.CANCELLED_BY_GUEST);
+        booking.setCancellationReason(reason);
         
-        // Update payment status based on current payment status
-        if (booking.getPaymentStatus() == PaymentStatus.PENDING) {
+        // Process refund based on current payment status
+        if (originalPaymentStatus == PaymentStatus.PENDING) {
             // If not paid yet, set to NO_PAYMENT
             booking.setPaymentStatus(PaymentStatus.NO_PAYMENT);
-        } else if (booking.getPaymentStatus() == PaymentStatus.PAID) {
-            // If already paid, set to REFUND_PENDING for host to process
-            booking.setPaymentStatus(PaymentStatus.REFUND_PENDING);
+            log.info("Booking cancelled before payment - no refund needed: {}", bookingId);
+        } else if (originalPaymentStatus == PaymentStatus.FAILED) {
+            // If payment failed, set to CANCELLED (no refund needed)
+            booking.setPaymentStatus(PaymentStatus.CANCELLED);
+            log.info("Booking cancelled after payment failure - no refund needed: {}", bookingId);
+        } else if (originalPaymentStatus == PaymentStatus.PAID) {
+            // If already paid, process automatic refund to wallet
+            BigDecimal refundAmount = booking.getTotalAmount();
+            booking.setRefundAmount(refundAmount);
+            booking.setPaymentStatus(PaymentStatus.REFUNDED);
+            
+            try {
+                // Add refund to user's wallet
+                walletService.addRefund(
+                    currentUser.getId(),
+                    refundAmount,
+                    "Booking cancellation refund - " + booking.getBookingReference()
+                );
+                
+                log.info("Refund processed successfully for booking {}: {} VND", 
+                        bookingId, refundAmount);
+            } catch (Exception e) {
+                log.error("Failed to process refund for booking {}: {}", bookingId, e.getMessage());
+                // Rollback payment status if wallet refund fails
+                booking.setPaymentStatus(PaymentStatus.REFUND_PENDING);
+                booking.setRefundAmount(null);
+                throw new AppRuntimeException(ErrorResponse.REFUND_PROCESSING_FAILED);
+            }
+        } else {
+            // For other payment statuses, just set to cancelled
+            booking.setPaymentStatus(PaymentStatus.CANCELLED);
+            log.info("Booking cancelled with payment status: {}", originalPaymentStatus);
         }
         
-        // Cập nhật lại số lượng phòng có sẵn (tăng 1 phòng khi cancel)
+        // Restore room availability when booking is cancelled
         RoomType roomType = booking.getRoomType();
-        if (roomType.getAvailableRooms() < roomType.getTotalRooms()) {
-            roomType.setAvailableRooms(roomType.getAvailableRooms() + 1);
-            roomTypeRepository.save(roomType);
-            log.info("Room availability restored for roomType {}: {} -> {} (booking cancelled)", 
-                    roomType.getId(), roomType.getAvailableRooms() - 1, roomType.getAvailableRooms());
-        }
-        
-        // Other payment statuses remain unchanged
+        roomType.setAvailableRooms(roomType.getAvailableRooms() + 1);
+        roomTypeRepository.save(roomType);
         
         booking.setUpdatedBy(currentUser.getId());
         booking = bookingRepository.save(booking);
         
-        // Remove voucher usage if booking had voucher applied
-        try {
-            voucherService.removeVoucherUsage(booking.getId());
-            log.info("Voucher usage removed for cancelled booking: {}", booking.getId());
-        } catch (Exception e) {
-            log.warn("Failed to remove voucher usage for booking {}: {}", booking.getId(), e.getMessage());
+        // Revert commission if booking was paid before cancellation
+        if (originalPaymentStatus == PaymentStatus.PAID) {
+            try {
+                revenueService.revertHotelRevenue(bookingId);
+                log.info("Commission reverted for cancelled booking: {}", bookingId);
+            } catch (Exception e) {
+                log.error("Failed to revert commission for booking {}: {}", bookingId, e.getMessage());
+                // Don't fail the cancellation if commission revert fails
+            }
         }
         
-        log.info("Booking cancelled: {}", bookingId);
-        
+        log.info("Booking cancelled successfully: {}", bookingId);
         return bookingMapper.toResponse(booking);
     }
     
@@ -689,36 +723,82 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findByIdAndHotelOwnerId(bookingId, currentUser.getId())
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
+        if (booking.getStatus() == BookingStatus.CANCELLED ||
+            booking.getStatus() == BookingStatus.CANCELLED_BY_GUEST ||
+            booking.getStatus() == BookingStatus.CANCELLED_BY_HOST) {
             throw new AppRuntimeException(ErrorResponse.BOOKING_ALREADY_CANCELLED);
         }
         
         if (booking.getStatus() == BookingStatus.COMPLETED) {
             throw new AppRuntimeException(ErrorResponse.BOOKING_CANNOT_BE_CANCELLED);
         }
+
+        // Store original payment status for refund logic
+        PaymentStatus originalPaymentStatus = booking.getPaymentStatus();
         
-        booking.setStatus(BookingStatus.CANCELLED);
-        booking.setUpdatedBy(currentUser.getId());
+        // Update booking status to cancelled by host
+        booking.setStatus(BookingStatus.CANCELLED_BY_HOST);
+        booking.setCancellationReason(reason);
         
-        // Cập nhật lại số lượng phòng có sẵn (tăng 1 phòng khi host cancel)
-        RoomType roomType = booking.getRoomType();
-        if (roomType.getAvailableRooms() < roomType.getTotalRooms()) {
-            roomType.setAvailableRooms(roomType.getAvailableRooms() + 1);
-            roomTypeRepository.save(roomType);
-            log.info("Room availability restored for roomType {}: {} -> {} (host cancelled booking)", 
-                    roomType.getId(), roomType.getAvailableRooms() - 1, roomType.getAvailableRooms());
+        // Process refund based on current payment status
+        if (originalPaymentStatus == PaymentStatus.PENDING) {
+            // If not paid yet, set to CANCELLED
+            booking.setPaymentStatus(PaymentStatus.CANCELLED);
+            log.info("Host cancelled booking before payment - no refund needed: {}", bookingId);
+        } else if (originalPaymentStatus == PaymentStatus.FAILED) {
+            // If payment failed, set to CANCELLED (no refund needed)
+            booking.setPaymentStatus(PaymentStatus.CANCELLED);
+            log.info("Host cancelled booking after payment failure - no refund needed: {}", bookingId);
+        } else if (originalPaymentStatus == PaymentStatus.PAID && booking.getUser() != null) {
+            // If already paid, process automatic 100% refund to wallet
+            BigDecimal refundAmount = booking.getTotalAmount();
+            booking.setRefundAmount(refundAmount);
+            booking.setPaymentStatus(PaymentStatus.REFUNDED);
+            
+            try {
+                // Add refund to user's wallet
+                walletService.addRefund(
+                    booking.getUser().getId(),
+                    refundAmount,
+                    "Host cancelled booking refund - " + booking.getBookingReference() + 
+                    (reason != null ? " | Reason: " + reason : "")
+                );
+                
+                log.info("Full refund processed successfully for host cancelled booking {}: {} VND", 
+                        bookingId, refundAmount);
+            } catch (Exception e) {
+                log.error("Failed to process refund for host cancelled booking {}: {}", bookingId, e.getMessage());
+                // Rollback payment status if wallet refund fails
+                booking.setPaymentStatus(PaymentStatus.REFUND_PENDING);
+                booking.setRefundAmount(null);
+                throw new AppRuntimeException(ErrorResponse.REFUND_PROCESSING_FAILED);
+            }
+        } else {
+            // For other cases (guest booking or other payment statuses)
+            booking.setPaymentStatus(PaymentStatus.CANCELLED);
+            log.info("Host cancelled booking with payment status: {}", originalPaymentStatus);
         }
         
+        // Restore room availability when booking is cancelled
+        RoomType roomType = booking.getRoomType();
+        roomType.setAvailableRooms(roomType.getAvailableRooms() + 1);
+        roomTypeRepository.save(roomType);
+        
+        booking.setUpdatedBy(currentUser.getId());
         booking = bookingRepository.save(booking);
         
-        // Remove voucher usage if booking had voucher applied
-        try {
-            voucherService.removeVoucherUsage(booking.getId());
-            log.info("Voucher usage removed for host cancelled booking: {}", booking.getId());
-        } catch (Exception e) {
-            log.warn("Failed to remove voucher usage for booking {}: {}", booking.getId(), e.getMessage());
+        // Revert commission if booking was paid before cancellation
+        if (originalPaymentStatus == PaymentStatus.PAID) {
+            try {
+                revenueService.revertHotelRevenue(bookingId);
+                log.info("Commission reverted for host cancelled booking: {}", bookingId);
+            } catch (Exception e) {
+                log.error("Failed to revert commission for booking {}: {}", bookingId, e.getMessage());
+                // Don't fail the cancellation if commission revert fails
+            }
         }
         
+        log.info("Host cancelled booking successfully: {}", bookingId);
         return bookingMapper.toResponse(booking);
     }
     
@@ -815,54 +895,85 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new AppRuntimeException(ErrorResponse.BOOKING_NOT_FOUND));
         
         // Validate business rules
-        if (booking.getStatus() != BookingStatus.CONFIRMED) {
-            throw new AppRuntimeException(ErrorResponse.INVALID_BOOKING_STATUS);
+        if (booking.getStatus() == BookingStatus.CANCELLED ||
+            booking.getStatus() == BookingStatus.CANCELLED_BY_GUEST ||
+            booking.getStatus() == BookingStatus.CANCELLED_BY_HOST) {
+            throw new AppRuntimeException(ErrorResponse.BOOKING_ALREADY_CANCELLED);
         }
         
-        // Update booking status based on refund decision
-        if (request.getRefundAmount() != null && request.getRefundAmount().compareTo(BigDecimal.ZERO) > 0) {
-            booking.setStatus(BookingStatus.CANCELLED_BY_GUEST);
-            
-            // Determine refund status based on amount
-            BigDecimal totalAmount = booking.getTotalAmount();
-            if (request.getRefundAmount().compareTo(totalAmount) == 0) {
-                // Full refund
-                booking.setPaymentStatus(PaymentStatus.REFUNDED);
+        if (booking.getStatus() == BookingStatus.COMPLETED) {
+            throw new AppRuntimeException(ErrorResponse.BOOKING_CANNOT_BE_CANCELLED);
+        }
+        
+        // Process refund if payment was made
+        if (booking.getPaymentStatus() == PaymentStatus.PAID && booking.getUser() != null) {
+            if (request.getRefundAmount() != null && request.getRefundAmount().compareTo(BigDecimal.ZERO) > 0) {
+                try {
+                    // Add refund to user's wallet
+                    walletService.addRefund(
+                        booking.getUser().getId(),
+                        request.getRefundAmount(),
+                        "Host cancelled booking refund - " + booking.getBookingReference() + 
+                        (request.getReason() != null ? " | Reason: " + request.getReason() : "")
+                    );
+                    
+                    booking.setStatus(BookingStatus.CANCELLED_BY_HOST);
+                    
+                    // Determine refund status based on amount
+                    BigDecimal totalAmount = booking.getTotalAmount();
+                    if (request.getRefundAmount().compareTo(totalAmount) == 0) {
+                        // Full refund
+                        booking.setPaymentStatus(PaymentStatus.REFUNDED);
+                    } else {
+                        // Partial refund
+                        booking.setPaymentStatus(PaymentStatus.PARTIALLY_REFUNDED);
+                    }
+                    
+                    booking.setRefundAmount(request.getRefundAmount());
+                    booking = bookingRepository.save(booking);
+                    
+                    log.info("Booking cancellation processed successfully with refund {}: {} VND", 
+                            bookingId, request.getRefundAmount());
+                            
+                } catch (Exception e) {
+                    log.error("Failed to process refund for booking {}: {}", bookingId, e.getMessage());
+                    throw new AppRuntimeException(ErrorResponse.REFUND_PROCESSING_ERROR);
+                }
             } else {
-                // Partial refund
-                booking.setPaymentStatus(PaymentStatus.PARTIALLY_REFUNDED);
+                // No refund - host cancelled without compensation
+                booking.setStatus(BookingStatus.CANCELLED_BY_HOST);
+                booking.setPaymentStatus(PaymentStatus.CANCELLED);
             }
         } else {
+            // Booking was not paid, just cancel it
             booking.setStatus(BookingStatus.CANCELLED_BY_HOST);
             booking.setPaymentStatus(PaymentStatus.CANCELLED);
         }
         
-        // Set cancellation details
         booking.setCancellationReason(request.getReason());
-        booking.setRefundAmount(request.getRefundAmount());
-        booking.setUpdatedAt(LocalDateTime.now());
         booking.setUpdatedBy(currentUser.getId());
         
-        // Cập nhật lại số lượng phòng có sẵn (tăng 1 phòng khi process cancellation)
+        // Restore room availability
         RoomType roomType = booking.getRoomType();
-        if (roomType.getAvailableRooms() < roomType.getTotalRooms()) {
-            roomType.setAvailableRooms(roomType.getAvailableRooms() + 1);
-            roomTypeRepository.save(roomType);
-            log.info("Room availability restored for roomType {}: {} -> {} (cancellation processed)", 
-                    roomType.getId(), roomType.getAvailableRooms() - 1, roomType.getAvailableRooms());
-        }
+        roomType.setAvailableRooms(roomType.getAvailableRooms() + 1);
+        roomTypeRepository.save(roomType);
         
         booking = bookingRepository.save(booking);
         
-        // Remove voucher usage if booking had voucher applied
-        try {
-            voucherService.removeVoucherUsage(booking.getId());
-            log.info("Voucher usage removed for processed cancellation: {}", booking.getId());
-        } catch (Exception e) {
-            log.warn("Failed to remove voucher usage for booking {}: {}", booking.getId(), e.getMessage());
+        // Revert commission based on refund amount or full amount if no refund specified
+        if (booking.getPaymentStatus() == PaymentStatus.PAID || 
+            booking.getPaymentStatus() == PaymentStatus.REFUNDED ||
+            booking.getPaymentStatus() == PaymentStatus.PARTIALLY_REFUNDED) {
+            try {
+                revenueService.revertHotelRevenue(bookingId);
+                log.info("Commission reverted for processed cancellation: {}", bookingId);
+            } catch (Exception e) {
+                log.error("Failed to revert commission for booking {}: {}", bookingId, e.getMessage());
+                // Don't fail the cancellation if commission revert fails
+            }
         }
         
-        log.info("Successfully processed cancellation for booking: {}", bookingId);
+        log.info("Cancellation processed successfully for booking: {}", bookingId);
         return bookingMapper.toResponse(booking);
     }
     
@@ -1070,5 +1181,169 @@ public class BookingServiceImpl implements BookingService {
     public Long getHostBookingsCountByStatus(BookingStatus status) {
         User currentUser = getCurrentUserRequired();
         return bookingRepository.countByHotelOwnerIdAndStatus(currentUser.getId(), status);
+    }
+    
+    // ===== HOST DASHBOARD METHODS =====
+    
+    @Override
+    @IsHost
+    public BigDecimal getHostTotalRevenue() {
+        User currentUser = getCurrentUserRequired();
+        return bookingRepository.getTotalRevenueByHost(currentUser.getId());
+    }
+    
+    @Override
+    @IsHost
+    public BigDecimal getHostMonthlyRevenue() {
+        User currentUser = getCurrentUserRequired();
+        LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+        LocalDateTime endOfMonth = startOfMonth.plusMonths(1).minusSeconds(1);
+        return bookingRepository.getRevenueByHostAndDateRange(currentUser.getId(), startOfMonth, endOfMonth);
+    }
+    
+    @Override
+    @IsHost
+    public Double getHostOccupancyRate() {
+        User currentUser = getCurrentUserRequired();
+        // Simple occupancy calculation - can be enhanced with more complex logic
+        Long totalRooms = roomTypeRepository.getTotalRoomsByHost(currentUser.getId());
+        Long occupiedRooms = bookingRepository.getOccupiedRoomsByHost(currentUser.getId());
+        
+        if (totalRooms == 0) return 0.0;
+        return (occupiedRooms.doubleValue() / totalRooms.doubleValue()) * 100;
+    }
+    
+    @Override
+    @IsHost
+    public Long getHostBookingsCountByDateRange(UUID hostId, LocalDate startDate, LocalDate endDate) {
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+        return bookingRepository.countByHotelOwnerIdAndCreatedAtBetween(hostId, startDateTime, endDateTime);
+    }
+    
+    @Override
+    @IsHost
+    public BigDecimal getHostRevenueByDateRange(UUID hostId, LocalDate startDate, LocalDate endDate) {
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+        return bookingRepository.getRevenueByHostAndDateRange(hostId, startDateTime, endDateTime);
+    }
+
+    @Override
+    @IsHost
+    public BigDecimal getHostTotalCommission() {
+        User currentUser = getCurrentUserRequired();
+        return bookingRepository.getTotalCommissionByHost(currentUser.getId());
+    }
+
+    @Override
+    @IsHost
+    public BigDecimal getHostCommissionByDateRange(UUID hostId, LocalDate startDate, LocalDate endDate) {
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+        return bookingRepository.getCommissionByHostAndDateRange(hostId, startDateTime, endDateTime);
+    }
+    
+    @Override
+    @IsHost
+    public List<HostDashboardResponse.RecentBooking> getHostRecentBookings(UUID hostId, int limit) {
+        Pageable pageable = PageRequest.of(0, limit, Sort.by("createdAt").descending());
+        List<Booking> recentBookings = bookingRepository.findRecentBookingsByHost(hostId, pageable);
+        
+        return recentBookings.stream()
+                .map(booking -> HostDashboardResponse.RecentBooking.builder()
+                        .id(booking.getId().toString())
+                        .guestName(booking.getUser().getName())
+                        .hotelName(booking.getHotel().getName())
+                        .roomTypeName(booking.getRoomType().getName())
+                        .checkInDate(booking.getCheckInDate().atStartOfDay())
+                        .checkOutDate(booking.getCheckOutDate().atStartOfDay())
+                        .totalAmount(booking.getTotalAmount())
+                        .status(booking.getStatus().name())
+                        .paymentStatus(booking.getPaymentStatus().name())
+                        .createdAt(booking.getCreatedAt())
+                        .build())
+                .toList();
+    }
+    
+    @Override
+    @IsHost
+    public List<HostDashboardResponse.MonthlyData> getHostMonthlyRevenueData(UUID hostId, int months) {
+        LocalDateTime endDate = LocalDateTime.now();
+        LocalDateTime startDate = endDate.minusMonths(months);
+        
+        List<Object[]> monthlyData = bookingRepository.getMonthlyRevenueByHost(hostId, startDate, endDate);
+        
+        return monthlyData.stream()
+                .map(data -> HostDashboardResponse.MonthlyData.builder()
+                        .month((String) data[0])
+                        .revenue((BigDecimal) data[1])
+                        .bookings((Long) data[2])
+                        .build())
+                .toList();
+    }
+    
+    @Override
+    @IsHost
+    public List<HostDashboardResponse.MonthlyData> getHostMonthlyBookingData(UUID hostId, int months) {
+        LocalDateTime endDate = LocalDateTime.now();
+        LocalDateTime startDate = endDate.minusMonths(months);
+        
+        List<Object[]> monthlyData = bookingRepository.getMonthlyBookingsByHost(hostId, startDate, endDate);
+        
+        return monthlyData.stream()
+                .map(data -> HostDashboardResponse.MonthlyData.builder()
+                        .month((String) data[0])
+                        .bookings((Long) data[1])
+                        .revenue(BigDecimal.ZERO) // This method focuses on bookings count
+                        .build())
+                .toList();
+    }
+    
+    @Override
+    @IsHost
+    public List<HostDashboardResponse.MonthlyData> getHostMonthlyAnalytics(UUID hostId, LocalDate startDate, LocalDate endDate) {
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+        
+        // Get actual data from database
+        List<Object[]> actualData = bookingRepository.getMonthlyAnalyticsByHost(hostId, startDateTime, endDateTime);
+        
+        // Convert to map for easy lookup
+        Map<String, HostDashboardResponse.MonthlyData> dataMap = new HashMap<>();
+        for (Object[] data : actualData) {
+            String month = (String) data[0];
+            BigDecimal revenue = (BigDecimal) data[1];
+            Long bookings = (Long) data[2];
+            
+            dataMap.put(month, HostDashboardResponse.MonthlyData.builder()
+                    .month(month)
+                    .revenue(revenue != null ? revenue : BigDecimal.ZERO)
+                    .bookings(bookings != null ? bookings : 0L)
+                    .build());
+        }
+        
+        // Generate all months in the range (similar to Admin Analytics logic)
+        List<HostDashboardResponse.MonthlyData> result = new ArrayList<>();
+        YearMonth start = YearMonth.from(startDate);
+        YearMonth end = YearMonth.from(endDate);
+        
+        YearMonth current = start;
+        while (!current.isAfter(end) && result.size() < 12) {
+            String monthKey = String.format("%d-%02d", current.getYear(), current.getMonthValue());
+            
+            // Use actual data if exists, otherwise create empty month
+            HostDashboardResponse.MonthlyData monthData = dataMap.getOrDefault(monthKey, 
+                HostDashboardResponse.MonthlyData.builder()
+                        .month(monthKey)
+                        .revenue(BigDecimal.ZERO)
+                        .bookings(0L)
+                        .build());
+            
+            result.add(monthData);
+            current = current.plusMonths(1);
+        }
+        
+        return result;
     }
 } 

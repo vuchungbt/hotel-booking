@@ -4,6 +4,7 @@ import { Plus, Search, Hotel, Star, MapPin, Phone, Mail, Globe, Users, DollarSig
 import { hotelAPI, HotelResponse } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import { formatCurrency } from '../../utils/format';
+import { getImageProps } from '../../utils/imageUtils';
 
 const HostHotels: React.FC = () => {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ const HostHotels: React.FC = () => {
       setTotalElements(response.data.result.totalElements);
     } catch (error: any) {
       console.error('Error fetching hotels:', error);
-      showToast('error', 'Lỗi', 'Không thể tải danh sách khách sạn');
+              showToast('error', 'Error', 'Cannot load hotel list');
     } finally {
       setLoading(false);
     }
@@ -58,7 +59,7 @@ const HostHotels: React.FC = () => {
 
     try {
       await hotelAPI.deleteMyHotel(id);
-      showToast('success', 'Thành công', 'Đã xóa khách sạn');
+      showToast('success', 'Success', 'Hotel deleted successfully');
       fetchHotels();
     } catch (error: any) {
       console.error('Error deleting hotel:', error);
@@ -130,13 +131,12 @@ const HostHotels: React.FC = () => {
                 {/* Hotel Image */}
                 <div className="relative h-48">
                   <img
-                    src={hotel.imageUrl || 'https://via.placeholder.com/400x200?text=No+Image'}
-                    alt={hotel.name}
+                    {...getImageProps(hotel.imageUrl, 'hotel', hotel.name)}
                     className="w-full h-full object-cover"
                   />
                   {hotel.featured && (
                     <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded text-sm font-medium">
-                      Nổi bật
+                      Featured
                     </div>
                   )}
                 </div>
@@ -151,15 +151,11 @@ const HostHotels: React.FC = () => {
                     </div>
                     <div className="flex items-center text-gray-600">
                       <Star size={16} className="mr-2 text-yellow-500" />
-                      <span className="text-sm">{hotel.starRating} sao</span>
-                    </div>
-                    <div className="flex items-center text-gray-600">
-                      <Users size={16} className="mr-2" />
-                      <span className="text-sm">{hotel.totalRoomTypes || 0} loại phòng</span>
+                      <span className="text-sm">{hotel.starRating} stars</span>
                     </div>
                     <div className="flex items-center text-gray-600">
                       <DollarSign size={16} className="mr-2" />
-                      <span className="text-sm">Từ {formatCurrency(hotel.pricePerNight || 0)}/đêm</span>
+                      <span className="text-sm">From {formatCurrency(hotel.pricePerNight || 0)}/night</span>
                     </div>
                   </div>
 
@@ -168,7 +164,7 @@ const HostHotels: React.FC = () => {
                     <span className={`px-3 py-1 rounded-full text-sm ${
                       hotel.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                     }`}>
-                      {hotel.active ? 'Đang hoạt động' : 'Ngừng hoạt động'}
+                      {hotel.active ? 'Active' : 'Inactive'}
                     </span>
                   </div>
 
@@ -177,21 +173,21 @@ const HostHotels: React.FC = () => {
                     <button
                       onClick={() => handleViewHotel(hotel.id)}
                       className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
-                      title="Xem chi tiết"
+                      title="View details"
                     >
                       <Eye size={20} />
                     </button>
                     <button
                       onClick={() => handleEditHotel(hotel.id)}
                       className="p-2 text-gray-600 hover:text-green-600 transition-colors"
-                      title="Chỉnh sửa"
+                      title="Edit"
                     >
                       <Edit size={20} />
                     </button>
                     <button
                       onClick={() => handleDeleteHotel(hotel.id)}
                       className="p-2 text-gray-600 hover:text-red-600 transition-colors"
-                      title="Xóa"
+                      title="Delete"
                     >
                       <Trash size={20} />
                     </button>
@@ -211,14 +207,14 @@ const HostHotels: React.FC = () => {
                 disabled={currentPage === 0}
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
               >
-                Trước
+                Previous
               </button>
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
                 disabled={currentPage === totalPages - 1}
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
               >
-                Sau
+                  Next
               </button>
             </div>
           </div>

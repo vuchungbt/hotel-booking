@@ -41,6 +41,7 @@ public interface RoomTypeService {
     // Statistics
     Long getTotalRoomTypesCount();
     Long getRoomTypesCountByHotel(UUID hotelId);
+    Long getMyRoomTypesCount();
     
     // Validation methods
     boolean isRoomTypeNameExistsForHotel(String name, UUID hotelId);

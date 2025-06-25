@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Search, MapPin, Star, Filter, ChevronLeft, ChevronRight, Calendar, Users, CreditCard } from 'lucide-react';
 import { hotelAPI, HotelFilterParams, HotelResponse, roomTypeAPI } from '../services/api';
+import { getImageProps } from '../utils/imageUtils';
 
 interface FiltersState {
   priceRange: string;
@@ -295,10 +296,7 @@ const HotelsPage: React.FC = () => {
     ));
   };
 
-  // Get image URL with fallback
-  const getImageUrl = (imageUrl?: string) => {
-    return imageUrl || 'https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg';
-  };
+
 
   // Handle booking button click
   const handleBookNow = (hotel: HotelWithAvailability) => {
@@ -670,13 +668,8 @@ const HotelsPage: React.FC = () => {
                 <div key={hotel.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="relative">
                     <img
-                        src={getImageUrl(hotel.imageUrl)}
-                      alt={hotel.name}
+                      {...getImageProps(hotel.imageUrl, 'hotel', hotel.name)}
                       className="w-full h-48 object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg';
-                        }}
                     />
                       {hotel.featured && (
                         <div className="absolute top-4 left-4 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">

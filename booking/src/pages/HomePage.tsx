@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import HeroSection from '../components/HeroSection';
 import FeaturedHotels from '../components/FeaturedHotels';
-import { hotelAPI } from '../services/api';
+import { hotelAPI, CityStatsResponse } from '../services/api';
 
 interface CityStats {
   name: string;
@@ -10,34 +10,44 @@ interface CityStats {
   count: number;
 }
 
+// Default images for cities
+const defaultCityImages: Record<string, string> = {
+  'Da Nang': 'https://images.pexels.com/photos/2132180/pexels-photo-2132180.jpeg',
+  'Hanoi': 'https://images.pexels.com/photos/1486577/pexels-photo-1486577.jpeg',
+  'Ho Chi Minh': 'https://images.pexels.com/photos/2115367/pexels-photo-2115367.jpeg',
+  'Phu Quoc': 'https://images.pexels.com/photos/1450353/pexels-photo-1450353.jpeg',
+  'Hoi An': 'https://images.pexels.com/photos/3278215/pexels-photo-3278215.jpeg',
+  'Nha Trang': 'https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg',
+  'Dalat': 'https://images.pexels.com/photos/2161449/pexels-photo-2161449.jpeg',
+  'Vung Tau': 'https://images.pexels.com/photos/1174732/pexels-photo-1174732.jpeg'
+};
+
+const defaultCityImage = 'https://images.pexels.com/photos/460672/pexels-photo-460672.jpeg';
+
 const HomePage: React.FC = () => {
-  const [cityStats, setCityStats] = useState<CityStats[]>([
-    { name: 'Da Nang', image: 'https://images.pexels.com/photos/2132180/pexels-photo-2132180.jpeg', count: 0 },
-    { name: 'Hanoi', image: 'https://images.pexels.com/photos/1486577/pexels-photo-1486577.jpeg', count: 0 },
-    { name: 'Ho Chi Minh', image: 'https://images.pexels.com/photos/2115367/pexels-photo-2115367.jpeg', count: 0 },
-    { name: 'Phu Quoc', image: 'https://images.pexels.com/photos/1450353/pexels-photo-1450353.jpeg', count: 0 }
-  ]);
+  const [cityStats, setCityStats] = useState<CityStats[]>([]);
   const [totalHotels, setTotalHotels] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCityStats = async () => {
       try {
-        // Fetch hotels count for each city
-        const promises = cityStats.map(async (city) => {
-          try {
-            const response = await hotelAPI.getHotelsByCity(city.name, 0, 1, 'name');
-            return {
-              ...city,
-              count: response.data.result?.totalElements || 0
-            };
-          } catch (error) {
-            console.error(`Error fetching hotels for ${city.name}:`, error);
-            return city; // Return original city data if API fails
-          }
-        });
-
-        const updatedCityStats = await Promise.all(promises);
-        setCityStats(updatedCityStats);
+        setLoading(true);
+        
+        // Fetch top cities from API
+        const topCitiesResponse = await hotelAPI.getTopCities(4);
+        if (topCitiesResponse.data.success) {
+          const topCities: CityStatsResponse[] = topCitiesResponse.data.result;
+          
+          // Transform API data to CityStats format with images
+          const cityStatsData: CityStats[] = topCities.map(city => ({
+            name: city.cityName,
+            count: city.hotelCount,
+            image: defaultCityImages[city.cityName] || defaultCityImage
+          }));
+          
+          setCityStats(cityStatsData);
+        }
 
         // Fetch total hotels count using public API
         try {
@@ -50,6 +60,15 @@ const HomePage: React.FC = () => {
         }
       } catch (error) {
         console.error('Error fetching city statistics:', error);
+        // Fallback to hardcoded cities if API fails
+        setCityStats([
+          { name: 'Da Nang', image: defaultCityImages['Da Nang'], count: 0 },
+          { name: 'Hanoi', image: defaultCityImages['Hanoi'], count: 0 },
+          { name: 'Ho Chi Minh', image: defaultCityImages['Ho Chi Minh'], count: 0 },
+          { name: 'Phu Quoc', image: defaultCityImages['Phu Quoc'], count: 0 }
+        ]);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -77,31 +96,46 @@ const HomePage: React.FC = () => {
           </div>
 
           <div className="mt-12 grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            {cityStats.map((destination, index) => (
-              <Link 
-                key={index} 
-                to={`/hotels?city=${encodeURIComponent(destination.name)}`}
-                className="group"
-              >
-                <div className="relative rounded-lg overflow-hidden h-64 shadow-md group-hover:shadow-xl transition-shadow">
-                  <img
-                    src={destination.image}
-                    alt={destination.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                  <div className="absolute bottom-0 left-0 p-6 text-white">
-                    <h3 className="text-xl font-bold">{destination.name}</h3>
-                    <p>
-                      {destination.count > 0 
-                        ? `${destination.count.toLocaleString()} hotels`
-                        : 'Updating...'
-                      }
-                    </p>
+            {loading ? (
+              // Loading skeleton
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="group">
+                  <div className="relative rounded-lg overflow-hidden h-64 shadow-md animate-pulse">
+                    <div className="w-full h-full bg-gray-300"></div>
+                    <div className="absolute bottom-0 left-0 p-6">
+                      <div className="h-6 bg-gray-400 rounded mb-2 w-24"></div>
+                      <div className="h-4 bg-gray-400 rounded w-16"></div>
+                    </div>
                   </div>
                 </div>
-              </Link>
-            ))}
+              ))
+            ) : (
+              cityStats.map((destination, index) => (
+                <Link 
+                  key={index} 
+                  to={`/hotels?city=${encodeURIComponent(destination.name)}`}
+                  className="group"
+                >
+                  <div className="relative rounded-lg overflow-hidden h-64 shadow-md group-hover:shadow-xl transition-shadow">
+                    <img
+                      src={destination.image}
+                      alt={destination.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 p-6 text-white">
+                      <h3 className="text-xl font-bold">{destination.name}</h3>
+                      <p>
+                        {destination.count > 0 
+                          ? `${destination.count.toLocaleString()} hotels`
+                          : 'No hotels available'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>

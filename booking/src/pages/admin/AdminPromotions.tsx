@@ -17,8 +17,6 @@ const AdminPromotions: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<VoucherStatus | 'all'>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedVouchers, setSelectedVouchers] = useState<string[]>([]);
-  const [isSelectAll, setIsSelectAll] = useState(false);
   const [vouchers, setVouchers] = useState<VoucherResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -72,7 +70,7 @@ const AdminPromotions: React.FC = () => {
         setTotalElements(response.data.result.totalElements);
       }
     } catch (error) {
-      showAlert('error', 'Không thể tải danh sách voucher');
+      showAlert('error', 'Unable to load voucher list');
       console.error('Error loading vouchers:', error);
     } finally {
       setLoading(false);
@@ -100,12 +98,12 @@ const AdminPromotions: React.FC = () => {
     try {
       const response = await voucherAPI.createVoucher(data);
       if (response.data.success) {
-        showAlert('success', 'Tạo voucher thành công');
+        showAlert('success', 'Voucher created successfully');
         setShowForm(false);
         loadVouchers();
       }
     } catch (error: any) {
-      showAlert('error', error.response?.data?.message || 'Không thể tạo voucher');
+      showAlert('error', error.response?.data?.message || 'Unable to create voucher');
     } finally {
       setLoading(false);
     }
@@ -118,13 +116,13 @@ const AdminPromotions: React.FC = () => {
     try {
       const response = await voucherAPI.updateVoucher(editingVoucher.id, data);
       if (response.data.success) {
-        showAlert('success', 'Cập nhật voucher thành công');
+        showAlert('success', 'Voucher updated successfully');
         setShowForm(false);
         setEditingVoucher(null);
         loadVouchers();
       }
     } catch (error: any) {
-      showAlert('error', error.response?.data?.message || 'Không thể cập nhật voucher');
+      showAlert('error', error.response?.data?.message || 'Unable to update voucher');
     } finally {
       setLoading(false);
     }
@@ -144,11 +142,11 @@ const AdminPromotions: React.FC = () => {
     try {
       const response = await voucherAPI.deleteVoucher(deleteModal.voucher.id);
       if (response.data.success) {
-        showAlert('success', 'Xóa voucher thành công');
+        showAlert('success', 'Voucher deleted successfully');
         loadVouchers();
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Không thể xóa voucher';
+      const errorMessage = error.response?.data?.message || 'Unable to delete voucher';
       if (error.response?.status === 409) { // Conflict - has usage records
         setDeleteModal(prev => ({ ...prev, hasUsageRecords: true }));
         return; // Don't close modal, show disable option
@@ -167,14 +165,14 @@ const AdminPromotions: React.FC = () => {
       if (deleteModal.voucher.status === VoucherStatus.ACTIVE) {
         const response = await voucherAPI.toggleVoucherStatus(deleteModal.voucher.id);
         if (response.data.success) {
-          showAlert('success', 'Đã tắt voucher thành công');
+          showAlert('success', 'Voucher disabled successfully');
           loadVouchers();
         }
       } else {
-        showAlert('success', 'Voucher đã được tắt');
+        showAlert('success', 'Voucher is already disabled');
       }
     } catch (error: any) {
-      showAlert('error', error.response?.data?.message || 'Không thể tắt voucher');
+      showAlert('error', error.response?.data?.message || 'Unable to disable voucher');
     } finally {
       setDeleteModal({ isOpen: false, voucher: null, hasUsageRecords: false });
     }
@@ -184,11 +182,11 @@ const AdminPromotions: React.FC = () => {
     try {
       const response = await voucherAPI.toggleVoucherStatus(voucherId);
       if (response.data.success) {
-        showAlert('success', 'Cập nhật trạng thái thành công');
+        showAlert('success', 'Status updated successfully');
         loadVouchers();
       }
     } catch (error: any) {
-      showAlert('error', error.response?.data?.message || 'Không thể cập nhật trạng thái');
+      showAlert('error', error.response?.data?.message || 'Unable to update status');
     }
   };
 
@@ -209,10 +207,10 @@ const AdminPromotions: React.FC = () => {
 
   const getStatusBadge = (status: VoucherStatus) => {
     const statusConfig = {
-      [VoucherStatus.ACTIVE]: { color: 'bg-green-100 text-green-800', icon: Check, text: 'Hoạt động' },
-      [VoucherStatus.INACTIVE]: { color: 'bg-gray-100 text-gray-800', icon: X, text: 'Tạm dừng' },
-      [VoucherStatus.EXPIRED]: { color: 'bg-red-100 text-red-800', icon: Clock, text: 'Hết hạn' },
-      [VoucherStatus.USED_UP]: { color: 'bg-orange-100 text-orange-800', icon: Tag, text: 'Hết lượt' }
+      [VoucherStatus.ACTIVE]: { color: 'bg-green-100 text-green-800', icon: Check, text: 'Active' },
+      [VoucherStatus.INACTIVE]: { color: 'bg-gray-100 text-gray-800', icon: X, text: 'Inactive' },
+      [VoucherStatus.EXPIRED]: { color: 'bg-red-100 text-red-800', icon: Clock, text: 'Expired' },
+      [VoucherStatus.USED_UP]: { color: 'bg-orange-100 text-orange-800', icon: Tag, text: 'Used Up' }
     };
 
     const config = statusConfig[status];
@@ -228,7 +226,7 @@ const AdminPromotions: React.FC = () => {
 
   const getDiscountText = (voucher: VoucherResponse) => {
     if (voucher.discountType === DiscountType.PERCENTAGE) {
-      return `${voucher.discountValue}% (tối đa ${formatCurrency(voucher.maxDiscount || 0)})`;
+      return `${voucher.discountValue}% (max ${formatCurrency(voucher.maxDiscount || 0)})`;
     }
     return formatCurrency(voucher.discountValue);
   };
@@ -236,23 +234,6 @@ const AdminPromotions: React.FC = () => {
   const getProgressBarWidth = (used: number, total?: number) => {
     if (!total) return 0;
     return Math.min((used / total) * 100, 100);
-  };
-
-  const handleSelectAll = () => {
-    if (isSelectAll) {
-      setSelectedVouchers([]);
-    } else {
-      setSelectedVouchers(vouchers.map(voucher => voucher.id));
-    }
-    setIsSelectAll(!isSelectAll);
-  };
-
-  const handleSelectVoucher = (voucherId: string) => {
-    if (selectedVouchers.includes(voucherId)) {
-      setSelectedVouchers(selectedVouchers.filter(id => id !== voucherId));
-    } else {
-      setSelectedVouchers([...selectedVouchers, voucherId]);
-    }
   };
 
   const handleEditVoucher = (voucher: VoucherResponse) => {
@@ -289,16 +270,16 @@ const AdminPromotions: React.FC = () => {
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Quản lý Voucher</h1>
-              <p className="text-gray-600 mt-1">Tạo và quản lý các voucher giảm giá</p>
+              <h1 className="text-2xl font-bold text-gray-900">Voucher Management</h1>
+              <p className="text-gray-600 mt-1">Create and manage discount vouchers</p>
             </div>
-          <button
+          {/* <button
               onClick={handleAddVoucher}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
           >
             <Plus size={20} className="mr-2" />
-              Tạo voucher mới
-          </button>
+              Create New Voucher
+          </button> */}
           </div>
         </div>
       </div>
@@ -322,7 +303,7 @@ const AdminPromotions: React.FC = () => {
                 <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                  placeholder="Tìm kiếm theo tên hoặc mã voucher..."
+                  placeholder="Search by name or voucher code..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -335,11 +316,11 @@ const AdminPromotions: React.FC = () => {
                 onChange={(e) => setStatusFilter(e.target.value as VoucherStatus | 'all')}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="all">Tất cả trạng thái</option>
-                <option value={VoucherStatus.ACTIVE}>Hoạt động</option>
-                <option value={VoucherStatus.INACTIVE}>Tạm dừng</option>
-                <option value={VoucherStatus.EXPIRED}>Hết hạn</option>
-                <option value={VoucherStatus.USED_UP}>Hết lượt</option>
+                <option value="all">All Status</option>
+                <option value={VoucherStatus.ACTIVE}>Active</option>
+                <option value={VoucherStatus.INACTIVE}>Inactive</option>
+                <option value={VoucherStatus.EXPIRED}>Expired</option>
+                <option value={VoucherStatus.USED_UP}>Used Up</option>
               </select>
             </div>
           </div>
@@ -352,22 +333,14 @@ const AdminPromotions: React.FC = () => {
           {/* Table Header */}
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                  checked={isSelectAll}
-                  onChange={handleSelectAll}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span className="ml-3 text-sm text-gray-700">
-                  Đã chọn {selectedVouchers.length} voucher
-                      </span>
-                    </div>
+              <div className="text-sm text-gray-700 font-medium">
+                Voucher Management
+              </div>
               <div className="text-sm text-gray-500">
-                Tổng: {totalElements} voucher
-                  </div>
-                  </div>
-                </div>
+                Total: {totalElements} vouchers
+              </div>
+            </div>
+          </div>
 
           {/* Table Content */}
           {loading ? (
@@ -377,7 +350,7 @@ const AdminPromotions: React.FC = () => {
           ) : vouchers.length === 0 ? (
             <div className="text-center py-12">
               <Tag size={48} className="mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500">Chưa có voucher nào</p>
+              <p className="text-gray-500">No vouchers available</p>
                   </div>
           ) : (
             <>
@@ -389,19 +362,19 @@ const AdminPromotions: React.FC = () => {
                         Voucher
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Giảm giá
+                        Discount
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Thời gian
+                        Duration
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Sử dụng
+                        Usage
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Trạng thái
+                        Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Thao tác
+                        Actions
                       </th>
                     </tr>
                   </thead>
@@ -410,12 +383,6 @@ const AdminPromotions: React.FC = () => {
                       <tr key={voucher.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={selectedVouchers.includes(voucher.id)}
-                              onChange={() => handleSelectVoucher(voucher.id)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-4"
-                            />
                             <div>
                               <div className="flex items-center">
                                 <Tag size={16} className="text-blue-600 mr-2" />
@@ -437,7 +404,7 @@ const AdminPromotions: React.FC = () => {
                           </div>
                           {voucher.minBookingValue && (
                             <div className="text-xs text-gray-500 mt-1">
-                              Tối thiểu: {formatCurrency(voucher.minBookingValue)}
+                              Minimum: {formatCurrency(voucher.minBookingValue)}
                             </div>
                           )}
                         </td>
@@ -446,7 +413,7 @@ const AdminPromotions: React.FC = () => {
                             <Calendar size={16} className="mr-2" />
                             <div>
                               <div>{formatDate(voucher.startDate)}</div>
-                              <div className="text-xs">đến {formatDate(voucher.endDate)}</div>
+                              <div className="text-xs">to {formatDate(voucher.endDate)}</div>
                             </div>
                           </div>
                         </td>
@@ -499,7 +466,7 @@ const AdminPromotions: React.FC = () => {
                 <div className="px-6 py-4 border-t border-gray-200">
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-700">
-                      Hiển thị {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, totalElements)} của {totalElements} voucher
+                      Showing {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, totalElements)} of {totalElements} vouchers
                     </div>
                     <div className="flex items-center space-x-2">
                 <button
@@ -507,7 +474,7 @@ const AdminPromotions: React.FC = () => {
                   disabled={currentPage === 1}
                         className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Trước
+                  Previous
                 </button>
                       <span className="text-sm text-gray-700">
                         {currentPage} / {totalPages}
@@ -517,7 +484,7 @@ const AdminPromotions: React.FC = () => {
                         disabled={currentPage === totalPages}
                         className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Tiếp
+                        Next
                       </button>
                 </div>
               </div>

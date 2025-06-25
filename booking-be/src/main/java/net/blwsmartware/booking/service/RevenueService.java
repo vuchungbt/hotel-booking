@@ -15,6 +15,11 @@ public interface RevenueService {
     void updateHotelRevenue(UUID bookingId);
     
     /**
+     * Trừ commission khi booking bị cancel hoặc refund
+     */
+    void revertHotelRevenue(UUID bookingId);
+    
+    /**
      * Tính toán lại tất cả revenue cho hotel (dùng khi có thay đổi commission rate)
      */
     void recalculateHotelRevenue(UUID hotelId);

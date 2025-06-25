@@ -33,14 +33,14 @@ const HostRoomTypeEdit: React.FC = () => {
   });
 
   const predefinedAmenities = [
-    'WiFi miễn phí', 'Điều hòa không khí', 'TV màn hình phẳng', 'Minibar', 'Két an toàn',
-    'Máy sấy tóc', 'Bàn làm việc', 'Ghế sofa', 'Ban công', 'Tầm nhìn ra biển',
-    'Tầm nhìn ra thành phố', 'Tầm nhìn ra núi', 'Phòng tắm riêng', 'Bồn tắm', 'Vòi sen',
-    'Đồ vệ sinh cá nhân', 'Khăn tắm', 'Dép đi trong phòng', 'Áo choàng tắm', 'Máy pha cà phê',
-    'Ấm đun nước', 'Tủ lạnh mini', 'Máy lạnh', 'Quạt trần', 'Cửa sổ mở được',
-    'Rèm che', 'Giường đôi', 'Giường đơn', 'Ga trải giường', 'Gối bông',
-    'Chăn ấm', 'Đèn đọc sách', 'Ổ cắm điện', 'Máy hút bụi', 'Điện thoại',
-    'Radio', 'Loa Bluetooth', 'Sạc điện thoại', 'Internet tốc độ cao'
+    'Free WiFi', 'Air Conditioning', 'Flat-screen TV', 'Minibar', 'Safe',
+    'Hair Dryer', 'Work Desk', 'Sofa', 'Balcony', 'Sea View',
+    'City View', 'Mountain View', 'Private Bathroom', 'Bathtub', 'Shower',
+    'Toiletries', 'Towels', 'Slippers', 'Bathrobe', 'Coffee Machine',
+    'Electric Kettle', 'Mini Fridge', 'Air Conditioning', 'Ceiling Fan', 'Opening Windows',
+    'Curtains', 'Double Bed', 'Single Bed', 'Bed Linen', 'Pillows',
+    'Blanket', 'Reading Light', 'Power Outlets', 'Vacuum Cleaner', 'Telephone',
+    'Radio', 'Bluetooth Speaker', 'Phone Charger', 'High-speed Internet'
   ];
 
   useEffect(() => {
@@ -73,11 +73,11 @@ const HostRoomTypeEdit: React.FC = () => {
 
       // Set selected amenities
       if (roomTypeData.amenities) {
-        setSelectedAmenities(roomTypeData.amenities.split(',').map(item => item.trim()));
+        setSelectedAmenities(roomTypeData.amenities.split(',').map((item: string) => item.trim()));
       }
     } catch (error) {
       console.error('Error fetching room type:', error);
-      showToast('error', 'Lỗi khi tải thông tin loại phòng');
+      showToast('error', 'Failed to load room type information');
       navigate('/host/room-types');
     } finally {
       setLoading(false);
@@ -134,29 +134,29 @@ const HostRoomTypeEdit: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim()) {
-      showToast('error', 'Vui lòng nhập tên loại phòng');
+    if (!formData.name?.trim()) {
+      showToast('error', 'Please enter room type name');
       return;
     }
 
-    if (formData.pricePerNight <= 0) {
-      showToast('error', 'Vui lòng nhập giá phòng hợp lệ');
+    if ((formData.pricePerNight || 0) <= 0) {
+      showToast('error', 'Please enter a valid room price');
       return;
     }
 
-    if (formData.totalRooms <= 0) {
-      showToast('error', 'Vui lòng nhập số lượng phòng hợp lệ');
+    if ((formData.totalRooms || 0) <= 0) {
+      showToast('error', 'Please enter a valid number of rooms');
       return;
     }
 
     try {
       setSaving(true);
       await hostRoomTypeAPI.updateMyRoomType(id!, formData);
-      showToast('success', 'Cập nhật loại phòng thành công');
+      showToast('success', 'Room type updated successfully');
       navigate(`/host/room-types/${id}`);
     } catch (error) {
       console.error('Error updating room type:', error);
-      showToast('error', 'Lỗi khi cập nhật loại phòng');
+      showToast('error', 'Failed to update room type');
     } finally {
       setSaving(false);
     }
@@ -179,14 +179,14 @@ const HostRoomTypeEdit: React.FC = () => {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900">Không tìm thấy loại phòng</h2>
-            <p className="mt-2 text-gray-600">Loại phòng không tồn tại hoặc bạn không có quyền truy cập.</p>
+            <h2 className="text-2xl font-bold text-gray-900">Room type not found</h2>
+            <p className="mt-2 text-gray-600">The room type does not exist or you don't have access to it.</p>
             <button
               onClick={() => navigate('/host/room-types')}
               className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Quay lại
+              Go Back
             </button>
           </div>
         </div>
@@ -208,8 +208,8 @@ const HostRoomTypeEdit: React.FC = () => {
                 <ArrowLeft className="h-5 w-5 text-gray-600" />
               </button>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Chỉnh sửa loại phòng</h1>
-                <p className="mt-2 text-gray-600">Cập nhật thông tin loại phòng: {roomType.name}</p>
+                <h1 className="text-3xl font-bold text-gray-900">Edit Room Type</h1>
+                <p className="mt-2 text-gray-600">Update room type information: {roomType.name}</p>
               </div>
             </div>
           </div>
@@ -222,11 +222,11 @@ const HostRoomTypeEdit: React.FC = () => {
               <div className="p-2 bg-blue-100 rounded-lg mr-3">
                 <Hotel className="h-5 w-5 text-blue-600" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">Khách sạn</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Hotel</h2>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Khách sạn
+                Hotel
               </label>
               <input
                 type="text"
@@ -234,7 +234,7 @@ const HostRoomTypeEdit: React.FC = () => {
                 disabled
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
               />
-              <p className="mt-1 text-sm text-gray-500">Không thể thay đổi khách sạn cho loại phòng đã tồn tại</p>
+                              <p className="mt-1 text-sm text-gray-500">Cannot change hotel for existing room type</p>
             </div>
           </div>
 
@@ -244,20 +244,20 @@ const HostRoomTypeEdit: React.FC = () => {
               <div className="p-2 bg-green-100 rounded-lg mr-3">
                 <BedDouble className="h-5 w-5 text-green-600" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">Thông tin cơ bản</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Basic Information</h2>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tên loại phòng *
+                  Room Type Name *
                 </label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="VD: Phòng Deluxe"
+                  placeholder="e.g: Deluxe Room"
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
@@ -265,7 +265,7 @@ const HostRoomTypeEdit: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Loại giường
+                  Bed Type
                 </label>
                 <select
                   name="bedType"
@@ -273,19 +273,19 @@ const HostRoomTypeEdit: React.FC = () => {
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 >
-                  <option value="">Chọn loại giường</option>
-                  <option value="Single">Giường đơn</option>
-                  <option value="Double">Giường đôi</option>
-                  <option value="Queen">Giường Queen</option>
-                  <option value="King">Giường King</option>
-                  <option value="Twin">Giường đôi riêng biệt</option>
-                  <option value="Sofa Bed">Giường sofa</option>
+                  <option value="">Select Bed Type</option>
+                  <option value="Single">Single Bed</option>
+                  <option value="Double">Double Bed</option>
+                  <option value="Queen">Queen Bed</option>
+                  <option value="King">King Bed</option>
+                  <option value="Twin">Twin Beds</option>
+                  <option value="Sofa Bed">Sofa Bed</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Sức chứa tối đa *
+                  Max Occupancy *
                 </label>
                 <div className="relative">
                   <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -304,7 +304,7 @@ const HostRoomTypeEdit: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Diện tích (m²)
+                  Room Size (m²)
                 </label>
                 <div className="relative">
                   <Home className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -323,14 +323,14 @@ const HostRoomTypeEdit: React.FC = () => {
 
             <div className="mt-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mô tả
+                Description
               </label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
                 rows={4}
-                placeholder="Mô tả chi tiết về loại phòng..."
+                placeholder="Detailed description of the room type..."
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
@@ -342,13 +342,13 @@ const HostRoomTypeEdit: React.FC = () => {
               <div className="p-2 bg-yellow-100 rounded-lg mr-3">
                 <DollarSign className="h-5 w-5 text-yellow-600" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">Giá & Số lượng</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Pricing & Quantity</h2>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Giá mỗi đêm (VNĐ) *
+                  Price per Night (VND) *
                 </label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -367,7 +367,7 @@ const HostRoomTypeEdit: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tổng số phòng *
+                  Total Rooms *
                 </label>
                 <input
                   type="number"
@@ -379,7 +379,7 @@ const HostRoomTypeEdit: React.FC = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
                 <p className="mt-1 text-sm text-gray-500">
-                  Hiện có {roomType.availableRooms} phòng trống / {roomType.totalRooms} tổng số phòng
+                  Currently {roomType.availableRooms} available rooms / {roomType.totalRooms} total rooms
                 </p>
               </div>
             </div>
@@ -391,12 +391,12 @@ const HostRoomTypeEdit: React.FC = () => {
               <div className="p-2 bg-purple-100 rounded-lg mr-3">
                 <Image className="h-5 w-5 text-purple-600" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">Hình ảnh</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Image</h2>
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                URL hình ảnh
+                Image URL
               </label>
               <input
                 type="url"
@@ -409,11 +409,12 @@ const HostRoomTypeEdit: React.FC = () => {
               {formData.imageUrl && (
                 <div className="mt-3">
                   <img
-                    src={formData.imageUrl}
+                    src={formData.imageUrl || 'https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg'}
                     alt="Preview"
                     className="w-32 h-24 object-cover rounded-lg"
                     onError={(e) => {
-                      e.currentTarget.style.display = 'none';
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg';
                     }}
                   />
                 </div>
@@ -427,13 +428,13 @@ const HostRoomTypeEdit: React.FC = () => {
               <div className="p-2 bg-indigo-100 rounded-lg mr-3">
                 <Tag className="h-5 w-5 text-indigo-600" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">Tiện nghi</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Amenities</h2>
             </div>
 
             {/* Predefined Amenity Tags */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Chọn tiện nghi có sẵn:
+                Select Available Amenities:
               </label>
               <div className="flex flex-wrap gap-2">
                 {predefinedAmenities.map((amenity, index) => (
@@ -456,14 +457,14 @@ const HostRoomTypeEdit: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hoặc nhập tiện nghi (phân cách bằng dấu phẩy):
+                Or enter amenities (comma separated):
               </label>
               <textarea
                 name="amenities"
                 value={formData.amenities}
                 onChange={handleAmenitiesTextChange}
                 rows={3}
-                placeholder="WiFi miễn phí, Điều hòa không khí, TV màn hình phẳng..."
+                placeholder="Free WiFi, Air Conditioning, Flat-screen TV..."
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
@@ -477,7 +478,7 @@ const HostRoomTypeEdit: React.FC = () => {
                 onClick={() => navigate(`/host/room-types/${id}`)}
                 className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Hủy
+                Cancel
               </button>
               <button
                 type="submit"
@@ -487,12 +488,12 @@ const HostRoomTypeEdit: React.FC = () => {
                 {saving ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Đang lưu...
+                    Saving...
                   </>
                 ) : (
                   <>
                     <Save className="h-5 w-5 mr-2" />
-                    Lưu thay đổi
+                    Save Changes
                   </>
                 )}
               </button>

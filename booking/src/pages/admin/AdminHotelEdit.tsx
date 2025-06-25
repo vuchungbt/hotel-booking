@@ -76,7 +76,7 @@ const AdminHotelEdit: React.FC = () => {
   const fetchHotel = async () => {
     try {
       setLoading(true);
-      const response = await hotelAPI.getHotelDetails(id!);
+      const response = await hotelAPI.getAdminHotelById(id!);
       const hotelData = response.data.result || response.data;
       setHotel(hotelData);
       
