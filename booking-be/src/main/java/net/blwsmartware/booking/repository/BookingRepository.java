@@ -223,9 +223,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     @Query("SELECT b FROM Booking b WHERE b.hotel.owner.id = :hostId ORDER BY b.createdAt DESC")
     List<Booking> findRecentBookingsByHost(@Param("hostId") UUID hostId, Pageable pageable);
     
-    @Query("SELECT CONCAT(CAST(YEAR(b.createdAt) AS STRING), '-', " +
-           "CASE WHEN MONTH(b.createdAt) < 10 THEN CONCAT('0', CAST(MONTH(b.createdAt) AS STRING)) " +
-           "ELSE CAST(MONTH(b.createdAt) AS STRING) END) as month, " +
+    @Query("SELECT YEAR(b.createdAt), MONTH(b.createdAt), " +
            "COALESCE(SUM(b.totalAmount - COALESCE(b.refundAmount, 0)), 0) as revenue, COUNT(b) as bookings " +
            "FROM Booking b WHERE b.hotel.owner.id = :hostId " +
            "AND b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED') " +
@@ -236,9 +234,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
                                           @Param("startDate") LocalDateTime startDate, 
                                           @Param("endDate") LocalDateTime endDate);
     
-    @Query("SELECT CONCAT(CAST(YEAR(b.createdAt) AS STRING), '-', " +
-           "CASE WHEN MONTH(b.createdAt) < 10 THEN CONCAT('0', CAST(MONTH(b.createdAt) AS STRING)) " +
-           "ELSE CAST(MONTH(b.createdAt) AS STRING) END) as month, " +
+    @Query("SELECT YEAR(b.createdAt), MONTH(b.createdAt), " +
            "COUNT(b) as bookings " +
            "FROM Booking b WHERE b.hotel.owner.id = :hostId " +
            "AND b.createdAt >= :startDate AND b.createdAt < :endDate " +
@@ -248,9 +244,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
                                            @Param("startDate") LocalDateTime startDate, 
                                            @Param("endDate") LocalDateTime endDate);
     
-    @Query("SELECT CONCAT(CAST(YEAR(b.createdAt) AS STRING), '-', " +
-           "CASE WHEN MONTH(b.createdAt) < 10 THEN CONCAT('0', CAST(MONTH(b.createdAt) AS STRING)) " +
-           "ELSE CAST(MONTH(b.createdAt) AS STRING) END) as month, " +
+    @Query("SELECT YEAR(b.createdAt), MONTH(b.createdAt), " +
            "COALESCE(SUM(b.totalAmount - COALESCE(b.refundAmount, 0)), 0) as revenue, COUNT(b) as bookings " +
            "FROM Booking b WHERE b.hotel.owner.id = :hostId " +
            "AND b.paymentStatus IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED') " +

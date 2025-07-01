@@ -1275,11 +1275,16 @@ public class BookingServiceImpl implements BookingService {
         List<Object[]> monthlyData = bookingRepository.getMonthlyRevenueByHost(hostId, startDate, endDate);
         
         return monthlyData.stream()
-                .map(data -> HostDashboardResponse.MonthlyData.builder()
-                        .month((String) data[0])
-                        .revenue((BigDecimal) data[1])
-                        .bookings((Long) data[2])
-                        .build())
+                .map(data -> {
+                    Integer year = (Integer) data[0];
+                    Integer month = (Integer) data[1];
+                    String monthString = String.format("%d-%02d", year, month);
+                    return HostDashboardResponse.MonthlyData.builder()
+                            .month(monthString)
+                            .revenue((BigDecimal) data[2])
+                            .bookings((Long) data[3])
+                            .build();
+                })
                 .toList();
     }
     
@@ -1292,11 +1297,16 @@ public class BookingServiceImpl implements BookingService {
         List<Object[]> monthlyData = bookingRepository.getMonthlyBookingsByHost(hostId, startDate, endDate);
         
         return monthlyData.stream()
-                .map(data -> HostDashboardResponse.MonthlyData.builder()
-                        .month((String) data[0])
-                        .bookings((Long) data[1])
-                        .revenue(BigDecimal.ZERO) // This method focuses on bookings count
-                        .build())
+                .map(data -> {
+                    Integer year = (Integer) data[0];
+                    Integer month = (Integer) data[1];
+                    String monthString = String.format("%d-%02d", year, month);
+                    return HostDashboardResponse.MonthlyData.builder()
+                            .month(monthString)
+                            .bookings((Long) data[2])
+                            .revenue(BigDecimal.ZERO) // This method focuses on bookings count
+                            .build();
+                })
                 .toList();
     }
     
@@ -1312,12 +1322,14 @@ public class BookingServiceImpl implements BookingService {
         // Convert to map for easy lookup
         Map<String, HostDashboardResponse.MonthlyData> dataMap = new HashMap<>();
         for (Object[] data : actualData) {
-            String month = (String) data[0];
-            BigDecimal revenue = (BigDecimal) data[1];
-            Long bookings = (Long) data[2];
+            Integer year = (Integer) data[0];
+            Integer month = (Integer) data[1];
+            String monthString = String.format("%d-%02d", year, month);
+            BigDecimal revenue = (BigDecimal) data[2];
+            Long bookings = (Long) data[3];
             
-            dataMap.put(month, HostDashboardResponse.MonthlyData.builder()
-                    .month(month)
+            dataMap.put(monthString, HostDashboardResponse.MonthlyData.builder()
+                    .month(monthString)
                     .revenue(revenue != null ? revenue : BigDecimal.ZERO)
                     .bookings(bookings != null ? bookings : 0L)
                     .build());
