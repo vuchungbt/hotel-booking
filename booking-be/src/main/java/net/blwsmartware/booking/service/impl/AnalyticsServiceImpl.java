@@ -190,23 +190,28 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         List<AdminAnalyticsResponse.TopLocationData> topLocations = new ArrayList<>();
         
         try {
-            // Get top 5 locations by revenue
+            // Get top 5 cities by hotel count (independent of date range since hotels are not time-bound)
             Pageable pageable = PageRequest.of(0, 5);
-            List<Object[]> results = bookingRepository.findTopLocationsByRevenue(startDate, endDate, pageable);
+            List<Object[]> results = hotelRepository.findTopCitiesByHotelCount(pageable);
             
             for (Object[] result : results) {
-                String location = (String) result[0];
-                BigDecimal revenue = (BigDecimal) result[1];
-                Long bookings = (Long) result[2];
+                String cityName = (String) result[0];
+                Long hotelCount = (Long) result[1];
+                
+                // Optionally get booking stats for this city within the date range
+                // This provides additional context while the primary metric is hotel count
+                // You can remove these lines if you only want hotel count
+                // TODO: Add city-based booking query if needed for additional stats
                 
                 topLocations.add(AdminAnalyticsResponse.TopLocationData.builder()
-                        .name(location)
-                        .bookings(bookings)
-                        .revenue(revenue)
+                        .name(cityName)
+                        .hotelCount(hotelCount)
+                        .bookings(0L) // Set to 0 or remove if not needed
+                        .revenue(BigDecimal.ZERO) // Set to 0 or remove if not needed
                         .build());
             }
         } catch (Exception e) {
-            log.error("Error getting top locations: ", e);
+            log.error("Error getting top cities by hotel count: ", e);
             // Return empty list if error occurs
         }
         

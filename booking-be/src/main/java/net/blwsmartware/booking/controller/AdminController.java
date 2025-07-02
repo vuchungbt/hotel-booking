@@ -9,6 +9,8 @@ import net.blwsmartware.booking.dto.response.*;
 import net.blwsmartware.booking.service.*;
 import net.blwsmartware.booking.validator.IsAdmin;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,12 +32,15 @@ import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 
 import net.blwsmartware.booking.service.WalletService;
 import net.blwsmartware.booking.service.BookingService;
 import net.blwsmartware.booking.repository.BookingRepository;
 import net.blwsmartware.booking.enums.BookingStatus;
 import net.blwsmartware.booking.util.DataResponseUtils;
+import net.blwsmartware.booking.repository.HotelRepository;
 
 @RestController
 @RequestMapping("/admin")
@@ -53,6 +58,7 @@ public class AdminController {
     BookingService bookingService;
     BookingRepository bookingRepository;
     UserRepository userRepository;
+    HotelRepository hotelRepository;
     
     @GetMapping("/dashboard")
     @IsAdmin
@@ -126,6 +132,42 @@ public class AdminController {
         } catch (Exception e) {
             log.error("Error retrieving analytics data", e);
             throw e;
+        }
+    }
+    
+    @GetMapping("/analytics/test-cities")
+    public ResponseEntity<MessageResponse<Object>> testTopCities() {
+        log.info("Testing top cities by hotel count");
+        
+        try {
+            Pageable pageable = PageRequest.of(0, 10);
+            List<Object[]> results = hotelRepository.findTopCitiesByHotelCount(pageable);
+            
+            List<Map<String, Object>> cityStats = new ArrayList<>();
+            for (Object[] result : results) {
+                Map<String, Object> cityData = new HashMap<>();
+                cityData.put("cityName", result[0]);
+                cityData.put("hotelCount", result[1]);
+                cityStats.add(cityData);
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("totalCities", cityStats.size());
+            response.put("cities", cityStats);
+            
+            return ResponseEntity.ok()
+                    .body(MessageResponse.builder()
+                            .message("Top cities by hotel count retrieved successfully")
+                            .result(response)
+                            .build());
+                            
+        } catch (Exception e) {
+            log.error("Error testing top cities: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(MessageResponse.builder()
+                            .success(false)
+                            .message("Error retrieving top cities: " + e.getMessage())
+                            .build());
         }
     }
     

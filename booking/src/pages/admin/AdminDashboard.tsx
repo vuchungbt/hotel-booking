@@ -638,12 +638,12 @@ const AdminDashboard: React.FC = () => {
               )}
             </div>
 
-            {/* Top Locations */}
+            {/* Top Cities by Hotel Count */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold flex items-center">
                   <MapPin className="h-5 w-5 mr-2 text-green-500" />
-                  Top Locations
+                  Top Cities by Hotel Count
                 </h3>
                 {analyticsLoading && (
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-500 border-t-transparent"></div>
@@ -669,7 +669,7 @@ const AdminDashboard: React.FC = () => {
                   {(analyticsData?.topLocations || []).length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       <MapPin className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                      <p>No location data available for the selected period</p>
+                      <p>No city data available</p>
                     </div>
                   ) : (
                     (analyticsData?.topLocations || []).map((location, index) => (
@@ -685,11 +685,12 @@ const AdminDashboard: React.FC = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-gray-900 truncate group-hover:text-green-600 transition-colors">{location.name}</p>
+                          <p className="text-sm text-gray-500 truncate">City with most hotels</p>
                         </div>
                       </div>
                       <div className="text-right ml-4 flex-shrink-0">
-                        <p className="font-bold text-gray-900 group-hover:text-green-600 transition-colors">{formatCurrency(location.revenue)}</p>
-                        <p className="text-sm text-gray-500">{location.bookings} bookings</p>
+                        <p className="font-bold text-gray-900 group-hover:text-green-600 transition-colors">{location.hotelCount} hotels</p>
+                        <p className="text-sm text-gray-500">Total properties</p>
                       </div>
                     </div>
                     ))

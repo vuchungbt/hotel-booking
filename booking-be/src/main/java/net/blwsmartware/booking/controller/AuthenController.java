@@ -14,10 +14,7 @@ import net.blwsmartware.booking.service.AuthenticationService;
 import net.blwsmartware.booking.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -122,5 +119,19 @@ public class AuthenController {
                         .message("Logout success")
                         .build()
                 );
+    }
+
+    @GetMapping("/oauth2/google")
+    public ResponseEntity<MessageResponse<String>> getGoogleOAuth2Url() {
+        log.info("Getting Google OAuth2 authorization URL");
+        
+        // Return the OAuth2 authorization URL for Google
+        String googleAuthUrl = "/oauth2/authorization/google";
+        
+        return ResponseEntity.ok()
+                .body(MessageResponse.<String>builder()
+                        .message("Google OAuth2 authorization URL")
+                        .result(googleAuthUrl)
+                        .build());
     }
 }

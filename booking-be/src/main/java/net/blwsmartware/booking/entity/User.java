@@ -46,6 +46,17 @@ public class User {
 
     LocalDate dob;
 
+    // OAuth2 related fields
+    @Column(name = "google_id")
+    String googleId;
+
+    @Column(name = "avatar_url")
+    String avatarUrl;
+
+    @Column(name = "provider")
+    @Builder.Default
+    String provider = "local"; // local, google
+
     @Builder.Default
     boolean isActive=true;
 

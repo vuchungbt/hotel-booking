@@ -354,7 +354,10 @@ export const authAPI = {
   confirmEmail: (data: ConfirmEmailRequest) =>
     api.post<UserResponse>('/auth/confirm-email', data),
   resendCode: (data: ResendCodeRequest) =>
-    api.post<UserResponse>('/auth/resend-code', data)
+    api.post<UserResponse>('/auth/resend-code', data),
+  // OAuth2 APIs
+  getGoogleOAuth2Url: () =>
+    api.get<MessageResponse<string>>('/auth/oauth2/google')
 };
 
 // User APIs
@@ -711,8 +714,9 @@ export interface AdminAnalyticsResponse {
   }>;
   topLocations: Array<{
     name: string;
-    bookings: number;
-    revenue: number;
+    hotelCount: number;
+    bookings?: number; // Optional for backward compatibility
+    revenue?: number; // Optional for backward compatibility
   }>;
 }
 

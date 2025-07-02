@@ -12,6 +12,8 @@ import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import EmailVerificationPage from './pages/EmailVerificationPage';
+import OAuth2SuccessPage from './pages/OAuth2SuccessPage';
+import OAuth2TestPage from './pages/OAuth2TestPage';
 import ProfilePage from './pages/ProfilePage';
 import AboutPage from './pages/AboutPage';
 
@@ -120,6 +122,8 @@ function App() {
             <Route path="/forgot-password" element={<PublicLayout><ForgotPasswordPage /></PublicLayout>} />
             <Route path="/reset-password" element={<PublicLayout><ResetPasswordPage /></PublicLayout>} />
             <Route path="/email-verification" element={<PublicLayout><EmailVerificationPage /></PublicLayout>} />
+            <Route path="/auth/oauth2/success" element={<OAuth2SuccessPage />} />
+            <Route path="/oauth2-test" element={<PublicLayout><OAuth2TestPage /></PublicLayout>} />
             <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
 
             <Route path="/hotels" element={<PublicLayout><HotelsPage /></PublicLayout>} />

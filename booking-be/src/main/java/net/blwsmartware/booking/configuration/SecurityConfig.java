@@ -1,6 +1,8 @@
 package net.blwsmartware.booking.configuration;
 
 import net.blwsmartware.booking.security.JwtCustomDecoder;
+import net.blwsmartware.booking.security.OAuth2LoginFailureHandler;
+import net.blwsmartware.booking.security.OAuth2LoginSuccessHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +38,8 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {
             "/users",
             "/auth/**",
+            "/oauth2/**", // Add OAuth2 endpoints
+            "/login/oauth2/**", // Add OAuth2 login endpoints
             "/api/payment/vnpay/ipn" // VNPay IPN callback - không cần authentication
     };
 
@@ -52,12 +56,20 @@ public class SecurityConfig {
             "/room-types/hotel/**",
             "/bookings/check-availability", // Only keep availability check as public
             "/api/upload/test", // Allow test endpoint for upload service verification
-            "/api/payment/vnpay/return" // VNPay return URL - không cần authentication
+            "/api/payment/vnpay/return", // VNPay return URL - không cần authentication
+            "/oauth2/**", // Add OAuth2 GET endpoints
+            "/login/oauth2/**" // Add OAuth2 login GET endpoints
     };
     private final JwtCustomDecoder customJwtDecoder;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
-    public SecurityConfig(JwtCustomDecoder customJwtDecoder) {
+    public SecurityConfig(JwtCustomDecoder customJwtDecoder, 
+                         OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
+                         OAuth2LoginFailureHandler oAuth2LoginFailureHandler) {
         this.customJwtDecoder = customJwtDecoder;
+        this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
+        this.oAuth2LoginFailureHandler = oAuth2LoginFailureHandler;
     }
 
     @Bean
@@ -77,6 +89,12 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .exceptionHandling(exception->exception.authenticationEntryPoint(new JwtAuthEntryPoint()))
+
+                // Add OAuth2 Login configuration
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2LoginSuccessHandler)
+                        .failureHandler(oAuth2LoginFailureHandler)
+                )
 
                 .oauth2ResourceServer(oauth2 -> {
                             oauth2.jwt(jwtConfigurer ->
