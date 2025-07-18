@@ -431,6 +431,10 @@ export const hotelAPI = {
   getTopCities: (limit = 4) =>
     api.get('/hotels/top-cities', { params: { limit } }),
 
+  // Get available rooms for hotel by date range
+  getAvailableRooms: (hotelId: string, checkInDate: string, checkOutDate: string) =>
+    api.get(`/hotels/${hotelId}/available-rooms`, { params: { checkInDate, checkOutDate } }),
+
   // ===== ADMIN APIs =====
   getAdminHotels: (pageNumber = 0, pageSize = 10, sortBy = 'id') =>
     api.get('/hotels/admin', { params: { pageNumber, pageSize, sortBy } }),

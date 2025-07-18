@@ -171,44 +171,19 @@ const HotelsPage: React.FC = () => {
 
     for (const hotel of hotelsData) {
       try {
-        // Get room types for this hotel
-        const roomTypesResponse = await roomTypeAPI.getRoomTypesByHotel(hotel.id, 0, 50);
-        if (roomTypesResponse.data.success) {
-          const roomTypes = roomTypesResponse.data.result.content || [];
-          let hasAvailableRooms = false;
-          let lowestPrice = Infinity;
-          let availableRoomCount = 0;
-
-          // Check each room type for availability and find lowest price
-          for (const roomType of roomTypes) {
-            if (roomType.availableRooms > 0 && roomType.maxOccupancy >= guestCount) {
-              hasAvailableRooms = true;
-              availableRoomCount += roomType.availableRooms;
-              
-              // Calculate total price for the stay
-              const totalPrice = roomType.pricePerNight * numberOfNights;
-              if (totalPrice < lowestPrice) {
-                lowestPrice = totalPrice;
-              }
-            }
-          }
-
-          hotelsWithAvailability.push({
-            ...hotel,
-            hasAvailableRooms,
-            lowestPrice: lowestPrice === Infinity ? undefined : lowestPrice,
-            availableRoomCount
-          });
-        } else {
-          // If can't get room types, include hotel but mark as no availability info
-          hotelsWithAvailability.push({
-            ...hotel,
-            hasAvailableRooms: undefined
-          });
+        // Gọi API mới lấy số phòng trống thực tế
+        const availableRoomsRes = await hotelAPI.getAvailableRooms(hotel.id, checkInDate, checkOutDate);
+        let availableRoomCount = 0;
+        if (availableRoomsRes.data.success) {
+          availableRoomCount = availableRoomsRes.data.result;
         }
+        hotelsWithAvailability.push({
+          ...hotel,
+          hasAvailableRooms: availableRoomCount > 0,
+          availableRoomCount
+        });
       } catch (error) {
         console.error(`Error checking availability for hotel ${hotel.id}:`, error);
-        // Include hotel but mark as no availability info
         hotelsWithAvailability.push({
           ...hotel,
           hasAvailableRooms: undefined

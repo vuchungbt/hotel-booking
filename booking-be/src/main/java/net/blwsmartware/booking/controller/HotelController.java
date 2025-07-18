@@ -27,6 +27,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
 import java.util.List;
 import java.util.UUID;
 
@@ -717,6 +719,23 @@ public class HotelController {
                 .body(MessageResponse.<List<CityStatsResponse>>builder()
                         .message("Top cities retrieved successfully")
                         .result(topCities)
+                        .build());
+    }
+
+    /**
+     * API trả về số phòng trống thực tế của khách sạn dựa trên booking
+     */
+    @GetMapping("/{id}/available-rooms")
+    public ResponseEntity<MessageResponse<Integer>> getAvailableRoomsByHotel(
+            @PathVariable UUID id,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkInDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOutDate) {
+        int availableRooms = hotelService.getAvailableRoomsByHotel(id, checkInDate, checkOutDate);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(MessageResponse.<Integer>builder()
+                        .message("Available rooms calculated successfully")
+                        .result(availableRooms)
                         .build());
     }
 } 

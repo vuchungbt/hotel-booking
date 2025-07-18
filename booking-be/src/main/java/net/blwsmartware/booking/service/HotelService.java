@@ -8,6 +8,7 @@ import net.blwsmartware.booking.dto.response.HotelResponse;
 import net.blwsmartware.booking.dto.response.HostDashboardResponse;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -72,4 +73,9 @@ public interface HotelService {
     
     // ===== UTILITY METHODS =====
     boolean isHotelNameExistsInCity(String name, String city);
+
+    /**
+     * Đếm số phòng trống thực tế của khách sạn dựa trên booking trong khoảng ngày
+     */
+    int getAvailableRoomsByHotel(UUID hotelId, LocalDate checkInDate, LocalDate checkOutDate);
 } 

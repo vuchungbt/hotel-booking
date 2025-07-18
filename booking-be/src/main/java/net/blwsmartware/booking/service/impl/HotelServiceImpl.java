@@ -12,6 +12,7 @@ import net.blwsmartware.booking.dto.response.HostDashboardResponse;
 import net.blwsmartware.booking.dto.response.HotelResponse;
 import net.blwsmartware.booking.entity.Hotel;
 import net.blwsmartware.booking.entity.User;
+import net.blwsmartware.booking.entity.RoomType;
 import net.blwsmartware.booking.exception.AppRuntimeException;
 import net.blwsmartware.booking.enums.ErrorResponse;
 import net.blwsmartware.booking.mapper.HotelMapper;
@@ -19,6 +20,7 @@ import net.blwsmartware.booking.repository.HotelRepository;
 import net.blwsmartware.booking.repository.ReviewRepository;
 import net.blwsmartware.booking.repository.RoomTypeRepository;
 import net.blwsmartware.booking.repository.UserRepository;
+import net.blwsmartware.booking.repository.BookingRepository;
 import net.blwsmartware.booking.service.HotelService;
 import net.blwsmartware.booking.util.DataResponseUtils;
 import net.blwsmartware.booking.util.TextUtils;
@@ -34,6 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,6 +50,7 @@ public class HotelServiceImpl implements HotelService {
     UserRepository userRepository;
     ReviewRepository reviewRepository;
     RoomTypeRepository roomTypeRepository;
+    BookingRepository bookingRepository;
     HotelMapper hotelMapper;
     
     @Override
@@ -843,5 +847,23 @@ public class HotelServiceImpl implements HotelService {
 
     private void populateRoomData(List<HotelResponse> responses) {
         responses.forEach(this::populateRoomData);
+    }
+
+    @Override
+    public int getAvailableRoomsByHotel(UUID hotelId, LocalDate checkInDate, LocalDate checkOutDate) {
+        // Lấy tất cả RoomType của khách sạn
+        List<RoomType> roomTypes = roomTypeRepository.findByHotelId(hotelId);
+        if (roomTypes.isEmpty()) return 0;
+        // Lấy tổng số phòng từng loại
+        int totalRooms = roomTypes.stream().mapToInt(rt -> rt.getTotalRooms() != null ? rt.getTotalRooms() : 0).sum();
+        // Đếm số phòng đã được đặt (không bị hủy) theo từng loại phòng trong khoảng ngày
+        List<Object[]> bookedCounts = bookingRepository.countActiveBookingsByHotelAndDateRange(hotelId, checkInDate, checkOutDate);
+        int totalBooked = 0;
+        for (Object[] row : bookedCounts) {
+            Long count = (Long) row[1];
+            totalBooked += count != null ? count : 0;
+        }
+        // Số phòng trống thực tế
+        return Math.max(totalRooms - totalBooked, 0);
     }
 } 

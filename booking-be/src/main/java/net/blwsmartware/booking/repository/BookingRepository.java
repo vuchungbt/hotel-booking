@@ -280,4 +280,10 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     List<Booking> findByPaymentStatusAndStatus(PaymentStatus paymentStatus, BookingStatus status);
     
     List<Booking> findByPaymentStatusAndStatusAndCreatedAtBefore(PaymentStatus paymentStatus, BookingStatus status, LocalDateTime cutoffTime);
+
+    /**
+     * Đếm tổng số booking (không bị hủy) của tất cả RoomType thuộc 1 khách sạn trong khoảng ngày
+     */
+    @Query("SELECT rt.id, COUNT(b) FROM RoomType rt LEFT JOIN Booking b ON b.roomType.id = rt.id AND b.status != 'CANCELLED' AND ((b.checkInDate <= :checkOutDate AND b.checkOutDate > :checkInDate)) WHERE rt.hotel.id = :hotelId GROUP BY rt.id")
+    List<Object[]> countActiveBookingsByHotelAndDateRange(@Param("hotelId") UUID hotelId, @Param("checkInDate") LocalDate checkInDate, @Param("checkOutDate") LocalDate checkOutDate);
 } 
